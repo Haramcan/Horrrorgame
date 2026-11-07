@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>DESTUR – Phase 1: Mechanik-Prototyp</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:"Segoe UI",system-ui,sans-serif;color:#d8d8d8;user-select:none}
+  canvas{display:block}
+  #hud{position:fixed;inset:0;pointer-events:none}
+  #vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(60,0,0,.85) 100%);opacity:0;transition:opacity .2s}
+  #fade{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .8s}
+  #fearWrap{position:absolute;left:24px;bottom:24px;width:260px}
+  #fearLabel{font-size:12px;letter-spacing:.2em;opacity:.8;margin-bottom:4px}
+  #fearBar{height:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25)}
+  #fearFill{height:100%;width:0;background:#b02020}
+  #inv{position:absolute;left:24px;bottom:70px;font-size:14px;line-height:1.5;text-shadow:0 0 4px #000}
+  #prompt{position:absolute;left:0;right:0;top:58%;text-align:center;font-size:18px;text-shadow:0 0 6px #000;min-height:24px}
+  #sub{position:absolute;left:10%;right:10%;bottom:90px;text-align:center;font-size:20px;text-shadow:0 0 8px #000,0 0 3px #000;min-height:28px}
+  #cross{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:rgba(255,255,255,.55)}
+  #prog{position:absolute;left:50%;top:64%;width:240px;margin-left:-120px;display:none}
+  #progLabel{text-align:center;font-size:13px;letter-spacing:.15em;margin-bottom:4px;opacity:.9}
+  #progBar{height:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)}
+  #progFill{height:100%;width:0;background:#d8c070}
+  #beat{position:absolute;left:50%;top:70%;width:300px;margin-left:-150px;height:16px;border:1px solid rgba(255,255,255,.4);display:none;background:rgba(0,0,0,.4)}
+  #beatTarget{position:absolute;right:0;top:0;bottom:0;width:15%;background:rgba(216,192,112,.35)}
+  #beatMark{position:absolute;top:-3px;width:4px;height:22px;background:#fff;left:0}
+  #breath{position:absolute;left:50%;top:50%;width:0;height:0;display:none}
+  #breathOuter,#breathInner{position:absolute;border-radius:50%;left:0;top:0;transform:translate(-50%,-50%)}
+  #breathOuter{width:240px;height:240px;border:2px solid rgba(255,255,255,.5)}
+  #breathInner{width:240px;height:240px;background:rgba(200,60,60,.35)}
+  #debug{position:absolute;right:12px;top:10px;font:12px/1.4 Consolas,monospace;opacity:.7;text-align:right;white-space:pre}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:10;cursor:pointer}
+  #card{max-width:680px;padding:28px 36px;border:1px solid rgba(255,255,255,.2);background:rgba(10,10,14,.9);line-height:1.55}
+  #card h1{margin:0 0 4px;letter-spacing:.35em;font-weight:300;font-size:30px}
+  #card h2{margin:0 0 14px;font-size:14px;font-weight:400;opacity:.7}
+  #card table{border-collapse:collapse;font-size:14px;margin:10px 0}
+  #card td{padding:2px 14px 2px 0;vertical-align:top}
+  #card kbd{background:#222;border:1px solid #555;border-radius:3px;padding:0 6px;font-size:12px}
+  #card .go{margin-top:16px;text-align:center;letter-spacing:.2em;font-size:14px;opacity:.9}
+  #err{color:#f88;margin-top:10px;font-size:13px;white-space:pre-wrap}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<div id="hud">
+  <div id="vignette"></div>
+  <div id="cross"></div>
+  <div id="prompt"></div>
+  <div id="sub"></div>
+  <div id="prog"><div id="progLabel"></div><div id="progBar"><div id="progFill"></div></div></div>
+  <div id="beat"><div id="beatTarget"></div><div id="beatMark"></div></div>
+  <div id="breath"><div id="breathOuter"></div><div id="breathInner"></div></div>
+  <div id="inv"></div>
+  <div id="fearWrap"><div id="fearLabel">ANGST</div><div id="fearBar"><div id="fearFill"></div></div></div>
+  <div id="debug"></div>
+  <div id="fade"></div>
+</div>
+<div id="overlay">
+  <div id="card">
+    <h1>DESTUR</h1>
+    <h2>Phase 1 – Mechanik-Prototyp (graue Testwelt, noch keine Story, keine Grafik)</h2>
+    <table>
+      <tr><td><kbd>W A S D</kbd></td><td>Gehen &nbsp; <kbd>Shift</kbd> Rennen &nbsp; Maus: Umsehen</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Taschenlampe an/aus</td></tr>
+      <tr><td><kbd>E</kbd></td><td>Aufheben / Benutzen (Eisen, Muska, Bett)</td></tr>
+      <tr><td><kbd>Q</kbd> halten</td><td>„Destur“ flüstern (im leuchtenden Kreis an Schwellen)</td></tr>
+      <tr><td><kbd>R</kbd> halten</td><td>Rezitieren (bei Angst zusätzlich <kbd>Leertaste</kbd> im Takt)</td></tr>
+      <tr><td><kbd>Rechte Maustaste</kbd></td><td>Taschenspiegel – zeigt die Al Karısı</td></tr>
+      <tr><td><kbd>V</kbd> halten</td><td>Eisen hochhalten (hält Dschinn auf Abstand, rostet)</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Auf eine Stimme antworten (Karakoncolos – keine gute Idee)</td></tr>
+      <tr><td><kbd>1</kbd>–<kbd>5</kbd></td><td>Teleport: 1 Start · 2 Destur-Korridor · 3 Spiegelraum · 4 Schlafzimmer (Karabasan) · 5 Schneefeld (Karakoncolos)</td></tr>
+      <tr><td><kbd>F3</kbd></td><td>Debug-Anzeige &nbsp; <kbd>Esc</kbd> Maus freigeben</td></tr>
+    </table>
+    <div style="margin-top:10px;font-size:14px">Lautstärke <input id="vol" type="range" min="0" max="100" value="50" style="vertical-align:middle;width:180px"> <span id="volVal">50%</span> &nbsp; <kbd>M</kbd> Ton aus/an &nbsp; <kbd>P</kbd> Pause</div>
+    <div class="go">KLICKEN ZUM STARTEN</div>
+    <div id="err"></div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const $ = id => document.getElementById(id);
+const errBox = $('err');
+window.addEventListener('error', e => { errBox.textContent = 'Fehler: ' + e.message; });
+
+/* ---------------------------------------------------------------- Renderer */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.autoClear = false;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const FOG_COL = 0x05060a;
+scene.background = new THREE.Color(FOG_COL);
+scene.fog = new THREE.FogExp2(FOG_COL, 0.04);
+
+const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.05, 200);
+camera.rotation.order = 'YXZ';
+scene.add(camera);
+
+scene.add(new THREE.HemisphereLight(0x303a50, 0x101018, 0.9));
+
+/* Taschenlampe */
+const flash = new THREE.SpotLight(0xfff0d0, 500, 45, 0.5, 0.55, 2);
+flash.castShadow = true;
+flash.shadow.mapSize.set(1024, 1024);
+flash.shadow.bias = -0.0005;
+camera.add(flash);
+const flashTarget = new THREE.Object3D();
+flashTarget.position.set(0, 0, -5);
+camera.add(flashTarget);
+flash.target = flashTarget;
+let flashOn = true;
+const FLASH_BASE = 500;
+
+/* Lagerfeuer = sichere Zone */
+const fireLight = new THREE.PointLight(0xff7a30, 220, 22, 2);
+fireLight.position.set(8, 1.2, 0);
+scene.add(fireLight);
+const SAFE = { x: 8, z: 0, r: 6 };
+
+/* ------------------------------------------------------------------ Welt */
+const colliders = [];
+const matCache = {};
+const gmat = c => matCache[c] || (matCache[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.92, metalness: 0.0 }));
+
+function box(x, z, w, d, h = 3, y0 = 0, color = 0x808080, collide = true) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), gmat(color));
+  m.position.set(x, y0 + h / 2, z);
+  m.castShadow = true; m.receiveShadow = true;
+  scene.add(m);
+  if (collide) colliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
+  return m;
+}
+
+// Boden mit Gitter
+{
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#5a5a5a'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = '#7a7a7a'; g.lineWidth = 3; g.strokeRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(75, 75);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+  scene.add(floor);
+}
+const WORLD = 70;
+
+// Startbereich: Lagerfeuer + ein paar Kisten
+box(8, 0, 0.8, 0.8, 0.5, 0, 0x553322);
+box(-4, -5, 1.5, 1.5, 1.5);
+box(-6, 4, 2, 1, 1);
+box(5, 8, 1, 3, 2);
+box(-10, -12, 3, 3, 2.4);
+
+// Station A: Destur-Korridor (x=-30, z -13..13, Eingang offen bei z=-13)
+box(-31.7, 0, 0.4, 26, 3);
+box(-28.3, 0, 0.4, 26, 3);
+box(-30, 13, 3.4, 0.4, 3);
+box(-30, 0, 3.4, 26, 0.2, 3, 0x606060, false);
+const thresholds = [];
+[-6, 0, 6].forEach((z, i) => {
+  box(-30, z, 3, 0.35, 0.4, 2.5, 0x909090, false);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.2, 40), new THREE.MeshBasicMaterial({ color: 0x40b0b0, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(-30, 0.03, z);
+  scene.add(ring);
+  thresholds.push({ x: -30, z, r: 1.5, ring, state: 'idle', progress: 0, entered: false, timer: 0 });
+});
+
+// Station B: Spiegelraum (Mitte 30,0; 14x14; Tür im Süden)
+box(30, -7, 14.4, 0.4, 3.5);
+box(26, 7, 6, 0.4, 3.5);
+box(34, 7, 6, 0.4, 3.5);
+box(23, 0, 0.4, 14.4, 3.5);
+box(37, 0, 0.4, 14.4, 3.5);
+box(30, 0, 14.4, 14.4, 0.2, 3.5, 0x606060, false);
+box(28, -3, 1.4, 1.4, 1.2);
+box(33, 3, 1.6, 1.0, 1.0);
+box(26, 2, 1.0, 2.5, 1.8);
+const mirrors = [];
+
+// Station C: Schlafzimmer (Mitte 0,-30; 8x8; Tür im Süden)
+box(0, -34, 8.4, 0.4, 3);
+box(-4, -30, 0.4, 8.4, 3);
+box(4, -30, 0.4, 8.4, 3);
+box(-2.5, -26, 3, 0.4, 3);
+box(2.5, -26, 3, 0.4, 3);
+box(0, -30, 8.4, 8.4, 0.2, 3, 0x606060, false);
+const bed = box(0, -31, 2, 2.4, 0.55, 0, 0x6a5a4a);
+box(0, -32.0, 1.2, 0.5, 0.2, 0.55, 0xb0b0b0, false);
+box(-2.8, -33, 0.6, 0.6, 0.6, 0, 0x553322);
+
+// Station D: Feld mit Felsen (Mitte 0,40)
+{
+  let s = 1234567;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 26; i++) {
+    const x = (rnd() - 0.5) * 50, z = 40 + (rnd() - 0.5) * 50;
+    box(x, z, 1 + rnd() * 2, 1 + rnd() * 2, 0.8 + rnd() * 2, 0, 0x6a6a70);
+  }
+}
+const FIELD = { x: 0, z: 40, r: 26 };
+
+// Spiegel
+class MirrorSurface {
+  constructor(w, h, x, y, z, rotY) {
+    this.rt = new THREE.WebGLRenderTarget(512, 512);
+    this.cam = new THREE.PerspectiveCamera();
+    this.cam.layers.enable(0); this.cam.layers.enable(1);
+    this.texMat = new THREE.Matrix4();
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { map: { value: this.rt.texture }, textureMatrix: { value: this.texMat } },
+      vertexShader: 'uniform mat4 textureMatrix; varying vec4 vUv; void main(){ vUv = textureMatrix * vec4(position,1.0); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform sampler2D map; varying vec4 vUv; void main(){ vec4 c = texture2DProj(map, vUv); gl_FragColor = vec4(c.rgb * vec3(0.82,0.88,0.92), 1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'
+    });
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    this.mesh.position.set(x, y, z); this.mesh.rotation.y = rotY;
+    scene.add(this.mesh);
+    // Rahmen
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.2, h + 0.2, 0.08), gmat(0x2a1a10));
+    frame.position.set(0, 0, -0.05); this.mesh.add(frame);
+  }
+  update() {
+    const m = this.mesh, cam = this.cam;
+    m.updateMatrixWorld(); camera.updateMatrixWorld();
+    const mp = new THREE.Vector3().setFromMatrixPosition(m.matrixWorld);
+    const cp = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
+    const rot = new THREE.Matrix4().extractRotation(m.matrixWorld);
+    const normal = new THREE.Vector3(0, 0, 1).applyMatrix4(rot);
+    const view = new THREE.Vector3().subVectors(mp, cp);
+    if (view.dot(normal) > 0) return false;
+    view.reflect(normal).negate().add(mp);
+    rot.extractRotation(camera.matrixWorld);
+    const look = new THREE.Vector3(0, 0, -1).applyMatrix4(rot).add(cp);
+    const target = new THREE.Vector3().subVectors(mp, look).reflect(normal).negate().add(mp);
+    cam.position.copy(view);
+    cam.up.set(0, 1, 0).applyMatrix4(rot).reflect(normal);
+    cam.lookAt(target);
+    cam.far = camera.far;
+    cam.updateMatrixWorld();
+    cam.projectionMatrix.copy(camera.projectionMatrix);
+    this.texMat.set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
+    this.texMat.multiply(cam.projectionMatrix).multiply(cam.matrixWorldInverse).multiply(m.matrixWorld);
+    m.visible = false;
+    renderer.setRenderTarget(this.rt); renderer.clear();
+    renderer.render(scene, cam);
+    renderer.setRenderTarget(null);
+    m.visible = true;
+    return true;
+  }
+}
+mirrors.push(new MirrorSurface(2.0, 2.3, 36.75, 1.5, -2, -Math.PI / 2));
+mirrors.push(new MirrorSurface(2.0, 2.3, 28, 1.5, -6.75, 0));
+mirrors.push(new MirrorSurface(1.4, 2.0, 23.25, 1.4, 3, Math.PI / 2));
+
+/* ------------------------------------------------------- Sammelobjekte */
+const interactables = [];
+const SHOE_GEO = new THREE.TorusGeometry(0.17, 0.045, 8, 18, Math.PI * 1.55);
+const shoeMat = new THREE.MeshStandardMaterial({ color: 0x555a60, metalness: 0.8, roughness: 0.4, emissive: 0x101418 });
+const muskaMat = new THREE.MeshStandardMaterial({ color: 0x3a8a6a, roughness: 0.7, emissive: 0x0a3020 });
+function addIron(x, z) {
+  const m = new THREE.Mesh(SHOE_GEO, shoeMat);
+  m.position.set(x, 0.9, z); m.castShadow = true; scene.add(m);
+  interactables.push({ obj: m, type: 'iron', label: 'E: Hufeisen aufheben', base: 0.9 });
+}
+function addMuska(x, z) {
+  const m = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.3, 3), muskaMat);
+  m.position.set(x, 0.9, z); m.castShadow = true; scene.add(m);
+  interactables.push({ obj: m, type: 'muska', label: 'E: Muska aufheben', base: 0.9 });
+}
+[[-5, 2], [4, -6], [-8, -8], [-30, -9], [27, -4.5], [3, -28], [5, 33], [-6, 44]].forEach(p => addIron(p[0], p[1]));
+[[6, 5], [-3, -10], [31, 5], [-30, 9], [-3, -28.5], [-10, 38]].forEach(p => addMuska(p[0], p[1]));
+interactables.push({ obj: bed, type: 'bed', label: 'E: Hinlegen (Karabasan-Test)', base: bed.position.y });
+
+/* ----------------------------------------------------------- Spieler */
+const player = { pos: new THREE.Vector3(0, 1.65, 0), yaw: 0, pitch: 0, speed: 0, stepT: 0, bob: 0 };
+const WALK = 3.0, RUN = 5.2, RADIUS = 0.35;
+const keys = new Set();
+const inv = { iron: 0, muska: 1 };
+let ironDur = 100;
+let fear = 12;
+let time = 0;
+let locked = false, started = false, dead = false, deadTimer = 0;
+const mode = { paralysis: null, kk: false };
+
+function resolve(pos, r) {
+  for (const c of colliders) {
+    const cx = Math.max(c.minX, Math.min(pos.x, c.maxX));
+    const cz = Math.max(c.minZ, Math.min(pos.z, c.maxZ));
+    const dx = pos.x - cx, dz = pos.z - cz, d2 = dx * dx + dz * dz;
+    if (d2 < r * r) {
+      if (d2 > 1e-8) { const d = Math.sqrt(d2); pos.x += dx / d * (r - d); pos.z += dz / d * (r - d); }
+      else {
+        const a = pos.x - c.minX, b = c.maxX - pos.x, e = pos.z - c.minZ, f = c.maxZ - pos.z, m = Math.min(a, b, e, f);
+        if (m === a) pos.x = c.minX - r; else if (m === b) pos.x = c.maxX + r; else if (m === e) pos.z = c.minZ - r; else pos.z = c.maxZ + r;
+      }
+    }
+  }
+}
+
+/* ------------------------------------------------------------- Audio */
+let AC = null, master = null, noiseBuf = null, droneGain = null, windGain = null;
+let volume = 0.5, muted = false, paused = false;
+try { const sv = localStorage.getItem('destur_vol'); if (sv !== null) volume = Math.max(0, Math.min(1, parseFloat(sv))); } catch (e) {}
+$('vol').value = Math.round(volume * 100); $('volVal').textContent = Math.round(volume * 100) + '%';
+function applyVolume() { if (master) master.gain.value = muted ? 0 : volume; }
+$('vol').addEventListener('input', e => {
+  volume = e.target.value / 100; $('volVal').textContent = e.target.value + '%';
+  try { localStorage.setItem('destur_vol', String(volume)); } catch (err) {}
+  applyVolume();
+});
+$('vol').addEventListener('click', e => e.stopPropagation());
+function setPaused(p) {
+  if (p === paused) return;
+  paused = p;
+  if (p) {
+    keys.clear(); desturHeld = false; ironHeld = false; pocketOn = false;
+    $('overlay').style.display = 'flex'; $('overlay').querySelector('.go').textContent = 'PAUSE – KLICKEN ZUM WEITERSPIELEN';
+    if (AC) AC.suspend();
+  }
+}
+function initAudio() {
+  if (AC) return;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = muted ? 0 : volume; master.connect(AC.destination);
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    // Wind
+    const ws = AC.createBufferSource(); ws.buffer = noiseBuf; ws.loop = true;
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+    windGain = AC.createGain(); windGain.gain.value = 0.07;
+    ws.connect(lp).connect(windGain).connect(master); ws.start();
+    // Drohnen-Brummen
+    droneGain = AC.createGain(); droneGain.gain.value = 0; droneGain.connect(master);
+    [47, 48.6].forEach(f => { const o = AC.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; const lp2 = AC.createBiquadFilter(); lp2.type = 'lowpass'; lp2.frequency.value = 160; o.connect(lp2).connect(droneGain); o.start(); });
+  } catch (e) { AC = null; }
+}
+function burst(freq, q, dur, vol, type = 'bandpass') {
+  if (!AC) return;
+  const s = AC.createBufferSource(); s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+  const g = AC.createGain(); const t = AC.currentTime;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + dur * 0.2); g.gain.linearRampToValueAtTime(0, t + dur);
+  s.connect(f).connect(g).connect(master);
+  s.start(t, Math.random(), dur + 0.05);
+}
+function thump(vol) {
+  if (!AC) return;
+  const o = AC.createOscillator(); o.type = 'sine'; const g = AC.createGain(); const t = AC.currentTime;
+  o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.14);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  o.connect(g).connect(master); o.start(t); o.stop(t + 0.2);
+}
+function sting(f0, f1, dur, vol, type = 'sawtooth') {
+  if (!AC) return;
+  const o = AC.createOscillator(); o.type = type; const g = AC.createGain(); const t = AC.currentTime;
+  o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.05);
+}
+function voiceCall(pos) {
+  if (!AC) return;
+  const o = AC.createOscillator(); o.type = 'triangle';
+  const g = AC.createGain(); const p = AC.createPanner(); p.panningModel = 'HRTF'; p.distanceModel = 'inverse'; p.refDistance = 3;
+  p.positionX.value = pos.x; p.positionY.value = 1.5; p.positionZ.value = pos.z;
+  const t = AC.currentTime, base = 180 + Math.random() * 260;
+  o.frequency.setValueAtTime(base, t); o.frequency.linearRampToValueAtTime(base * 1.35, t + 0.35); o.frequency.linearRampToValueAtTime(base * 0.9, t + 0.9);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25, t + 0.15); g.gain.linearRampToValueAtTime(0, t + 1.0);
+  o.connect(g).connect(p).connect(master); o.start(t); o.stop(t + 1.05);
+}
+function updateListener() {
+  if (!AC) return;
+  const l = AC.listener;
+  if (l.positionX) {
+    l.positionX.value = player.pos.x; l.positionY.value = player.pos.y; l.positionZ.value = player.pos.z;
+    const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
+    l.forwardX.value = fx; l.forwardY.value = 0; l.forwardZ.value = fz;
+    l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0;
+  }
+}
+
+/* --------------------------------------------------------------- HUD */
+let subTimer = 0;
+function say(text, dur = 4.5) { $('sub').textContent = text; subTimer = dur; }
+function prompt(text) { $('prompt').textContent = text || ''; }
+function showProg(label, v) {
+  const p = $('prog'); p.style.display = label ? 'block' : 'none';
+  if (label) { $('progLabel').textContent = label; $('progFill').style.width = Math.round(Math.max(0, Math.min(1, v)) * 100) + '%'; }
+}
+function addFear(v) { fear = Math.max(0, Math.min(100, fear + v)); }
+function fade(on, ms = 800) { const f = $('fade'); f.style.transition = 'opacity ' + ms + 'ms'; f.style.opacity = on ? 1 : 0; }
+
+/* ---------------------------------------------------- Al Karısı (Entity) */
+function makeEntity() {
+  const g = new THREE.Group();       // Position + Blickrichtung (Front = +Z)
+  const body = new THREE.Group();    // Neigung
+  g.add(body);
+  const dress = new THREE.MeshStandardMaterial({ color: 0x3a1014, roughness: 0.9, emissive: 0x1a0505 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xcfc0b0, roughness: 0.8, emissive: 0x201a16 });
+  const hair = new THREE.MeshStandardMaterial({ color: 0xc01010, roughness: 0.8, emissive: 0x5a0000 });
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.45, 1.5, 10), dress); torso.position.y = 1.05; body.add(torso);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), skin); head.position.y = 2.0; body.add(head);
+  for (let i = 0; i < 11; i++) {
+    const h = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.5 + Math.random() * 0.5, 0.05), hair);
+    const a = (i / 11) * Math.PI * 2;
+    h.position.set(Math.cos(a) * 0.24, 1.55, Math.sin(a) * 0.24 - 0.05); h.rotation.x = (Math.random() - 0.5) * 0.15; body.add(h);
+  }
+  [-1, 1].forEach(s => {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.4, 0.09), skin); arm.position.set(s * 0.45, 1.1, 0.05); body.add(arm);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.38), skin); foot.position.set(s * 0.18, 0.05, -0.12); g.add(foot); // Füße zeigen nach hinten
+  });
+  g.traverse(o => { o.layers.set(1); o.castShadow = false; });
+  scene.add(g);
+  g.userData.body = body;
+  return g;
+}
+const ent = { g: makeEntity(), pos: new THREE.Vector3(-25, 0, 30), stun: 20, alert: 0, wander: new THREE.Vector3(), wanderT: 0, hint: 0 };
+ent.g.position.copy(ent.pos);
+
+function placeEntityAwayFrom(p, dist) {
+  const a = Math.random() * Math.PI * 2;
+  ent.pos.set(Math.max(-WORLD, Math.min(WORLD, p.x + Math.cos(a) * dist)), 0, Math.max(-WORLD, Math.min(WORLD, p.z + Math.sin(a) * dist)));
+}
+
+function updateEntity(dt) {
+  if (mode.paralysis) return;
+  if (ent.alert > 0) ent.alert -= dt;
+  if (ent.stun > 0) { ent.stun -= dt; ent.g.position.copy(ent.pos); return; }
+  const dx = player.pos.x - ent.pos.x, dz = player.pos.z - ent.pos.z;
+  const dist = Math.hypot(dx, dz);
+  const aggressive = fear > 45 || ent.alert > 0;
+  let speed = 0.7 + (fear / 100) * 1.8 + (ent.alert > 0 ? 0.9 : 0);
+  let mx = 0, mz = 0;
+  const ironNear = ironHeld && dist < 5 && inv.iron > 0;
+  if (ironNear) {
+    mx = -dx / dist; mz = -dz / dist; speed = 3.2;
+    ironDur -= 38 * dt;
+    if (Math.random() < dt * 14) burst(5000, 1, 0.08, 0.1, 'highpass');
+    if (ironDur <= 0) { inv.iron--; ironDur = 100; say('Das Eisen ist zu Rost zerfallen.', 3); sting(300, 80, 0.4, 0.2, 'square'); }
+  } else if (aggressive) {
+    if (dist > 0.01) { mx = dx / dist; mz = dz / dist; }
+  } else {
+    ent.wanderT -= dt;
+    if (ent.wanderT <= 0) { ent.wanderT = 4 + Math.random() * 5; const a = Math.random() * 6.28; ent.wander.set(ent.pos.x + Math.cos(a) * 9, 0, ent.pos.z + Math.sin(a) * 9); }
+    const wx = ent.wander.x - ent.pos.x, wz = ent.wander.z - ent.pos.z, wd = Math.hypot(wx, wz);
+    if (wd > 0.3) { mx = wx / wd; mz = wz / wd; speed = 0.6; }
+  }
+  ent.pos.x = Math.max(-WORLD, Math.min(WORLD, ent.pos.x + mx * speed * dt));
+  ent.pos.z = Math.max(-WORLD, Math.min(WORLD, ent.pos.z + mz * speed * dt));
+  ent.g.position.set(ent.pos.x, Math.sin(time * 1.3) * 0.04, ent.pos.z);
+  ent.g.rotation.y = Math.atan2(dx, dz);
+  ent.g.userData.body.rotation.x = 0;
+  // Angriff
+  if (dist < 1.5 && !dead) {
+    if (inv.muska > 0) {
+      inv.muska--; say('Eine Muska zerfällt – sie hat dich gerettet.', 4);
+      burst(3000, 1, 0.6, 0.35, 'highpass'); sting(500, 60, 0.7, 0.3);
+      ent.stun = 7; placeEntityAwayFrom(player.pos, 20); addFear(15);
+    } else die('Die Al Karısı hat dich erwischt.');
+  }
+  // Angst durch Nähe
+  if (dist < 7) addFear((7 - dist) * 1.1 * dt);
+}
+
+/* --------------------------------------------------------- Karakoncolos */
+const kk = { g: null, pos: new THREE.Vector3(0, 0, 56), chase: 0, stun: 0, callT: 4, stillT: 0 };
+{
+  const g = new THREE.Group();
+  const fur = new THREE.MeshStandardMaterial({ color: 0x1c1814, roughness: 1 });
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 1.3, 8), fur); b.position.y = 0.9; b.rotation.x = 0.5; g.add(b);
+  const h = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), fur); h.position.set(0, 1.35, 0.35); g.add(h);
+  [-1, 1].forEach(s => { const a = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.9, 0.12), fur); a.position.set(s * 0.6, 0.7, 0.3); a.rotation.x = -0.15; g.add(a); });
+  g.traverse(o => { o.castShadow = false; });
+  scene.add(g); g.visible = false; kk.g = g;
+}
+const kkNames = ['Selin', 'Anne', 'Babaanne', 'Patron'];
+function updateKK(dt) {
+  const inField = Math.hypot(player.pos.x - FIELD.x, player.pos.z - FIELD.z) < FIELD.r;
+  if (inField && !mode.kk) { mode.kk = true; kk.g.visible = true; kk.pos.set(0, 0, 58); kk.chase = 0; say('Der Wind trägt Stimmen heran. Steh still. Antworte nicht.', 6); }
+  if (!inField && mode.kk) { mode.kk = false; kk.g.visible = false; }
+  if (!mode.kk) return;
+  const dx = player.pos.x - kk.pos.x, dz = player.pos.z - kk.pos.z, dist = Math.hypot(dx, dz);
+  // Stimmen
+  kk.callT -= dt;
+  if (kk.callT <= 0) {
+    kk.callT = 3 + Math.random() * 3;
+    const a = Math.random() * 6.28, d = 8 + Math.random() * 10;
+    voiceCall({ x: player.pos.x + Math.cos(a) * d, z: player.pos.z + Math.sin(a) * d });
+    say(kkNames[Math.floor(Math.random() * kkNames.length)] + ': „Emre!“', 2.2);
+    addFear(2.5);
+  }
+  if (kk.stun > 0) { kk.stun -= dt; return; }
+  const running = player.speed > RUN * 0.8, walking = player.speed > 0.5 && !running;
+  let detect = false;
+  if (kk.chase > 0) { kk.chase -= dt; detect = true; }
+  else if (running && dist < 20) detect = true;
+  else if (walking && dist < 4) detect = true;
+  else if (dist < 1.2) detect = true;
+  if (detect) {
+    if (kk.chase <= 0) kk.chase = 3;
+    kk.pos.x += dx / dist * 3.4 * dt; kk.pos.z += dz / dist * 3.4 * dt;
+    addFear(6 * dt);
+  } else {
+    kk.pos.x += Math.sin(time * 0.3) * 0.5 * dt; kk.pos.z += Math.cos(time * 0.23) * 0.5 * dt;
+  }
+  kk.g.position.copy(kk.pos); kk.g.rotation.y = Math.atan2(dx, dz);
+  if (dist < 1.3 && !dead) {
+    if (inv.muska > 0) { inv.muska--; say('Eine Muska zerfällt – der Karakoncolos verliert dich.', 4); burst(3000, 1, 0.6, 0.35, 'highpass'); kk.stun = 8; kk.chase = 0; kk.pos.z += 14; }
+    else die('Der Karakoncolos hat dich gefunden.');
+  }
+}
+
+/* ------------------------------------------------------- Taschenspiegel */
+const pocketRT = new THREE.WebGLRenderTarget(384, 384);
+const pocketCam = new THREE.PerspectiveCamera(48, 1, 0.05, 200);
+pocketCam.layers.enable(0); pocketCam.layers.enable(1);
+const overlayScene = new THREE.Scene();
+let overlayCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
+const pocketQuad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
+  uniforms: { map: { value: pocketRT.texture } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ float d = length(vUv - 0.5); if(d > 0.5) discard; vec3 c = texture2D(map, vUv).rgb * vec3(0.8,0.9,1.0); if(d > 0.46) c = vec3(0.55,0.42,0.18); gl_FragColor = vec4(c,1.0);\n#include <colorspace_fragment>\n}'
+}));
+overlayScene.add(pocketQuad);
+function layoutOverlay() {
+  const W = innerWidth, H = innerHeight, S = Math.min(W, H) * 0.42;
+  overlayCam = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0, 10);
+  overlayCam.position.z = 5;
+  pocketQuad.scale.set(S, S, 1);
+  pocketQuad.position.set(W / 2 - S / 2 - 30, -H / 2 + S / 2 + 30, 0);
+}
+layoutOverlay();
+let pocketOn = false;
+
+/* -------------------------------------------------------------- Destur */
+let desturHeld = false;
+function updateThresholds(dt) {
+  let cur = null;
+  for (const t of thresholds) {
+    const d = Math.hypot(player.pos.x - t.x, player.pos.z - t.z);
+    const inside = d < t.r;
+    if (t.state === 'idle') {
+      if (inside) { t.entered = true; cur = t; }
+      else if (t.entered && d > t.r + 0.4) {
+        // Schwelle ohne Destur verlassen
+        t.state = 'failed'; t.timer = 15; t.ring.material.color.set(0xd03030);
+        say('İzin istemedin.', 4); addFear(25); ent.alert = 20; if (ent.stun > 6) ent.stun = 0;
+        sting(220, 60, 0.9, 0.3);
+      }
+    } else if (t.state === 'done' || t.state === 'failed') {
+      t.timer -= dt;
+      if (t.timer <= 0 && d > t.r + 6) { t.state = 'idle'; t.entered = false; t.progress = 0; t.ring.material.color.set(0x40b0b0); }
+    }
+  }
+  if (cur && !dead && !mode.paralysis) {
+    prompt(desturHeld ? '' : 'Q halten: „Destur“ flüstern');
+    if (desturHeld) {
+      cur.progress += dt / 1.3;
+      if (Math.random() < dt * 8) burst(2600, 2, 0.5, 0.12);
+      showProg('DESTUR …', cur.progress);
+      if (cur.progress >= 1) {
+        cur.state = 'done'; cur.timer = 10; cur.ring.material.color.set(0x50d070);
+        say('Destur.', 2.5); addFear(-6); showProg(null); sting(330, 440, 0.4, 0.08, 'sine');
+      }
+    } else { cur.progress = Math.max(0, cur.progress - dt * 0.8); if (cur.progress > 0) showProg('DESTUR …', cur.progress); else showProg(null); }
+    return true;
+  }
+  return false;
+}
+
+/* ------------------------------------------------------------ Rezitieren */
+const rec = { progress: 0, cooldown: 0, hitFlash: 0, tapped: false };
+let spaceTap = false;
+function updateRecite(dt) {
+  if (rec.cooldown > 0) rec.cooldown -= dt;
+  const holding = keys.has('KeyR') && rec.cooldown <= 0 && !dead && !mode.paralysis;
+  const beatPeriod = 0.62;
+  const phase = (time % beatPeriod) / beatPeriod;
+  const beatBox = $('beat');
+  if (holding) {
+    if (fear < 35) {
+      rec.progress += dt / 3.2; beatBox.style.display = 'none';
+      showProg('REZITIEREN – ruhig', rec.progress);
+    } else if (fear < 70) {
+      beatBox.style.display = 'block'; $('beatMark').style.left = (phase * 100) + '%';
+      showProg('REZITIEREN – im Takt (Leertaste)', rec.progress);
+      if (spaceTap) {
+        const hit = phase > 0.85 || phase < 0.06;
+        if (hit) { rec.progress += 0.13; thump(0.15); } else { rec.progress = Math.max(0, rec.progress - 0.12); addFear(3); burst(900, 1, 0.12, 0.12); }
+      }
+    } else {
+      beatBox.style.display = 'none';
+      showProg('… Panik – nur Bruchstücke', rec.progress);
+      if (Math.random() < dt * 0.5) { say('… la … ilā …', 1.6); sting(150, 90, 0.6, 0.07, 'triangle'); }
+      addFear(1.5 * dt);
+    }
+    if (rec.progress >= 1) {
+      rec.progress = 0; rec.cooldown = 8; beatBox.style.display = 'none'; showProg(null);
+      say('Das Gebet trägt. Die Al Karısı weicht zurück.', 4);
+      ent.stun = 15; placeEntityAwayFrom(player.pos, 26); addFear(-35); sting(220, 440, 0.8, 0.1, 'sine');
+    }
+  } else {
+    if (rec.progress > 0) { rec.progress = Math.max(0, rec.progress - dt * 1.6); }
+    beatBox.style.display = 'none';
+    if (!desturBusy) showProg(rec.progress > 0.01 ? 'REZITIEREN' : null, rec.progress);
+  }
+  spaceTap = false;
+}
+let desturBusy = false;
+
+/* --------------------------------------------------------- Karabasan */
+const bedBase = { x: 0, y: 0.95, z: -31 };
+function startParalysis() {
+  if (mode.paralysis || dead) return;
+  mode.paralysis = { t: 0, sync: 0, b: 0, lookYaw: 0, lookPitch: 0, phase: 'run', end: 0 };
+  fade(true, 600);
+  setTimeout(() => {
+    fade(false, 1200);
+    ent.stun = 0; ent.pos.set(0.95, 0, -31); ent.g.position.copy(ent.pos);
+    ent.g.rotation.y = -Math.PI / 2; ent.g.userData.body.rotation.x = 0.9;
+    camera.layers.enable(1);
+    $('breath').style.display = 'block';
+    say('Du kannst dich nicht bewegen. Atme mit dem Ring: Leertaste halten = einatmen.', 6);
+  }, 700);
+}
+function endParalysis(success) {
+  const p = mode.paralysis; if (!p) return;
+  fade(true, 500);
+  setTimeout(() => {
+    mode.paralysis = null; camera.layers.disable(1);
+    $('breath').style.display = 'none';
+    ent.g.userData.body.rotation.x = 0; ent.stun = 20; placeEntityAwayFrom(player.pos, 24);
+    player.pos.set(0, 1.65, -28.3); player.yaw = Math.PI; player.pitch = 0;
+    addFear(success ? -30 : 30);
+    fade(false, 900);
+    say(success ? 'Die Last auf deiner Brust löst sich.' : 'Du erwachst – schweißgebadet.', 4);
+  }, 600);
+  p.phase = 'ending';
+}
+function updateParalysis(dt) {
+  const p = mode.paralysis; if (!p) return;
+  p.t += dt;
+  if (p.phase !== 'run') return;
+  const period = 4;
+  const target = 0.5 - 0.5 * Math.cos(p.t * Math.PI * 2 / period);
+  const held = keys.has('Space');
+  p.b += (held ? 1 : -1) * dt / 1.6; p.b = Math.max(0, Math.min(1, p.b));
+  const err = Math.abs(p.b - target);
+  if (err < 0.26) p.sync += dt / 16; else { p.sync = Math.max(0, p.sync - dt * 0.05); addFear(2.5 * dt); }
+  $('breathOuter').style.width = $('breathOuter').style.height = (120 + target * 150) + 'px';
+  $('breathInner').style.width = $('breathInner').style.height = (120 + p.b * 150) + 'px';
+  $('breathInner').style.background = err < 0.26 ? 'rgba(90,200,120,.35)' : 'rgba(200,60,60,.35)';
+  showProg('ATMUNG', p.sync);
+  // Entity beugt sich weiter herab, je schlechter die Synchronisation
+  ent.g.userData.body.rotation.x = 0.9 + (1 - p.sync) * 0.25 * Math.sin(p.t * 1.2);
+  ent.g.position.x = 0.95 - (1 - p.sync) * 0.35;
+  if (p.sync >= 1) { showProg(null); endParalysis(true); }
+  else if (p.t > 45) { showProg(null); p.phase = 'fail'; say('Ihr Gesicht ist direkt vor deinem.', 3); sting(120, 40, 1.6, 0.35); ent.g.position.x = 0.35; setTimeout(() => endParalysis(false), 2200); }
+}
+
+/* ------------------------------------------------------------ Tod/Respawn */
+function die(reason) {
+  if (dead) return;
+  dead = true; deadTimer = 3.2;
+  fade(true, 700); say(reason, 3); sting(200, 30, 1.2, 0.4);
+  if (mode.paralysis) { mode.paralysis = null; camera.layers.disable(1); $('breath').style.display = 'none'; }
+}
+function respawn() {
+  dead = false; fear = 40; player.pos.set(0, 1.65, 2); player.yaw = 0; player.pitch = 0;
+  placeEntityAwayFrom(player.pos, 40); ent.stun = 10; ent.alert = 0; kk.chase = 0; mode.kk = false; kk.g.visible = false;
+  showProg(null); prompt('');
+  fade(false, 900); say('Du erwachst am Startpunkt.', 3);
+}
+
+/* -------------------------------------------------------------- Teleport */
+const stations = {
+  1: { x: 0, z: 2, yaw: 0, t: 'Startbereich: Taschenlampe F, Aufheben E. Teleport mit den Tasten 1–5. Das Lagerfeuer ist eine sichere Zone.' },
+  2: { x: -30, z: -11, yaw: Math.PI, t: 'Station A – Destur: Stell dich in den leuchtenden Kreis und halte Q, bevor du die Schwelle verlässt.' },
+  3: { x: 30, z: 5.5, yaw: 0, t: 'Station B – Spiegel: Die Al Karısı ist nur in Spiegeln sichtbar. Rechte Maustaste = Taschenspiegel.' },
+  4: { x: 0, z: -27.5, yaw: 0, t: 'Station C – Karabasan: Geh zum Bett (E). Atmung: Leertaste halten = einatmen.' },
+  5: { x: 0, z: 18, yaw: Math.PI, t: 'Station D – Karakoncolos: Stillstehen schützt. Rennen oder Antworten (T) lockt ihn an.' }
+};
+function teleport(n) {
+  const s = stations[n]; if (!s || mode.paralysis || dead) return;
+  player.pos.set(s.x, 1.65, s.z); player.yaw = s.yaw; player.pitch = 0;
+  placeEntityAwayFrom(player.pos, 16); ent.stun = Math.max(ent.stun, 6);
+  say(s.t, 8);
+}
+
+/* --------------------------------------------------------------- Input */
+let ironHeld = false;
+addEventListener('keydown', e => {
+  if (e.repeat) return;
+  if (started && (e.code === 'KeyP' || e.code === 'Escape')) { setPaused(true); return; }
+  if (paused) return;
+  keys.add(e.code);
+  if (!started) return;
+  if (e.code === 'KeyM') { muted = !muted; applyVolume(); say(muted ? 'Ton aus' : 'Ton an', 1.5); }
+  if (e.code === 'KeyF') { flashOn = !flashOn; burst(1800, 4, 0.04, 0.12); }
+  if (e.code === 'KeyE') interact();
+  if (e.code === 'Space') spaceTap = true;
+  if (e.code === 'KeyQ') desturHeld = true;
+  if (e.code === 'KeyV') ironHeld = true;
+  if (e.code === 'KeyT' && mode.kk && !dead) { say('Du hast geantwortet.', 3); kk.chase = 12; addFear(15); sting(260, 90, 0.5, 0.2); }
+  if (e.code === 'F3') $('debug').style.display = $('debug').style.display === 'none' ? 'block' : 'none';
+  if (e.code.startsWith('Digit')) teleport(parseInt(e.code.slice(5), 10));
+  if (e.code === 'Space') e.preventDefault();
+});
+addEventListener('keyup', e => {
+  keys.delete(e.code);
+  if (e.code === 'KeyQ') desturHeld = false;
+  if (e.code === 'KeyV') ironHeld = false;
+});
+addEventListener('mousedown', e => { if (e.button === 2 && started) pocketOn = true; });
+addEventListener('mouseup', e => { if (e.button === 2) pocketOn = false; });
+addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('mousemove', e => {
+  if (!started || dead) return;
+  if (!locked && !(e.buttons & 1)) return;
+  const k = 0.0022;
+  if (mode.paralysis) {
+    const p = mode.paralysis;
+    p.lookYaw = Math.max(-0.5, Math.min(0.5, p.lookYaw - e.movementX * k * 0.5));
+    p.lookPitch = Math.max(-0.3, Math.min(0.3, p.lookPitch - e.movementY * k * 0.5));
+    return;
+  }
+  player.yaw -= e.movementX * k;
+  player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch - e.movementY * k));
+});
+document.addEventListener('pointerlockchange', () => {
+  locked = document.pointerLockElement === renderer.domElement;
+  if (!locked && started) setPaused(true);
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && started) setPaused(true); });
+addEventListener('blur', () => { if (started) setPaused(true); });
+$('overlay').addEventListener('click', () => {
+  initAudio(); applyVolume(); if (AC && AC.state === 'suspended') AC.resume();
+  $('overlay').style.display = 'none'; started = true; paused = false;
+  try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  if (!say.once) { say.once = true; say(stations[1].t, 8); }
+});
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); layoutOverlay();
+});
+
+/* ---------------------------------------------------------- Interaktion */
+const raycaster = new THREE.Raycaster();
+raycaster.far = 2.6;
+let lookTarget = null;
+function findTarget() {
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  const hits = raycaster.intersectObjects(interactables.map(i => i.obj), false);
+  return hits.length ? interactables.find(i => i.obj === hits[0].object) : null;
+}
+function interact() {
+  if (!lookTarget || dead || mode.paralysis) return;
+  const it = lookTarget;
+  if (it.type === 'iron') { inv.iron++; if (inv.iron === 1) ironDur = 100; say('Hufeisen aufgehoben. V halten = Eisen hochhalten.', 3); burst(4000, 3, 0.1, 0.15); }
+  else if (it.type === 'muska') { inv.muska++; say('Muska aufgehoben. Sie rettet dich einmal.', 3); burst(1200, 2, 0.15, 0.1); }
+  else if (it.type === 'bed') { startParalysis(); return; }
+  scene.remove(it.obj); interactables.splice(interactables.indexOf(it), 1); lookTarget = null; prompt('');
+}
+
+/* ------------------------------------------------------------------ Update */
+let nextBeat = 0, bobT = 0;
+function update(dt) {
+  time += dt;
+  if (subTimer > 0) { subTimer -= dt; if (subTimer <= 0) $('sub').textContent = ''; }
+
+  if (dead) {
+    deadTimer -= dt; if (deadTimer <= 0) respawn();
+    return;
+  }
+
+  // Bewegung
+  if (!mode.paralysis && started) {
+    const f = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0);
+    const r = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0);
+    const run = keys.has('ShiftLeft') || keys.has('ShiftRight');
+    const sp = (f || r) ? (run ? RUN : WALK) : 0;
+    const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
+    let vx = (-sin * f + cos * r), vz = (-cos * f - sin * r);
+    const len = Math.hypot(vx, vz) || 1;
+    vx = vx / len * sp; vz = vz / len * sp;
+    player.pos.x += vx * dt; player.pos.z += vz * dt;
+    player.pos.x = Math.max(-WORLD, Math.min(WORLD, player.pos.x));
+    player.pos.z = Math.max(-WORLD, Math.min(WORLD, player.pos.z));
+    resolve(player.pos, RADIUS);
+    player.speed = sp;
+    if (sp > 0) {
+      bobT += dt * (run ? 11 : 7.5);
+      player.stepT -= dt * (run ? 3.2 : 2.0);
+      if (player.stepT <= 0) { player.stepT = 1; burst(380, 1, 0.07, run ? 0.22 : 0.12, 'lowpass'); }
+    }
+  } else player.speed = 0;
+
+  // Angst
+  const inSafe = Math.hypot(player.pos.x - SAFE.x, player.pos.z - SAFE.z) < SAFE.r;
+  if (!mode.paralysis) {
+    if (inSafe) addFear(-3 * dt);
+    else if (player.speed === 0 && fear > 15) addFear(-0.6 * dt);
+    else if (!flashOn) addFear(1.2 * dt);
+    else addFear(0.12 * dt);
+  }
+
+  // Systeme
+  const atThreshold = updateThresholds(dt);
+  desturBusy = atThreshold && desturHeld;
+  updateRecite(dt);
+  updateEntity(dt);
+  updateKK(dt);
+  updateParalysis(dt);
+
+  // Interaktion-Prompt
+  if (!mode.paralysis) {
+    lookTarget = findTarget();
+    if (!atThreshold) prompt(lookTarget ? lookTarget.label : '');
+  } else prompt('');
+
+  // Pickups animieren
+  for (const it of interactables) { if (it.type !== 'bed') { it.obj.rotation.y += dt * 1.2; it.obj.position.y = it.base + Math.sin(time * 2 + it.obj.position.x) * 0.05; } }
+  fireLight.intensity = 200 + Math.sin(time * 13) * 25 + Math.random() * 25;
+
+  // Nebel: dichter im Feld
+  const fd = Math.hypot(player.pos.x - FIELD.x, player.pos.z - FIELD.z);
+  const targetFog = fd < FIELD.r ? 0.16 : 0.04;
+  scene.fog.density += (targetFog - scene.fog.density) * Math.min(1, dt * 1.5);
+
+  // Kamera
+  if (mode.paralysis) {
+    const p = mode.paralysis;
+    camera.position.set(bedBase.x, bedBase.y, bedBase.z);
+    camera.rotation.set(1.1 + p.lookPitch, Math.PI + p.lookYaw, 0);
+    const breathe = Math.sin(p.t * 5) * 0.004 * (1 + (1 - p.sync) * 2);
+    camera.position.y += breathe;
+  } else {
+    const shake = fear > 70 ? (fear - 70) / 30 * 0.012 : 0;
+    camera.position.set(player.pos.x + (Math.random() - 0.5) * shake, player.pos.y + Math.sin(bobT) * 0.035 * (player.speed > 0 ? 1 : 0) + (Math.random() - 0.5) * shake, player.pos.z);
+    camera.rotation.set(player.pitch, player.yaw, 0);
+  }
+
+  // Taschenlampe
+  let fl = flashOn ? FLASH_BASE : 0;
+  const entDist = Math.hypot(player.pos.x - ent.pos.x, player.pos.z - ent.pos.z);
+  if (flashOn && (fear > 60 || entDist < 6) && Math.random() < 0.08 + fear / 600) fl *= Math.random() * 0.3;
+  flash.intensity = fl;
+
+  // Audio-Parameter
+  if (AC) {
+    updateListener();
+    const prox = Math.max(0, 1 - entDist / 14) * (ent.stun > 0 ? 0.3 : 1);
+    droneGain.gain.value += ((prox * 0.5 + fear / 100 * 0.12) - droneGain.gain.value) * Math.min(1, dt * 2);
+    windGain.gain.value = 0.05 + 0.04 * Math.sin(time * 0.35) + (fd < FIELD.r ? 0.08 : 0);
+    if (time >= nextBeat) {
+      const bpm = 58 + fear * 0.95;
+      nextBeat = time + 60 / bpm;
+      const v = 0.05 + fear / 100 * 0.45;
+      thump(v); setTimeout(() => thump(v * 0.7), 170);
+    }
+  }
+
+  // HUD
+  const fp = Math.round(fear);
+  $('fearFill').style.width = fp + '%';
+  $('fearFill').style.background = fear < 35 ? '#4a8a5a' : fear < 70 ? '#c0a030' : '#c02020';
+  $('vignette').style.opacity = String(Math.min(1, fear / 90));
+  $('inv').innerHTML = 'Eisen: ' + inv.iron + (inv.iron ? ' (' + Math.round(Math.max(0, ironDur)) + '%)' : '') + '<br>Muskas: ' + inv.muska + '<br>Lampe: ' + (flashOn ? 'an' : 'aus') + (inSafe ? '<br>Sichere Zone' : '');
+  $('debug').textContent = 'Angst ' + fear.toFixed(0) + ' | Dschinn ' + entDist.toFixed(1) + ' m' + (ent.stun > 0 ? ' (betäubt)' : ent.alert > 0 ? ' (alarmiert)' : '') + '\nPos ' + player.pos.x.toFixed(1) + ' / ' + player.pos.z.toFixed(1) + '\nFPS ' + fps;
+}
+
+/* ----------------------------------------------------------------- Render */
+function render() {
+  // 1) Spiegel
+  renderer.shadowMap.autoUpdate = false;
+  if (!mode.paralysis) {
+    for (const m of mirrors) {
+      const d = Math.hypot(player.pos.x - m.mesh.position.x, player.pos.z - m.mesh.position.z);
+      if (d < 26) m.update();
+    }
+  }
+  // 2) Taschenspiegel
+  if (pocketOn && !dead && !mode.paralysis) {
+    pocketCam.position.copy(camera.position);
+    pocketCam.rotation.copy(camera.rotation);
+    pocketCam.updateMatrixWorld();
+    renderer.setRenderTarget(pocketRT); renderer.clear();
+    renderer.render(scene, pocketCam);
+    renderer.setRenderTarget(null);
+    // Entity im Spiegelbild sichtbar? -> Angst
+    const dx = ent.pos.x - player.pos.x, dz = ent.pos.z - player.pos.z, d = Math.hypot(dx, dz);
+    const fwdx = -Math.sin(player.yaw), fwdz = -Math.cos(player.yaw);
+    if (d < 12 && (dx * fwdx + dz * fwdz) / (d || 1) > 0.85) addFear(0.07);
+  }
+  // 3) Hauptbild
+  renderer.setRenderTarget(null);
+  renderer.shadowMap.needsUpdate = true;
+  renderer.clear();
+  renderer.render(scene, camera);
+  if (pocketOn && !dead && !mode.paralysis) { renderer.clearDepth(); renderer.render(overlayScene, overlayCam); }
+}
+
+let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  fpsAcc += dt; fpsN++; if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
+  try { if (!paused) update(dt); render(); } catch (e) { errBox.textContent = 'Fehler im Spiel: ' + e.message; console.error(e); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__game = { player, ent, kk, inv, get fear() { return fear; }, set fear(v) { fear = v; }, teleport, scene, camera, renderer };
+</script>
+</body>
+</html>

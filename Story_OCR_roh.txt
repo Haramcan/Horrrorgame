@@ -1,0 +1,582 @@
+DESTUR
+
+Ein Horrorspiel über türkische Dschinn - Story & Leveldesign (Spielzeit ca. 2,5 Stunden)
+
+Grundidee
+
+Destur ist das Wort, das man in Anatolien leise ausspricht, bevor man einen dunklen Raum betritt, heißes
+Wasser in einen Abfluss gießt oder nachts über eine Schwelle tritt. Es bedeutet so viel wie „Erlaubnis" -
+man bittet die Dschinn, die dort wohnen, beiseitezutreten. Wer es vergisst, verletzt vielleicht einen von
+ihnen. Und Dschinn vergessen nicht.
+
+Das Spiel verbindet echte anatolische Volksglauben - die Al Karısı (auch Albastı), den Karakoncolos, den
+Karabasan, den Gulyabani - mit einer persönlichen Familiengeschichte über Schuld, Mutterschaft und
+einen Pakt, der 29 Jahre lang gehalten hat.
+
+Genre: First-Person Story-Horror (Richtung Amnesia, Visage, Resident Evil 7) Setting: Das verlassene
+Bergdorf Kuyulu („Dorf mit den Brunnen") in Ostanatolien, Nähe Kars, im Januar Zeitraum: Eine einzige
+Nacht in der Zemheri — den kältesten 40 Tagen des Winters, in denen laut Volksglauben der Karakoncolos
+umgeht
+
+Figuren
+
+Emre Aydin (29) - Spielfigur. In Deutschland aufgewachsen, spricht gebrochenes Türkisch, war seit seiner
+Kindheit nicht mehr in Kuyulu. Rational, skeptisch, etwas beschämt darüber, dass er seine Großmutter nie
+besucht hat. Seine Mutter starb drei Tage nach seiner Geburt am „Al basması" - so nannte man im Dorf
+das Kindbettfieber.
+
+Selin Aydın (27) - Emres Frau, im achten Monat schwanger. Begleitet ihn zur Beerdigung, obwohl er es ihr
+ausreden wollte. Warmherzig, neugierig, fasziniert vom Aberglauben, den Emre peinlich findet. Sie
+verschwindet in der ersten Nacht.
+
+Nuriye Aydin (,,Babaanne") - Emres Großmutter, eine Woche vor Spielbeginn gestorben. Sie war die
+„Ocaklı" des Dorfes: eine Heilerin, zu der man ging, wenn eine Wöchnerin fieberte oder ein Kind nicht
+aufhörte zu weinen. Sie ist nur über Briefe, Tonbandkassetten und Erinnerungen präsent — und über eine
+Stimme, die nicht ihr gehört.
+
+Kör Hasan (ca. 80) - Der blinde Schäfer, angeblich der letzte Bewohner des Dorfes. Spricht über ein altes
+Funkgerät mit Emre. Er hat als Junge etwas gesehen, das er nicht hätte sehen dürfen, und dafür sein
+Augenlicht verloren.
+
+Die Al Karısı - Der zentrale Dschinn. Eine hochgewachsene Frau mit verfilztem, feuerrotem Haar, schlaffen
+Brüsten, die sie über die Schultern wirft, und Füßen, die nach hinten zeigen. Sie jagt Schwangere und
+Wöchnerinnen, stiehlt ihre Leber und trägt sie zum Wasser. Nach dem Volksglauben fürchtet sie Eisen -
+und wer ihr eine Nadel in den Kragen steckt, macht sie zu seiner Dienerin.
+
+Die Hintergrundgeschichte (erfährt der Spieler nach und nach)
+
+Vor 29 Jahren kam die Al Karısı zu Emres Mutter Ayse, drei Tage nach der Geburt. Nuriye kam zu spät, um
+Avse zu retten - aber sie erwischte die Al. als diese mit Avses Leber zum Dorfbrunnen floh. und stach ihr
+eine Eisennadel in den Kragen.
+Von diesem Moment an gehorchte die Al Karısı ihr.
+
+Nuriye nutzte sie. Jede Heilung, für die sie im ganzen Bezirk berühmt wurde, war in Wahrheit das Werk
+des gebundenen Dschinns: Die Al, die Wöchnerinnen tötet, musste sie nun beschützen. Das Dorf wusste
+es, sprach aber nie darüber. Man brachte Nuriye Geschenke und schloss nachts die Fensterläden.
+
+Doch ein gebundener Dschinn wartet. Als Nuriye starb, blieb die Nadel an ihrem Leichnam - an ihrem
+Totenhemd festgesteckt, mit ihr begraben. Solange die Nadel existiert, kann die Al Karısı sich nicht
+vollständig befreien und niemandem direkt schaden, der Eisen trägt. Sie braucht einen Menschen aus
+Nuriyes Blut, der die Nadel freiwillig aus der Erde holt und ihr übergibt.
+
+Deshalb hat sie die Dorfbewohner vertrieben oder getötet. Deshalb hat sie Emre angelockt. Und deshalb
+hat sie Selin genommen: als Druckmittel - und als Beute, sobald sie frei ist.
+
+Der große Twist: Die „Stimme der Großmutter", die Emre durch die Nacht führt — auf Kassetten, in Briefen,
+im Flüstern hinter Türen -, ist die Al Karısı selbst. Sie imitiert Nuriyes Handschrift und Stimme perfekt. Der
+Spieler hilft dem Monster die ganze Zeit.
+
+Kernmechaniken (kurz, damit die Story Sinn ergibt)
+
+Destur. An markierten Schwellen (Abflüsse, Keller, Ställe, Hamam) hält der Spieler eine Taste gedrückt, um
+„Destur" zu flüstern. Vergisst er es, steigt die Angstanzeige, und Dschinn werden auf ihn aufmerksam.
+Wird später im Spiel zum Stealth-Werkzeug.
+
+Spiegel. Die Al Karısı ist mit bloßem Auge fast unsichtbar - nur als Flimmern in der Kälte. In Spiegeln,
+Wasserflächen und Fensterscheiben ist sie klar zu sehen. Emre findet früh einen kleinen Taschenspiegel
+seiner Großmutter.
+
+Eisen. Hufeisen, Nägel, eine Sichel: Eisen hält Dschinn auf Abstand, verbraucht sich aber (rostet in
+Sekunden, wenn ein Dschinn es berührt). Ressourcen-Management.
+
+Nicht pfeifen, nicht antworten. Pfeifen in der Nacht ruft Dschinn (Emre summt nervös, wenn die Angst
+hoch ist - der Spieler muss ihn beruhigen). Und wer auf einen Ruf mit seinem Namen antwortet, gehört
+dem Rufer.
+
+Karabasan. Schlafparalyse-Sequenzen: Emre ist gelähmt, ein Schatten sitzt auf seiner Brust. Der Spieler
+steuert nur Atmung und Blick.
+
+Muskas. Dreieckig gefaltete Schutzamulette. Sammelbar, einmal verwendbar - sie retten einmal vor einem
+tödlichen Angriff.
+
+PROLOG - „Yol" (Der Weg) - ca. 10 Minuten
+
+Tutorial, Atmosphäre, Figuren etablieren.
+
+Dämmerung. Ein Mietwagen auf einer vereisten Passstraße. Selin liest vom Handy vor: „Zemheri, die 40
+kältesten Tage. Da soll der Karakoncolos rumlaufen und Leute beim Namen rufen." Emre lacht es weg.
+Kurzes, echtes Paargespräch über das Baby, die Großmutter, Emres schlechtes Gewissen.
+
+Am Straßenrand steht ein Mann im Schnee und deutet ins Tal. Emre bremst — der Mann ist weg. Der
+Wagen rutscht in den Graben. Kein Handynetz.
+Die beiden laufen die letzten zwei Kilometer zu Fuß. Tutorial: Gehen, Taschenlampe, Umsehen. Am
+Dorfeingang ist jede Haustür mit einer großen Stecknadel versehen, jede Tür verschlossen, kein Licht. Aus
+einem Schornstein steigt Rauch: das Haus der Großmutter.
+
+Letztes Bild des Prologs: Selin wirft einen Blick in eine zugefrorene Pfütze. Für einen Frame sieht der
+Spieler darin eine zweite Gestalt hinter ihr stehen. Selin bemerkt nichts.
+
+KAPITEL 1- „Babaannemin Evi" (Das Haus meiner Großmutter) - ca. 25 Minuten
+Erkundung, Lore, erster echter Schrecken.
+
+Das Haus ist warm. Im Ofen brennt ein Feuer, das niemand angezündet haben kann. Alle Spiegel sind mit
+weißen Tüchern verhängt - ein Trauerbrauch, damit die Seele des Toten sich nicht darin verfängt. Auf dem
+Tisch liegt ein Brief in Großmutters Handschrift, adressiert an Emre:
+
+„Mein Löwe, wenn du das liest, bin ich gegangen. Bleib nur eine Nacht. Befolge die Regeln: Nimm kein
+Tuch von einem Spiegel. Pfeif nicht. Sag Destur. Und wenn jemand deinen Namen ruft, antworte nicht -
+auch wenn es meine Stimme ist."
+
+(Dieser erste Brief ist echt. Nuriye hat ihn vor ihrem Tod geschrieben. Alle späteren Briefe sind gefälscht -
+aufmerksame Spieler bemerken, dass nur dieser letzte Satz in keinem späteren Brief mehr vorkommt.)
+
+Gameplay: Das Haus erkunden. Fotos, ein Tonband mit Babaannes Heilgebeten, eine Wiege auf dem
+Dachboden, die frisch gezimmert ist - für Selins Baby. Selin findet das ruhrend. Emre nicht.
+
+Der Spieler findet den Taschenspiegel und kann ab jetzt „durch" Spiegel blicken. Beim ersten Blick durch
+den Flur: nichts. Beim zweiten: die verhängten Spiegel an der Wand zeigen unter ihren Tüchern
+Bewegung.
+
+Die erste Nacht. Emre und Selin legen sich schlafen. Erste Karabasan-Sequenz: Emre erwacht gelähmt.
+Etwas Schweres sitzt auf seiner Brust. Er kann den Kopf nur minimal drehen. Neben ihm liegt Selin, und
+über ihr beugt sich eine Frau mit rotem Haar und schnüffelt an ihrem Bauch. Der Spieler muss ruhig
+atmen (Rhythmus-Mechanik). Schafft er es, verschwindet alles. Schafft er es nicht, blickt die Frau ihn direkt
+an - und er wacht trotzdem auf.
+
+Selin ist weg.
+
+Nasse, barfüßige Fußspuren führen aus dem Haus - aber die Zehen zeigen zum Bett, nicht zur Tür. Im Stall
+steht Großmutters alte Stute, schweißnass und zitternd. Ihre Mähne ist zu Dutzenden winziger Zöpfe
+geflochten. (Im Volksglauben reitet die Al Karısı nachts Pferde bis zur Erschöpfung und flicht ihnen die
+Mähnen.)
+
+Das alte Funkgerät im Stall knistert. Eine brüchige Männerstimme: „Wer ist da? Bist du Nuriyes Enkel? Hör
+mir zu, Junge. Sie hat deine Frau. Sie will die Nadel."
+
+KAPITEL 2 - „Bos Köy" (Das leere Dorf) - ca. 30 Minuten
+Semi-offenes Gebiet, erste Verfolgungen, Regeln lernen.
+
+Kör Hasan führt Emre per Funk durchs Dorf. Er sagt, er sitze in der alten Wassermühle am Fluss fest und
+könne nicht raus. Er erklärt: Die Al Karısı war 29 Jahre lang Nuriyes Dienerin. Jetzt sei sie „halb frei" und
+das Dorf sei ihr Jagdrevier.
+
+Gleichzeitin findet Fmre naııe Rriefe van Rahaanne" varstarkt an Orten die nıır amand kannen kann der
+mung mn m mm mn me gem mem mm me mm em nn ern mem ng m
+
+Emres Kindheit kennt. Sie sagen ihm: Finde die Nadel. Sie liegt bei mir. Nur mit ihr kannst du Selin
+zurückholen.
+
+Gameplay-Stationen:
+
+© Die Häuser. Jedes Haus erzählt, wie seine Bewohner verschwanden. Eine Familie hat alle Möbel vor die
+Tür geschoben - von innen. In einem Kinderzimmer stehen Dutzende Schuhe, alle verkehrt herum. Ein
+Tagebuch einer jungen Mutter: „Nuriye ist tot. Sie hat keine Angst mehr vor ihr. Heute Nacht hat sie an
+unserem Fenster gesungen."
+
+® Die Moschee-Bibliothek / das Dorfarchiv. Emre findet ein Heft des alten Dorflehrers mit Dschinn-
+Kunde: Al Karısı, Karakoncolos, Gulyabani. Das Heft funktioniert als ingame-Bestiarium.
+
+¢ Der Hamam. Das zentrale Set-Piece dieses Kapitels. Dschinn lieben Bäder, Brunnen und Abflüsse. Der
+alte Dorfhamam ist voller Dampf, die Kupferkessel kochen, obwohl seit Jahren kein Feuer mehr brennt.
+Die Al Karısı ist hier. Sichtbar nur in den Wasserbecken und im beschlagenen Glas. Der Spieler muss
+durch die Kammern schleichen, an jedem Abfluss „Destur" sagen, und den Kessel-Schlüssel zum
+Friedhofstor holen. Ein Fehler, und aus dem Nebel greifen lange, nasse Finger nach ihm.
+
+Am Ende des Kapitels ruft Selins Stimme vom Dorfplatz. Sie klingt verängstigt, echt, flehend. Emre darf
+nicht antworten. (Antwortet der Spieler per Sprach- oder Tastenaktion, beginnt eine sofortige Hetzjagd -
+erster Einsatz einer Muska.)
+
+KAPITEL 3 - „Zemheri" - ca. 30 Minuten
+
+Außenlevel im Schneesturm, zwei neue Kreaturen.
+
+Ein Schneesturm zieht auf. Sicht: fünf Meter. Die Kälte ist eine eigene Mechanik — Emre muss sich an
+Feuerstellen, Ställen und Tandır-Öfen aufwärmen, sonst beginnt er zu halluzinieren.
+
+Der Karakoncolos. Auf dem Weg zum Friedhof hört Emre im Sturm Stimmen: seine Mutter, die er nie
+kannte. Seine Großmutter. Selin. Sein deutscher Chef. Sie alle rufen „Emre!". Irgendwo im Weiß bewegt
+sich eine gebückte, zottelige Gestalt mit Klauen und viel zu langen Armen. Der Karakoncolos ist blind für
+jeden, der schweigt und still steht. Er kann nur finden, wer antwortet oder rennt. Diese Sequenz ist ein
+reines Nerven-Spiel: Der Spieler muss sich zwischen Sturmböen langsam vorwärts bewegen, während die
+Stimmen immer persönlicher und verzweifelter werden. Zum Ende hin sagt die Stimme der Mutter Dinge,
+die Emre in einem der Briefe gelesen hat - der Karakoncolos kennt seine Gedanken.
+
+Der Friedhof. Zwischen umgestürzten Grabsteinen kriecht der Gulyabani: ein Leichenfresser, halb Mensch,
+halb Tier, der Gräber öffnet. Er ist langsam, aber hartnäckig, und er fürchtet Feuer. Emre muss eine
+Öllampe tragen, die im Sturm ständig auszugehen droht.
+
+Nuriyes Grab ist bereits aufgewühlt. Der Leichnam ist in sein Totentuch gewickelt - aber die Nadel ist weg.
+An ihrer Stelle steckt ein Zettel in Großmutters Handschrift: Kör Hasan hat sie genommen. Er lügt dich an.
+Geh zur Mühle.
+
+Hier beginnt der Spieler zu zweifeln, wem er trauen soll.
+
+KAPITEL 4 - „Degirmen" (Die Mühle) - ca. 25 Minuten
+Konfrontation, Wendepunkte, emotionales Herz der Geschichte.
+
+Die Wassermühle liegt am vereisten Fluss. Innen: Hunderte Hufeisen und Nägel an Wänden und Decke,
+ein ganzer Raum aus Eisen. Kör Hasan sitzt in der Mitte, zitternd, die leeren Augenhöhlen verbunden.
+Er erzählt die Wahrheit - oder zumindest seine Wahrheit:
+
+Er war zwölf, als er in der Nacht von Ayses Tod am Brunnen stand und sah, wie Nuriye die Al Karısı band.
+Die Al drehte sich zu ihm um, und am nächsten Morgen war er blind. Er erzählt, dass Nuriyes Heilkünste
+nie ihre eigenen waren. Dass das Dorf das wusste. Dass die Al jedes Mal, wenn sie ein Kind retten musste,
+einen Teil ihres Hasses sammelte. , Neunundzwanzig Jahre Hass, Junge. Und die Nadel ist das Einzige, was
+ihn noch zurtickhalt."
+
+Er hat die Nadel tatsächlich aus dem Grab geholt - um sie zu verstecken. Er gibt sie Emre. Und sagt: „Gib
+sie ihr nicht. Egal was sie sagt. Egal welche Stimme sie benutzt."
+
+Die Belagerung. Die Al Karısı greift die Mühle an. Sie kann das Eisen nicht berühren, also bringt sie das
+Muhlrad dazu, sich rückwärts zu drehen, lässt den Fluss über die Ufer treten und die Nägel rosten. Emre
+und Hasan müssen die Mühle Raum für Raum verteidigen. Es ist die actionreichste Sequenz des Spiels.
+
+Am Ende steht Hasan im Wasser, der letzte Nagel zerfällt zu Rost in seiner Hand. Er dreht seinen blinden
+Kopf in Emres Richtung, lächelt und sagt: „Ich sehe sie. Zum ersten Mal seit siebzig Jahren sehe ich wieder
+etwas." Dann zieht ihn etwas unter das Eis.
+
+Die Kassette. In Hasans Tasche findet Emre ein Tonband, beschriftet mit „Nuriye - son" (Nuriye - letztes).
+Er spielt es ab. Es ist die echte Stimme seiner Großmutter, aufgenommen kurz vor ihrem Tod:
+
+„Emre, ich habe dir nur einen Brief geschrieben. Nur einen. Wenn du mehr gefunden hast, dann hat sie sie
+geschrieben. Sie kennt meine Hand, sie hat 29 Jahre lang neben mir gesessen."
+
+Der Spieler erkennt: Jeder Hinweis, dem er gefolgt ist, war eine Falle. Die Al hat ihn zum Grab geführt,
+damit er die Nadel holt. Nur Hasan hat es verhindert - und jetzt hat Emre sie trotzdem in der Hand.
+
+Aus dem Flur flüstert Nuriyes Stimme: „Komm zum Brunnen, mein Löwe. Selin wartet."
+
+KAPITEL 5 - „Kuyu" (Der Brunnen) - ca. 25 Minuten
+Surreale Anderswelt, Erinnerungen, Wahrheit.
+Der alte Dorfbrunnen, dort wo alles begann. Emre steigt hinunter.
+
+Unten ist nicht Wasser, sondern eine zweite Version von Kuyulu - spiegelverkehrt, auf dem Kopf stehend,
+beleuchtet von einem Mond, der unter den Füßen liegt. Das ist die Welt der Dschinn. Alle Häuser sind
+bewohnt: von den verschwundenen Dorfbewohnern, die reglos an ihren Tischen sitzen, die Gesichter in
+Spiegel gedreht.
+
+Die Erinnerungen. Emre durchläuft drei begehbare Erinnerungsszenen:
+
+1. Ayses Geburt, vor 29 Jahren. Emre sieht seine eigene Mutter, jung und erschöpft, mit ihm im Arm. Er
+sieht die Al Karısı hereinkommen. Er kann nichts tun. Die Szene ist bewusst leise und traurig, kein
+Jumpscare.
+
+2. Der Brunnen, dieselbe Nacht. Nuriye sticht der Al die Nadel in den Kragen. Die Al schreit - und der
+Spieler hört zum ersten Mal ihre echte Stimme: nicht monströs, sondern die einer jungen Frau. Kurz
+blitzt auf, dass auch sie einst etwas verloren hat.
+
+3. Nuriyes Sterbebett, vor einer Woche. Die Großmutter, allein, flüstert der Al zu: „Wenn der Junge
+kommt, lass ihn in Ruhe. Nimm mich." Die Al antwortet: „Dich hatte ich schon 29 Jahre lang."
+
+Selin. Im Zentrum der Spiegelwelt, im Haus der Großmutter, liegt Selin in der frisch gezimmerten Wiege
+aus Kapitel 1 - nein, sie liegt auf dem Bett, in den Wehen. Die Wiege steht daneben. Leer. Wartend.
+
+Die Al Karısı steht am Fußende des Bettes. Zum ersten Mal ist sie ohne Spiegel sichtbar. Sie spricht mit
+Nuriyes Stimme, dann mit ihrer eigenen:
+
+„Gib mir, was mir gehört. Dann kannst du gehen. Beide. Alle drei."
+
+FINALE - „Destur" - ca. 10-15 Minuten
+
+Der Spieler hält die Nadel. Drei Möglichkeiten, abhängig von der finalen Wahl und davon, wie viele echte
+Hinweise (Nuriyes Brief, Hasans Kassette, Muskas) er gesammelt hat.
+
+Ende A - ,Yeni Efendi" (Der neue Herr)
+
+Emre stürmt vor und sticht der Al die Nadel selbst in den Kragen. Sie erstarrt. Sie gehorcht. Selin bringt
+das Kind zur Welt, gesund.
+
+Epilog, ein Jahr später in Deutschland: Eine helle Wohnung, ein lachendes Baby. Emre wiegt es in den
+Schlaf. Die Kamera fährt über den Flurspiegel - und darin steht neben der Wiege eine rothaarige Frau und
+wacht über das Kind. Emre sieht sie an. Nickt. Er hat Nuriyes Last geerbt. Und irgendwann wird auch er
+sterben.
+
+(Das „bittersüße" Standardende.)
+
+Ende B - „Destur" (Das Loslassen) - geheimes gutes Ende
+
+Voraussetzung: Der Spieler hat den echten Brief behalten, Hasans Kassette gehört und im Laufe des Spiels
+an allen Schwellen „Destur" gesagt. Nur dann erscheint eine vierte Option.
+
+Emre kniet sich hin und sagt: „Destur.“ Er bittet um Erlaubnis, statt zu befehlen. Er legt die Nadel ins Feuer
+des Ofens und schmilzt sie — er befreit die Al Karısı, ohne sie zu binden, aber auch ohne ihr die Nadel als
+Waffe zu überlassen. Er bietet sich selbst im Tausch für Selin und das Kind an.
+
+Die Al sieht ihn lange an. Dann sagt sie: „Die Alte hat nie um Erlaubnis gefragt." Sie geht. Hinaus in den
+Schnee, fort aus Kuyulu.
+
+Morgendämmerung. Emre wacht im echten Haus auf, Selin neben ihm, das Kind im Arm. Draußen auf
+dem Dorfplatz sitzen verwirrt die zurückgekehrten Dorfbewohner im Schnee. Nur Kör Hasan fehlt. Aber in
+der Mühle hängt ein neues Hufeisen an der Tür.
+
+Ende C - „Kuyu" (Der Brunnen) - schlechtes Ende
+
+Emre glaubt der Stimme seiner Großmutter bis zum Schluss und übergibt die Nadel. Die Al Karısı steckt sie
+sich lächelnd selbst an — nun ist sie niemandes Dienerin mehr.
+
+Schwarzbild. Dann: Morgen. Emre geht allein durch den Schnee aus dem Dorf, ein Bündel im Arm. Das
+Baby. Keine Spur von Selin. Er kommt am Dorfbrunnen vorbei, bleibt stehen, dreht sich langsam um -
+seine Füße zeigen nach hinten.
+
+Zeitplan-Übersicht
+Abschnitt Titel Dauer Schwerpunkt
+
+Prolog Yol 10 min Tutorial, Figuren
+Kapitel 1 Babaannemin Evi 25 min Erkundung, Karabasan
+
+Kapitel 2 Bos Köy 30 min Dorf, Hamam-Stealth
+
+Kapitel 3 Zemheri 30 min Schneesturm, Karakoncolos, Gulyabani
+Kapitel 4 Degirmen 25 min Enthüllung, Mühlen-Belagerung
+Kapitel 5 Kuyu 25 min Anderswelt, Erinnerungen
+
+Finale Destur 10-15 min Entscheidung, 3 Enden
+
+Gesamt ca.2,5h + Wiederspielwert durch Enden
+
+Sammelobjekte
+
+© Mektuplar (Briefe) — 12 Stück. 11 davon sind Fälschungen der Al. Aufmerksame Spieler erkennen
+Unterschiede (die Fälschungen nennen Emre nie „mein Löwe" im letzten Satz, nur im ersten; der echte
+Brief riecht laut Beschreibung nach Rosenwasser).
+
+e Muskas - 7 Stück, als Schutz-Ressource.
+
+® Nazar Boncukları - 9 zersprungene Nazar-Amulette an Stellen, wo jemand „angesehen" wurde. Jeder
+zeigt eine kurze Audio-Erinnerung eines verschwundenen Dorfbewohners.
+
+® Das Dschinn-Heft des Lehrers - füllt sich mit jeder Begegnung.
+
+Umsetzungstipps für Unreal Engine 5
+
+Spiegel-Mechanik: Die Al Karısı als Actor, der im normalen Render verborgen ist (Hidden in Game oder
+per Custom Depth ausgeblendet) und nur in einer Scene Capture Component oder Planar Reflection
+sichtbar wird. Für Wasserflächen und den Taschenspiegel reicht oft eine Scene Capture 2D mit Show-Only-
+Liste.
+
+Licht: Lumen ist perfekt für das Setting - Öllampen, Ofenfeuer und Mondlicht auf Schnee geben die
+meiste Stimmung. Das Dorf im Sturm dunkel und kontrastarm halten, Lichtquellen als sichere Zonen lesen
+lassen.
+
+Schnee & Dampf: Niagara für Schneesturm und Hamam-Nebel. Volumetric Fog mit lokalen Fog-Volumes
+im Hamam, damit die Sicht Raum für Raum anders ist.
+
+Stimmen des Karakoncolos: MetaSounds mit räumlich wandernden Quellen, die zufällig um den Spieler
+kreisen. Mehrere Sprecher, die denselben Namen rufen, leicht verstimmt übereinandergelegt.
+
+Karabasan-Sequenzen: Kamera fixieren, nur minimale Kopfbewegung erlauben, Post-Process mit
+Vignette, chromatischer Aberration und Herzschlag-Sounddesign. Die Atem-Mechanik als Timing-
+Minispiel mit Controller-Vibration.
+
+Sprache: Türkische Originalstimmen mit deutschen Untertiteln wirken deutlich authentischer und
+unheimlicher. Emre kann zwischen Deutsch und Türkisch wechseln — je mehr Angst er hat, desto mehr
+verfällt er ins Türkische.
+
+Fin Hinweis zum kulturellen Hinterarund: Die Fiauren und Bräuche (Destur. verhänate Snieael. die Nadel
+v v x 7 00.
+
+gegen die Al Karısı, geflochtene Pferdemähnen, der Karakoncolos in der Zemheri) stammen aus echtem
+anatolischem Volksglauben. Es lohnt sich, beim Voice-Acting oder bei der Ausgestaltung mit Leuten zu
+sprechen, die mit diesen Geschichten aufgewachsen sind - das macht die Details glaubwürdiger und
+vermeidet Klischees.
+
+DUAS & GEBETE IM SPIEL
+
+Emre hat als Kind in Deutschland ein paar Gebete von seiner Großmutter gelernt, halb vergessen, halb
+auswendig. Genau das macht sie im Spiel so wirkungsvoll: Er kennt die Worte, aber er stolpert über sie,
+wenn die Angst steigt. Und der Dschinn hört jedes Stocken.
+
+Alle Texte unten sind echte, überlieferte Gebete (Koranverse bzw. Duas aus der Sunna). Transliteration in
+türkischer Schreibweise, so wie Emres Großmutter sie ausgesprochen hätte.
+Mechanik: „Okumak" (Rezitieren)
+
+Der Spieler hält eine Taste gedrückt, Emre beginnt zu rezitieren. Die Wirkung hängt von der Angstanzeige
+ab:
+
+® Ruhig: Emre spricht das Gebet flüssig. Der Dschinn weicht zurück, Lichter flackern wieder an, der
+Karabasan löst sich.
+
+© Verangstigt: Emres Stimme zittert, er verliert den Faden und muss neu ansetzen (Rhythmus-Minispiel:
+Silben im Takt halten). Das kostet Zeit.
+
+e Panik: Emre bringt nur Bruchstücke heraus. Der Dschinn lacht.
+
+Wichtig für die Aussage des Spiels: Die Gebete scheitern nie, weil sie „nicht wirken", sondern weil Emre
+sie nicht mit Ruhe und Überzeugung sprechen kann. Das entspricht dem islamischen Verständnis, dass ein
+Dua Aufrichtigkeit braucht, und es ist gleichzeitig Emres Charakterbogen: vom Skeptiker, der sich für den
+Glauben seiner Großmutter schämt, zu jemandem, der die Worte am Ende wirklich meint. Im geheimen
+Ende B spricht Emre das Ayetel Kürsi zum ersten Mal vollständig und ohne Stocken.
+
+1. Eüzü Besmele - die Zuflucht
+
+Einsatz: Das „Standard-Gebet". Kurz, schnell, schwache Wirkung. Emre murmelt es automatisch, wenn er
+sich erschreckt (auch ohne Tastendruck - als Reaktion bei Jumpscares).
+
+all 5 alll ai rl gL! yo abl Soe
+Eüzü billahi mine's-seytänir-racim. Bismillähirrahmänirrahim.
+
+Ich suche Zuflucht bei Allah vor dem verfluchten Satan. Im Namen Allahs, des Allerbarmers, des
+Barmherzigen.
+
+2. Das Dua vor dem Betreten unreiner Orte
+
+Einsatz: Kapitel 2, der Hamam. Überliefert von Buhäri und Müslim, gesprochen vor dem Betreten von
+Waschräumen und Toiletten - den Orten, an denen laut Überlieferung Dschinn wohnen. Ersetzt im
+Hamam das normale „Destur": Emre muss es an jeder Kammertür sprechen, bevor er eintritt.
+
+Cuballg HI ye cy Sgei Saal
+Allanumme ınnı euzu bike mınel-hubsı veil-nabaıs.
+O Allah, ich suche Zuflucht bei Dir vor den bösen Wesen, den männlichen und den weiblichen.
+
+Detail für die Glaubwürdigkeit: Innerhalb der Wasch- und Toilettenräume rezitiert Emre nicht - das wäre
+nach islamischem Brauch unangemessen. Er kann dort nur schweigen und schleichen. Das macht den
+Hamam noch bedrohlicher: Die stärkste Waffe funktioniert nur an der Schwelle.
+
+3. Das Schutzgebet für den Abend
+
+Einsatz: Kapitel 1, bevor Emre und Selin schlafen gehen. Selin liest es von einem Zettel ab, den Nuriye
+über das Bett gehängt hat, und fragt Emre, was es bedeutet. Er weiß es nicht mehr. Überliefert bei Ebü
+Dävüd und Tirmizi, traditionell dreimal morgens und abends gesprochen.
+
+alll Zrolull 35 clodull nd Vg LOS a tea doin! > Kay V Vil abl au
+Bismillähillezi la yedurru maa'smiht seyün fi'l-ardi ve la fi's-semdi ve hüve's-semiu'l-alim.
+
+Im Namen Allahs, mit dessen Namen nichts auf der Erde und nichts im Himmel schaden kann. Und Er ist
+der Allhörende, der Allwissende.
+
+Horror-Moment: Selin liest es nur zweimal, dann wird sie von Emre abgelenkt. In dieser Nacht
+verschwindet sie. Aufmerksame Spieler finden später in Nuriyes Notizen den Satz „Immer dreimal. Niemals
+zweimal."
+
+4. Ayetel Kürsi (Sure 2, Vers 255) - der Thronvers
+
+Einsatz: Die stärkste Rezitation im Spiel. Löst die Karabasan-Sequenzen auf und hält die Al Karısı im Finale
+auf Abstand. Emre findet sie in Kapitel 1 auf einer Kassette von Nuriye, muss sie aber Stück für Stück
+„wiedererlernen" - jedes Kapitel schaltet einen weiteren Abschnitt frei.
+
+N bie £85 All Bo "all Gos log Cig ladull a lo 4 “237 Ug Siw S35 W “soll aaa
+Mg "ars cglatull AS ug “eld la Ul dale Go cosy Gobued Ve Aaals og agul of Is ally al
+Auball Splall za; laglAd> 659%
+
+Allähü la ilähe illä hüvel-hayyü'l-kayyüm. Ld te'huzühü sinetün ve lä nevm. Lehü ma fi's-semäväti ve ma
+fi'l-ard. Men zellezi yesfeu indehd illä bi-iznih. Ya'lemü ma beyne eydihim ve ma halfehüm. Ve la yuhitüne
+bi-sey'in min ilmiht illa bi-mä sde. Vesia kürsiyyühü's-semäväti vell-ard. Ve lä yeüdühü hıfzuhumä. Ve
+hiive'l-aliyyui'l-azim.
+
+Allah - es gibt keinen Gott außer Ihm, dem Lebendigen, dem Bestandigen. Ihn überkommt weder
+Schlummer noch Schlaf. Ihm gehört, was in den Himmeln und auf der Erde ist. Wer könnte bei Ihm
+Fürsprache einlegen, außer mit Seiner Erlaubnis? Er weiß, was vor ihnen und was hinter ihnen liegt, und
+sie erfassen nichts von Seinem Wissen, außer was Er will. Sein Thron umfasst die Himmel und die Erde,
+und ihre Bewahrung ermüdet Ihn nicht. Er ist der Erhabene, der Gewaltige.
+
+Warum das perfekt passt: „Ihn überkommt weder Schlummer noch Schlaf" - gesprochen von einem Mann,
+der im Schlaf gelähmt ist. Und in der Überlieferung (Buhari) war es ausgerechnet ein Dämon, der Ebü
+Hüreyre verriet, dass dieser Vers vor dem Schlafen schützt. Die Al Karısı kann sich im Finale darauf
+beziehen (siehe unten).
+
+5. Sure el-Felak (113) - gegen die Dunkelheit und die Knoten
+Einsatz: Kapitel 3, im Schneesturm und am Friedhof. Die Verse passen fast unheimlich genau: die
+Finsternis, wenn sie hereinbricht, und „die, die in Knoten blasen" - der klassische Schutz gegen Zauberei.
+Emre spricht sie, als er die geflochtenen Knoten in der Pferdemähne löst (optionale Szene zwischen
+Kapitel 2 und 3, beruhigt die Stute und gibt eine Muska).
+
+u Rb 305 © 388 od SULA Ju 305 © 155 I] Gul Fü Go5 O BB bo Fb de © Glall un Soci Js
+us [31
+
+Kul eüzü bi-rabbi'l-felak. Min serri mä halak. Ve min serri gäsikın izä vekab. Ve min serri'n-neffäsäti fi'l-
+ukad. Ve min serri häsidin izä hased.
+
+Sprich: Ich suche Zuflucht beim Herrn des Morgengrauens, vor dem Übel dessen, was Er erschaffen hat,
+vor dem Übel der Finsternis, wenn sie hereinbricht, vor dem Übel derer, die in Knoten blasen, und vor
+dem Übel des Neiders, wenn er neidet.
+
+6. Sure en-Näs (114) - gegen den Einflüsterer
+Einsatz: Kapitel 3, gegen den Karakoncolos. Die einzige Möglichkeit, die Stimmen im Sturm zum
+Schweigen zu bringen, ohne zu antworten. Die Sure spricht vom „Einflüsterer, der sich zurückzieht" und
+
+der in die Herzen flüstert - aus den Reihen der Dschinn und der Menschen. Rezitiert Emre sie, verstummen
+die Stimmen für 20 Sekunden.
+
+well 5350 god u Gill © N ef! ze © wÜl all © Gull elle © yÜl Sy, deci Us
+yullg diall ge O
+
+Kul eüzü bi-rabbi'n-näs. Meliki'n-nds. Ilähi'n-näs. Min serril-vesväsi'l-hannäs. Ellezi yüvesvisü ft sudürü'n-
+nds. Mine'l-cinneti ve'n-nds.
+
+Sprich: Ich suche Zuflucht beim Herrn der Menschen, dem König der Menschen, dem Gott der
+Menschen, vor dem Übel des Einflüsterers, der sich zurückzieht, der in die Brust der Menschen
+einflüstert, sei es unter den Dschinn oder den Menschen.
+
+7. La havle - das Stoßgebet
+
+Einsatz: Kein aktives Werkzeug, sondern eine Reaktion. Emre flüstert es automatisch, wenn er eine Leiche
+oder etwas Schreckliches findet. Nuriye sagt es auf der Kassette, als sie von Ayses Tod erzählt.
+
+Ld havle ve la kuvvete illä billäh.
+
+Es gibt keine Macht und keine Kraft außer bei Allah.
+
+WAS DER DSCHINN SAGT
+
+Die Al Karısı rezitiert keine verdrehten oder rückwärts gesprochenen Koranverse (siehe Hinweise unten).
+Viel unheimlicher ist ohnehin etwas anderes: Sie hat keine Angst vor den Worten, weil sie sie kennt. Sie
+hat 29 Jahre lang neben Nuriye gesessen und zugehört. Ihre Waffe ist nicht Gotteslästerung, sondern
+Zweifel.
+
+Sie spricht Türkisch, mal mit ihrer eigenen, rauen Stimme, mal perfekt mit Nuriyes.
+
+\Alann Emra etarbt
+wwii cm SWwenu
+
+„Yanlıs okudun, aslanum." Du hast falsch gelesen, mein Löwe. (mit Nuriyes Stimme und ihrem Kosenamen
+für ihn - dem Detail aus dem echten Brief)
+
+Wenn Emre in Panik rezitiert:
+
+„Dilin okuyor. Kalbin okumuyor. Ben ikisini de duyuyorum." Deine Zunge liest. Dein Herz nicht. Ich höre
+beides.
+
+Wenn Emre das Ayetel Kürsi beginnt:
+
+„Bu sözleri, dedenin dedesi dogmadan önce biliyordum." Diese Worte kannte ich, bevor der Großvater
+deines Großvaters geboren wurde.
+
+Im Karabasan, während Emre gelähmt ist:
+
+„Uyu. O uyumaz ama sen uyursun." Schlaf. Er schläft nicht, aber du schläfst. (eine direkte Anspielung auf
+„Ihn überkommt weder Schlummer noch Schlaf")
+
+Wenn Emre „Destur" vergisst:
+„Izin istemedin." Du hast nicht um Erlaubnis gebeten.
+In der Mühle, nach Hasans Tod:
+
+„Nuriye de böyle okurdu. Her gece. Yine de öldü." Nuriye hat auch so gelesen. Jede Nacht. Gestorben ist
+sie trotzdem.
+
+Im Finale, wenn Emre das Ayetel Kürsi vollständig und ruhig spricht (Ende B): Die Al Karısı hört bis zum
+Ende zu, ohne ihn zu unterbrechen. Dann, leise und zum ersten Mal ohne Spott:
+
+„Bunu bir zamanlar bir insana biz ögrettik. Unutmussunuzdur." Das haben einst wir einem Menschen
+beigebracht. Ihr habt es wohl vergessen. (Anspielung auf die Überlieferung von Ebü Hüreyre und dem
+Dämon)
+
+HINWEISE ZUR UMSETZUNG DER GEBETE
+
+Aufnahme: Lass die Rezitationen von einem echten Hafız oder zumindest einem Muttersprachler mit
+sauberer Aussprache (Tajwid) einsprechen. Türkische und arabische Spieler hören sofort, ob ein Vers falsch
+klingt, und das zerstört nicht nur die Immersion, sondern wirkt respektlos. Für Emres „stolpernde"
+Versionen braucht es zusätzlich einen Sprecher, der bewusst unsicher, aber nicht falsch klingt.
+
+Keine Verzerrung der Verse: Koranverse rückwärts abspielen, verdrehen, vom Dschinn verspotten oder als
+„wirkungslos“ darstellen — das ist für viele Muslime eine rote Linie und kann in der Türkei, wo ein großer
+Teil deiner Zielgruppe sitzt, zu heftigen Reaktionen führen. Das Konzept oben vermeidet das bewusst: Die
+Verse sind im Spiel immer stark, das Problem ist nur Emre.
+
+Keine Verse als Deko an unpassenden Orten: Keine Koranschrift auf Böden, in Toiletten, auf Leichen oder
+als blutige Wandkritzelei. Muskas und gerahmte Verse an den Wänden von Nuriyes Haus sind dagegen
+völlig authentisch.
+
+Untertitel: Arabischer Text, türkische Transliteration und deutsche Übersetzung gleichzeitig anzeigen wirkt
+sehr stimmungsvoll. Du kannst es optional machen (Einstellungen: „Rezitationen übersetzen").
+
+Audio in UE5: Die Rezitation über MetaSounds mit Emres Atem und Herzschlag mischen, damit der
+Rhythmus des Minispiels hörbar ist. Wenn die Al Karısı mit Nuriyes Stimme spricht, klingt es am
+
+unhaimlichketan wiann Ain CHhimma aun Lt atin aif Aan Varecattan Llinnt Lain UAll Lain ECffal+ Nin
+ULIGIHTINCHDLEN, WEHT UIT QUT CAGKE WIT GUI UTI NAIDTLLEIH NIIYe — NTH TITAN, NET LIIENL. LIS
+
+Normalitat ist das Grauen.
+
+Testen: Lass die Szenen früh von muslimischen Spielern gegenlesen und anspielen. Horror mit echten
+religiösen Elementen funktioniert sehr gut (indonesische und türkische Horrorfilme wie Siccin oder Dabbe
+leben davon), aber nur, wenn die Menschen, denen diese Worte heilig sind, sich darin wiederfinden.

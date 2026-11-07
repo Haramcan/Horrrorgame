@@ -1,0 +1,42 @@
+# DESTUR – Projektübergabe (aus dem Chat in Claude Code)
+
+Dieses Dokument fasst alles zusammen, was im Chat geklärt und gebaut wurde. Lies es zuerst.
+
+## Über den Nutzer
+- Schreibt Deutsch, ist technisch Einsteiger. Anleitungen immer in kleinen, nummerierten Schritten, mit den deutschen Windows-/Blender-Bezeichnungen.
+- Hardware: Windows-PC, AMD Radeon RX 9070 XT, Ryzen 7 5700X3D (AM4). Zwei Bildschirme: nur auf **Bildschirm 1** (Chrome) arbeiten, der hochkant stehende linke Bildschirm bleibt tabu.
+- Blender 5.2.3 LTS ist installiert, das Blender-MCP-Addon ("MCP for Blender", Addon 1.8) ist verbunden. `uv` ist installiert. Der MCP-Server `blender` steht in `claude_desktop_config.json` (`uvx mcp-for-blender`).
+- Er will am Ende ein richtiges Indie-Horror-Storygame (ca. 2,5–3 h Spielzeit) und Schritt für Schritt Spielbares sehen.
+
+## Entscheidungen
+- **Engine: three.js im Browser (nicht Unreal Engine).** Das PDF erwähnt UE5-Tipps, die sind gestrichen.
+- Grafik über Blender (Modelle als .glb), Look eher stilisiert/Low-Poly (PS1-Retro denkbar), PC mit Maus und Tastatur.
+- Alles in Phasen: 0 Konzept, 1 Mechanik-Prototyp, 2 Vertical Slice (ein Gebiet mit echtem Look), 3 Welt, 4 Story/Content, 5 Audio/Feinschliff, 6 Test/Balancing. Nach jeder Phase etwas Spielbares.
+
+## Story (Kurzfassung, Details: `Horrorspielstory.pdf` und `Story_OCR_roh.txt`)
+Titel **DESTUR**. First-Person-Story-Horror über türkische Dschinn. Verlassenes Bergdorf Kuyulu bei Kars, eine Nacht in der Zemheri (kälteste 40 Tage).
+- **Emre Aydın (29)** Spielfigur, skeptisch, in Deutschland aufgewachsen. **Selin** seine Frau, im 8. Monat schwanger, verschwindet in der ersten Nacht. **Nuriye (Babaanne)**, Großmutter, Heilerin ("Ocaklı"), gerade gestorben. **Kör Hasan**, blinder Schäfer, per Funk. **Al Karısı**, zentraler Dschinn (roter Haarschopf, Füße nach hinten), von Nuriye vor 29 Jahren mit einer Eisennadel gebunden.
+- **Twist:** Die "Stimme der Großmutter" (Briefe, Kassetten, Flüstern) ist die Al Karısı selbst. Nur der erste Brief ist echt (erkennbar am Satz "Mein Löwe… antworte nicht, auch wenn es meine Stimme ist" und an Rosenwasser-Duft).
+- **Kapitel:** Prolog "Yol" (10 min) · K1 "Babaannemin Evi" (25) Haus, erste Karabasan-Sequenz · K2 "Boş Köy" (30) Dorf, Hamam-Stealth · K3 "Zemheri" (30) Schneesturm, Karakoncolos, Gulyabani, Friedhof · K4 "Değirmen" (25) Mühle, Belagerung, Hasan stirbt, echte Kassette · K5 "Kuyu" (25) Spiegelwelt im Brunnen, drei Erinnerungsszenen · Finale (10–15) drei Enden: A "Yeni Efendi" (Standard), B "Destur" (geheimes gutes Ende, braucht echten Brief + Hasans Kassette + alle Destur-Schwellen), C "Kuyu" (schlechtes Ende).
+- **Sammelobjekte:** 12 Briefe (11 gefälscht), 7 Muskas, 9 Nazar-Amulette, Dschinn-Heft des Lehrers.
+- **Mechaniken laut PDF:** Destur (Schwellen), Spiegel (Al Karısı nur in Spiegeln/Wasser sichtbar), Eisen (verbraucht sich), nicht pfeifen/nicht antworten, Karabasan (Schlaflähmung, Atmung), Muskas (retten einmal), Kälte/Aufwärmen, Rezitieren ("Okumak") mit Angstanzeige.
+- **Gebete/Duas:** Im Spiel nur mit echten, korrekt gesprochenen/geschriebenen Texten (Quelle prüfen, Arabisch nicht per OCR übernehmen). Verse nie verdrehen, rückwärts abspielen, verspotten oder an unpassenden Orten (Böden, Toiletten, Leichen) zeigen. Die Gebete scheitern nie, weil sie "nicht wirken", sondern weil Emre sie vor Angst nicht ruhig sprechen kann. Aktuell nur neutrale Platzhalter im Prototyp.
+- **Hinweis zum Quellmaterial:** Das PDF ist ein Scan ohne Text, `Story_OCR_roh.txt` ist die Texterkennung (Fließtext brauchbar, Arabisch und einzelne Wörter fehlerhaft).
+
+## Stand: Phase 1 (Mechanik-Prototyp)
+Datei: `index.html` (eine Datei, three.js r170 per CDN-Importmap von jsdelivr, Code inline als `<script type="module">`). Nur über http(s) oder per Doppelklick im Browser mit Internet nutzen.
+- Graue Testwelt mit fünf Teststationen (Taste 1–5): Start/Lagerfeuer, Destur-Korridor, Spiegelraum (3 Spiegel), Schlafzimmer (Bett = Karabasan-Test), Schneefeld (Karakoncolos).
+- Umgesetzt: Ego-Steuerung (WASD, Shift, Maus, Drag-Fallback ohne Pointer-Lock), Taschenlampe (F), Interaktion (E), Angstanzeige mit Herzschlag/Flackern/Wackeln, Destur-Schwellen (Q halten), Al Karısı (Layer 1, nur in Spiegeln und im Taschenspiegel/RMB sichtbar, Verfolgung ab Angst > 45, Muska rettet einmal), Eisen (V halten), Rezitieren (R, bei Angst im Takt mit Leertaste), Karabasan-Atemspiel (Bett), Karakoncolos (Stillstehen schützt, Rennen/T lockt an), Teleports, Lautstärkeregler, M = Ton aus/an, P/Esc = Pause.
+- Audio ist komplett prozedural (WebAudio), keine Dateien.
+- **Getestet:** Spiel lädt, Rendering und alle fünf Stationen per Teleport (live in Chrome über ein privates Artifact). **Nicht getestet** (Halte-Tasten lassen sich nicht fernsteuern): Destur, Rezitieren, Eisen, Karabasan-Atmung, Karakoncolos-Verhalten, Spiegel-Spiegelbild der Al Karısı, Balance der Werte. Der Nutzer testet und gibt Feedback.
+- Veröffentlicht war die Version als privates Artifact (nur für den Nutzer): https://claude.ai/artifact/EriDaWpiVWMoDZVRu3kRMy
+
+## Bekannte Grenzen / Hinweise
+- `file://` kann der eingebaute Browser und das Chrome-Tool nicht öffnen. Zum Testen entweder lokalen Server starten (z. B. `uv run python -m http.server 8000` im Projektordner, dann http://localhost:8000) oder als Artifact veröffentlichen.
+- In der Claude-Chat-Umgebung war kein Internet für three.js möglich. In Claude Code mit Shell auf dem PC lässt sich three.js lokal ablegen (z. B. `npm install three` + Vite), was für spätere Phasen (mehrere Dateien, .glb-Modelle laden) ohnehin sinnvoll ist.
+- Vorschlag fürs Projekt: ab Phase 2 auf mehrere Dateien/Module und lokalen Dev-Server umstellen, Modelle aus Blender als .glb nach `assets/` exportieren.
+
+## Nächste Schritte
+1. Feedback des Nutzers zum Prototyp einarbeiten (Angst-Werte, Takt-Minispiel, Atmung, Sichtbarkeit/Helligkeit).
+2. Phase 2: ein Gebiet mit echtem Look (Blender-Modelle, Beleuchtung, Sound), z. B. das Haus der Großmutter (Kapitel 1) inklusive erster Karabasan-Sequenz.
+3. Danach Kapitel für Kapitel gemäß Story.
