@@ -44,6 +44,7 @@
   <button data-light="daemmerung" class="on">Dämmerung</button>
   <button data-light="tag">Tag</button>
   <button data-light="nacht">Nacht</button>
+  <button id="btnSnow">Schnee: mittel</button>
   <button id="btnLabels" class="on">Beschriftung</button>
 </div>
 <div id="help"></div>
@@ -53,12 +54,19 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const $ = id => document.getElementById(id);
 addEventListener('error', e => { $('err').textContent = 'Fehler: ' + e.message; });
 addEventListener('unhandledrejection', e => { $('err').textContent = 'Fehler: ' + (e.reason && e.reason.message || e.reason); });
 
 const MAP = await (await fetch('map/kuyulu_map.json')).json();
+const texLoader = new THREE.TextureLoader();
+const loadT = (n, srgb) => new Promise(res => texLoader.load('assets/textures/' + n, tx => { tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.anisotropy = 4; if (srgb) tx.colorSpace = THREE.SRGBColorSpace; res(tx); }, undefined, () => res(null)));
+const TX = {};
+await Promise.all(['old_stone_wall', 'rustic_stone_wall', 'rough_plaster_broken', 'brown_mud_dry', 'worn_corrugated_iron', 'weathered_planks'].flatMap(n => [
+  loadT(n + '_diff.jpg', true).then(v => TX[n] = v), loadT(n + '_nor.jpg', false).then(v => TX[n + '_n'] = v)]).concat([
+  loadT('ground_detail.jpg', true).then(v => TX.ground = v), loadT('ground_nor.jpg', false).then(v => TX.ground_n = v)]));
 const P = Object.fromEntries(MAP.places.map(p => [p.id, p]));
 
 /* ------------------------------------------------------------ Hilfsfunktionen */
@@ -132,39 +140,71 @@ const N = 400, SIZE = 2000;
 // Pads vorab festlegen: Story-Gebäude, Häuser, Platz
 const FOOT = { 'House_1': [6.0, 7.4], 'House_2': [6.2, 9.6], 'House_3': [5.4, 5.9], 'House_4': [5.4, 5.9], 'Inn': [11.3, 11.3], 'Mill': [9.5, 7.6], 'Stable': [13.2, 9.3], 'Blacksmith': [10.9, 9.2], 'Sawmill': [12.3, 9.2] };
 const fpOf = m => FOOT[(m || '').split('/').pop().replace('.glb', '')];
+// Wohnhaus-Varianten (Ostanatolien: grober Stein oder Lehmputz, meist Flachdach aus Erde, teils rostiges Blech)
+const VARIANTS = [
+  { w: 7.2, d: 5.8, h: 3.0, wall: 'stone', roof: 'earth', chimney: true, tezek: true },
+  { w: 6.4, d: 5.4, h: 2.9, wall: 'plaster', roof: 'earth', tezek: true },
+  { w: 8.0, d: 6.2, h: 3.0, wall: 'stone2', roof: 'tin', chimney: true },
+  { w: 6.6, d: 5.6, h: 2.8, wall: 'stone', roof: 'earth', annex: true, chimney: true },
+  { w: 6.0, d: 5.6, h: 2.9, wall: 'plaster', roof: 'earth', stories: 2 },
+  { w: 7.0, d: 6.0, h: 3.0, wall: 'stone2', roof: 'earth', damage: 0.8 },
+  { w: 6.8, d: 5.8, h: 2.9, wall: 'stone', roof: 'tin', damage: 0.7 },
+  { w: 5.8, d: 5.0, h: 2.7, wall: 'plaster', roof: 'tin', tezek: true }
+];
+const vDims = v => [v.w + (v.annex ? 3.9 : 0), v.d];
+const STORY_DIMS = { haus_oma: [11, 9], stall: [15, 8], gasthaus: [13, 11], schmiede: [11, 9], saegewerk: [12, 9], muehle: [12, 9.5], haus1: [7.4, 6], haus2: [7.4, 6], haus3: [7.4, 6] };
 const PLACEHOLDER = { hamam: [30, 16, 6.5], archiv: [20, 20, 7], unterstand: [5, 4, 3], huette1: [5.5, 4.5, 3.2], huette2: [5.5, 4.5, 3.2], huette3: [5.5, 4.5, 3.2], ruine: [10, 8, 3.5], hoehle: [9, 6, 5] };
 const storyB = MAP.places.filter(p => p.type === 'building' && !p.id.startsWith('wh'));
-storyB.forEach(p => { const f = fpOf(p.model); const dims = f ? [f[0] * 2.8 / 2.8, f[1]] : PLACEHOLDER[p.id]; p._d = f ? [f[0], f[1], 0] : dims; addPad(p.x, p.y, Math.max(p._d[0], p._d[1]) * 0.6); });
-MAP.houses.forEach(h => { const f = fpOf(h.model); addPad(h.x, h.z, Math.max(f[0], f[1]) * 0.6); });
+storyB.forEach(p => { const f = fpOf(p.model); const dims = STORY_DIMS[p.id] || (f ? [f[0], f[1]] : PLACEHOLDER[p.id]); p._d = [dims[0], dims[1], 0]; addPad(p.x, p.y, Math.max(dims[0], dims[1]) * 0.62 + 1); });
+MAP.houses.forEach((h, i) => { h._v = VARIANTS[Math.floor(hash(i, 77) * VARIANTS.length)]; const dm = vDims(h._v); addPad(h.x, h.z, Math.max(dm[0], dm[1]) * 0.62 + 1.5); });
 addPad(480, 510, 28);
 [['brunnen2', 4], ['brunnen3', 4], ['quelle', 5]].forEach(([id, r]) => addPad(P[id].x, P[id].y, r));
 
 const geo = new THREE.PlaneGeometry(SIZE, SIZE, N, N);
 geo.rotateX(-Math.PI / 2);
 geo.translate(MIN + SIZE / 2, 0, MIN + SIZE / 2);
+const GC = {};   // zwischengespeicherte Werte, damit sich die Schneemenge schnell ändern lässt
 {
-  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
-  for (let i = 0; i < pos.count; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)));
+  const pos = geo.attributes.position, n = pos.count;
+  for (let i = 0; i < n; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)));
   geo.computeVertexNormals();
-  const nor = geo.attributes.normal, c = new THREE.Color();
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getZ(i), y = pos.getY(i), ny = nor.getY(i);
-    c.setRGB(0.90, 0.92, 0.96);
-    const n = fbm(x / 14, z / 14);
-    c.multiplyScalar(0.92 + n * 0.12);
-    const snowC = smooth(90, 230, y), rock = smooth(0.9, 0.62, ny) * (1 - 0.6 * snowC);
-    c.lerp(new THREE.Color(0.34, 0.35, 0.39), clamp(rock, 0, 1));
-    if (y < 45 && ny > 0.8) { const g = smooth(0.62, 0.78, fbm(x / 37 + 9, z / 37)); c.lerp(new THREE.Color(0.40, 0.36, 0.28), g * 0.7); }
+  const nor = geo.attributes.normal;
+  GC.dl = new Float32Array(n); GC.dro = new Float32Array(n); GC.dr = new Float32Array(n); GC.n1 = new Float32Array(n); GC.n2 = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
     let dl = 1e9; for (const L of MAP.lanes) dl = Math.min(dl, dpoly(x, z, L));
-    if (dl < 5) c.lerp(new THREE.Color(0.66, 0.63, 0.60), smooth(5, 2, dl) * 0.85);
-    const dro = dpoly(x, z, MAP.road); if (dro < 7) c.lerp(new THREE.Color(0.47, 0.47, 0.5), smooth(7, 3.5, dro));
-    const dr = dpoly(x, z, MAP.river); if (dr < 12) c.lerp(new THREE.Color(0.50, 0.70, 0.86), smooth(12, 7, dr));
-    if (Math.hypot(x - 480, z - 510) < 28) c.lerp(new THREE.Color(0.62, 0.6, 0.58), smooth(28, 20, Math.hypot(x - 480, z - 510)) * 0.8);
-    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    GC.dl[i] = dl; GC.dro[i] = dpoly(x, z, MAP.road); GC.dr[i] = dpoly(x, z, MAP.river);
+    GC.n1[i] = fbm(x / 26, z / 26); GC.n2[i] = fbm(x / 9 + 40, z / 9);
   }
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
 }
-const terrain = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 }));
+let snowAmt = 0.36;
+function paintTerrain() {
+  const pos = geo.attributes.position, nor = geo.attributes.normal, col = geo.attributes.color, n = pos.count;
+  const snow = new THREE.Color(0.86, 0.88, 0.93), soilWet = new THREE.Color(0.30, 0.24, 0.18), dust = new THREE.Color(0.47, 0.41, 0.31), gravel = new THREE.Color(0.41, 0.40, 0.38), rockC = new THREE.Color(0.38, 0.35, 0.32);
+  const path = new THREE.Color(0.27, 0.22, 0.17), road = new THREE.Color(0.39, 0.37, 0.34), plaza = new THREE.Color(0.37, 0.33, 0.28), ice = new THREE.Color(0.55, 0.72, 0.86);
+  const g = new THREE.Color(), c = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    const x = pos.getX(i), z = pos.getZ(i), y = pos.getY(i), ny = nor.getY(i), n1 = GC.n1[i], n2 = GC.n2[i];
+    // Boden ohne Schnee: gefrorene Erde, trockenes Gras/Staub, Geröll; steil = Fels
+    g.copy(soilWet).lerp(dust, smooth(0.35, 0.65, n2)).lerp(gravel, smooth(0.62, 0.8, GC.n1[i] * 0.6 + n2 * 0.4));
+    g.lerp(rockC, smooth(0.93, 0.7, ny));
+    // Schneeanteil: mehr in der Höhe und in Mulden, weniger an steilen Flanken, Wegen und im Dorfkern
+    const score = (snowAmt - 0.5) * 1.7 + (n1 - 0.5) * 1.5 + 0.7 * smooth(20, 190, y) - 0.55 * smooth(0.9, 0.7, ny);
+    let cover = smooth(-0.15, 0.3, score + 0.22);
+    const wl = smooth(4.5, 1.6, GC.dl[i]); if (wl > 0) { g.lerp(path, wl); cover *= 1 - wl * 0.95; }
+    const wr = smooth(7, 3, GC.dro[i]); if (wr > 0) { g.lerp(road, wr); cover *= 1 - wr * 0.85; }
+    const dp = Math.hypot(x - 480, z - 510); if (dp < 28) { const wp = smooth(28, 18, dp); g.lerp(plaza, wp); cover *= 1 - wp * 0.9; }
+    c.copy(g).lerp(snow, cover);
+    const dr = GC.dr[i]; if (dr < 12) c.lerp(ice, smooth(12, 7, dr));
+    col.setXYZ(i, c.r, c.g, c.b);
+  }
+  col.needsUpdate = true;
+}
+paintTerrain();
+if (TX.ground) TX.ground.repeat.set(SIZE / 4, SIZE / 4);
+if (TX.ground_n) TX.ground_n.repeat.set(SIZE / 5, SIZE / 5);
+const terrain = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: TX.ground, normalMap: TX.ground_n, normalScale: new THREE.Vector2(0.55, 0.55), roughness: 0.95, metalness: 0 }));
 terrain.receiveShadow = true;
 scene.add(terrain);
 // Kartenrand: Wand nach unten, damit die Kante sauber aussieht
@@ -179,10 +219,120 @@ const cache = {};
 const colliders = [];
 async function model(path) { if (!cache[path]) cache[path] = loader.loadAsync('assets/models/' + path).then(g => g.scene); return (await cache[path]).clone(true); }
 function shadowAll(o) { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); }
-/* ---------- Eigenbau-Gebäude (einfache Low-Poly-Formen, später durch Blender-Modelle ersetzbar) ---------- */
-const MAT = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 1, flatShading: true }, o));
-const M = { stone: MAT(0x7b7f86), stoneDark: MAT(0x555961), plaster: MAT(0xb4a98f), roof: MAT(0x6a3f30), lead: MAT(0x6d7885, { roughness: 0.7, metalness: 0.25 }), wood: MAT(0x5a3f28), dark: MAT(0x121317), rubble: MAT(0x6a6c72) };
-const bx = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y + h / 2, z); return m; };
+/* ---------- Materialien: echte Texturen (Poly Haven, CC0), Kachelgröße 2,6 m ---------- */
+const TILE = 2.6;
+const mkTex = (n, tint, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ map: TX[n], normalMap: TX[n + '_n'], normalScale: new THREE.Vector2(1, 1), color: tint, roughness: 1, metalness: 0 }, o));
+const MATS = {
+  stone: mkTex('old_stone_wall', 0xdad2c6), stone2: mkTex('rustic_stone_wall', 0xc4b9ab), plaster: mkTex('rough_plaster_broken', 0xd9cfba),
+  plasterLight: mkTex('rough_plaster_broken', 0xf1e9d8), earth: mkTex('brown_mud_dry', 0x8e8070), tin: mkTex('worn_corrugated_iron', 0xb27d58, { roughness: 0.85 }),
+  wood: mkTex('weathered_planks', 0xb8a898), dark: new THREE.MeshStandardMaterial({ color: 0x100e0c, roughness: 1 }),
+  log: new THREE.MeshStandardMaterial({ color: 0x4a3524, roughness: 1 }), tezek: new THREE.MeshStandardMaterial({ color: 0x3f3226, roughness: 1 }),
+  hay: new THREE.MeshStandardMaterial({ color: 0x9c8450, roughness: 1 }), clay: new THREE.MeshStandardMaterial({ color: 0x8a4e32, roughness: 1 }),
+  glow: new THREE.MeshStandardMaterial({ color: 0x3a2a14, emissive: 0xffa850, emissiveIntensity: 1.6, roughness: 1 }),
+  lead: new THREE.MeshStandardMaterial({ color: 0x6d7885, roughness: 0.7, metalness: 0.25, flatShading: true })
+};
+function boxG(w, h, d) {
+  const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) { const i = f * 4 + k; uv.setXY(i, uv.getX(i) * dims[f][0] / TILE, uv.getY(i) * dims[f][1] / TILE); }
+  return g;
+}
+function rng(seed) { let a = seed * 2654435761 >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let x = Math.imul(a ^ (a >>> 15), 1 | a); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; }
+class Builder {
+  constructor(seed) { this.parts = {}; this.r = rng(seed || 1); }
+  add(mat, geo, x, y, z, rx = 0, ry = 0, rz = 0) {
+    geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1)));
+    const uv = geo.attributes.uv, ou = this.r(), ov = this.r(); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) + ou, uv.getY(i) + ov);
+    (this.parts[mat] = this.parts[mat] || []).push(geo);
+  }
+  box(mat, w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) { this.add(mat, boxG(w, h, d), x, y + h / 2, z, rx, ry, rz); }
+  cyl(mat, r, h, x, y, z, rx = 0, ry = 0, rz = 0, seg = 8) { this.add(mat, new THREE.CylinderGeometry(r, r, h, seg), x, y + h / 2, z, rx, ry, rz); }
+  build() {
+    const g = new THREE.Group();
+    for (const k in this.parts) { const m = new THREE.Mesh(mergeGeometries(this.parts[k], false), MATS[k]); m.castShadow = true; m.receiveShadow = true; g.add(m); }
+    return g;
+  }
+}
+
+/* ---------- Dorfhaus: parametrischer Bau (Stein oder Lehmputz, Flachdach aus Erde oder Blechdach, Schäden) ---------- */
+function buildHouse(o) {
+  const B = new Builder(o.seed || 1), r = B.r, w = o.w, d = o.d, h = o.h || 3, t = 0.55, wall = o.wall || 'stone', dmg = o.damage || 0;
+  const win = o.lit ? 'glow' : 'dark';
+  const stories = o.stories || 1, H = h + (stories === 2 ? 2.7 : 0);
+  // Sockel aus Stein bei verputzten Häusern
+  if (wall === 'plaster' || wall === 'wood') { B.box('stone', w + 0.06, 0.55, d + 0.06, 0, 0, 0); }
+  // Rückwand und Seiten
+  B.box(wall, w, H, t, 0, 0, -d / 2 + t / 2);
+  const sideH = dmg > 0.55 ? H * 0.64 : H;
+  B.box(wall, t, H, d - 2 * t, -w / 2 + t / 2, 0, 0);
+  B.box(wall, t, sideH, d - 2 * t, w / 2 - t / 2, 0, 0);
+  if (dmg > 0.55) { B.box(wall, t, 0.7, (d - 2 * t) * 0.45, w / 2 - t / 2, sideH, -(d - 2 * t) * 0.22); B.box(wall, t, 0.35, (d - 2 * t) * 0.2, w / 2 - t / 2, sideH, (d - 2 * t) * 0.3); }
+  // Vorderwand mit Türöffnung
+  const dw = o.bigDoor ? 2.2 : 1.0, dh = o.bigDoor ? 2.3 : 1.95, dx = o.doorX !== undefined ? o.doorX : (r() - 0.5) * Math.max(0.5, w - 3.4);
+  const left = dx - dw / 2 + w / 2, right = w / 2 - (dx + dw / 2);
+  B.box(wall, left, H, t, -w / 2 + left / 2, 0, d / 2 - t / 2); B.box(wall, right, H, t, w / 2 - right / 2, 0, d / 2 - t / 2); B.box(wall, dw, H - dh, t, dx, dh, d / 2 - t / 2);
+  B.box('wood', dw - 0.08, dh - 0.04, 0.1, dx, 0, d / 2 - t * 0.55); B.box('wood', dw + 0.26, 0.16, 0.22, dx, dh - 0.02, d / 2 + 0.02);
+  B.box('wood', 0.14, dh, 0.2, dx - dw / 2 - 0.05, 0, d / 2 + 0.01); B.box('wood', 0.14, dh, 0.2, dx + dw / 2 + 0.05, 0, d / 2 + 0.01);
+  // Fenster (klein, mit Brett als Sims, manche mit offenem Laden)
+  const nw = stories === 2 ? [[0.28, 1.25], [0.72, 1.25], [0.28, 3.9], [0.72, 3.9]] : [[0.22, 1.25], [0.78, 1.25]];
+  nw.forEach(([u, yy], k) => { const x = -w / 2 + u * w; if (Math.abs(x - dx) < dw / 2 + 0.7) return; B.box(win, 0.72, 0.78, 0.07, x, yy, d / 2 + 0.01); B.box('wood', 0.98, 0.09, 0.24, x, yy - 0.1, d / 2 + 0.03); if (r() < 0.55) B.box('wood', 0.34, 0.8, 0.05, x + 0.62, yy, d / 2 + 0.18, 0, -0.9 - r() * 0.5, 0); });
+  // abblätternder Putz auf Steinwänden: helle Flecken, die Stein durchscheinen lassen
+  if (wall.startsWith('stone')) for (let i = 0; i < 2; i++) { const pw = 1.2 + r() * 2.2, ph = 0.9 + r() * 1.5, px = -w / 2 + 0.8 + r() * (w - 1.6 - pw); if (Math.abs(px + pw / 2 - dx) < dw / 2 + pw / 2 + 0.2) continue; B.box('plaster', pw, ph, 0.05, px + pw / 2, 0.6 + r() * 1.0, d / 2 + 0.03); }
+  // Zweites Geschoss: Holzbalkon
+  if (stories === 2) { B.box('wood', w * 0.92, 0.14, 1.2, 0, 2.95, d / 2 + 0.55); B.box('wood', w * 0.92, 0.8, 0.07, 0, 3.1, d / 2 + 1.1); for (let i = 0; i < 4; i++) B.box('log', 0.12, 2.9, 0.12, -w * 0.4 + i * w * 0.27, 0, d / 2 + 1.05); }
+  // Dach
+  let chim = null;
+  if (o.roof === 'tin') {
+    const a = 0.42, ov = 0.5, span = d / 2 + ov, len = span / Math.cos(a) + 0.05, yE = H - 0.05, yR = yE + span * Math.tan(a);
+    [1, -1].forEach(s2 => {
+      if (dmg > 0.6 && s2 === -1) B.box('tin', w + 0.9, 0.07, len * 0.5, 0, (yE + yR) / 2 + (yR - yE) / 4 - 0.03, -span / 4, -a, 0, 0);
+      else B.box('tin', w + 0.9, 0.07, len, 0, (yE + yR) / 2 - 0.03, s2 * span / 2, s2 * a, 0, 0);
+    });
+    // Giebeldreiecke in Wandfarbe
+    const sh = new THREE.Shape(); sh.moveTo(-d / 2, 0); sh.lineTo(d / 2, 0); sh.lineTo(0, yR - yE + 0.1); sh.lineTo(-d / 2, 0);
+    [-1, 1].forEach(s => { const gg = new THREE.ShapeGeometry(sh); const uv = gg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / TILE, uv.getY(i) / TILE); B.add(wall, gg, s * (w / 2 - 0.02), yE, 0, 0, s * Math.PI / 2, 0); });
+    // Steine auf dem Blech, Ofenrohr
+    for (let i = 0; i < 5; i++) B.box('stone2', 0.5 + r() * 0.4, 0.25, 0.5 + r() * 0.4, -w / 2 + 0.6 + r() * (w - 1.2), yE + 0.5 + r() * 0.8, (r() < 0.5 ? -1 : 1) * (0.7 + r() * 1.6), 0, r(), 0);
+    chim = [w * 0.22, yR + 0.9, -d * 0.12]; B.cyl('dark', 0.13, 1.6, chim[0], yR - 0.5, chim[2], 0, 0, 0, 7);
+  } else {
+    // Flachdach aus gestampfter Erde mit Holzbalken, die an der Front vorstehen
+    const sw = dmg > 0.55 ? w * 0.58 : w + 0.6, sx = dmg > 0.55 ? -w * 0.2 : 0;
+    B.box('earth', sw, 0.4, d + 0.6, sx, H, 0, 0, 0, dmg > 0.55 ? 0.07 : 0);
+    if (dmg <= 0.55) { B.box('earth', w + 0.6, 0.3, 0.32, 0, H + 0.4, d / 2 + 0.14); B.box('earth', w + 0.6, 0.26, 0.32, 0, H + 0.4, -d / 2 - 0.14); B.box('earth', 0.32, 0.28, d + 0.6, -w / 2 - 0.14, H + 0.4, 0); B.box('earth', 0.32, 0.26, d + 0.6, w / 2 + 0.14, H + 0.4, 0); }
+    for (let i = 0; i < Math.floor(w / 0.65); i++) B.cyl('log', 0.095, 0.8, -w / 2 + 0.4 + i * 0.65, H - 0.18, d / 2 + 0.25, Math.PI / 2, 0, 0, 7);
+    if (dmg > 0.55) for (let i = 0; i < 5; i++) B.cyl('log', 0.1, 1.7, w * 0.12 + i * 0.7, H - 0.1 - i * 0.05, d / 2 - 1.2, 0.9 + r() * 0.2, 0, r(), 7);
+    if (o.chimney) { chim = [w * 0.25, H + 0.4 + 1.5, -d * 0.2]; B.box('stone2', 0.7, 1.5, 0.7, chim[0], H + 0.4, chim[2]); B.cyl('clay', 0.22, 0.5, chim[0], H + 1.9, chim[2], 0, 0, 0, 8); }
+    for (let i = 0; i < 3; i++) B.box('hay', 0.7 + r() * 0.5, 0.3 + r() * 0.2, 0.6 + r() * 0.4, -w / 2 + 0.8 + r() * (w - 1.6), H + 0.4, -d / 4 + r() * d / 2.5);
+  }
+  // Tezek (getrocknete Dungfladen als Brennstoff) gestapelt an der Wand
+  if (o.tezek) { const z0 = -0.5 + r() * 1.2; for (let k = 0; k < 4; k++) for (let i = 0; i < 5 - k; i++) B.cyl('tezek', 0.26, 0.1, w / 2 + 0.55 + k * 0.1, 0.05 + k * 0.11, z0 + (i - (4 - k) / 2) * 0.5, 0, 0, Math.PI / 2, 8); }
+  // Vordach / Veranda aus Holz
+  if (o.veranda) { const vz = d / 2 + 2.2; [-1, 1].forEach(s => B.box('log', 0.2, 2.9, 0.2, s * (w / 2 - 0.5), 0, vz)); B.box('wood', w - 0.2, 0.18, 2.6, 0, 2.9, d / 2 + 1.2); B.box('earth', w, 0.22, 2.9, 0, 3.08, d / 2 + 1.2); }
+  // Anbau (niedriger Stall oder Vorratsraum)
+  if (o.annex) { const aw = 3.7, ad = d * 0.85, ah = 2.2, ax = w / 2 + aw / 2 - 0.05; B.box('stone2', aw, ah, ad, ax, 0, -0.3); B.box('earth', aw + 0.4, 0.34, ad + 0.4, ax, ah, -0.3); B.box('wood', 1.4, 1.7, 0.1, ax, 0, ad / 2 - 0.3 + 0.03); }
+  const g = B.build(); g.userData = { w: w + (o.annex ? 3.9 : 0), d, h: H + 2, chimney: chim };
+  return g;
+}
+const STORY_BUILD = {
+  haus_oma: () => buildHouse({ w: 9, d: 7, h: 3.2, wall: 'plaster', roof: 'earth', veranda: true, chimney: true, doorX: 0, lit: true, seed: 11 }),
+  stall: () => buildHouse({ w: 14, d: 7, h: 2.9, wall: 'stone2', roof: 'earth', bigDoor: true, doorX: -3.5, seed: 31 }),
+  gasthaus: () => buildHouse({ w: 11, d: 9, h: 3.1, stories: 2, wall: 'stone', roof: 'earth', chimney: true, doorX: 0, seed: 41 }),
+  schmiede: () => buildHouse({ w: 9, d: 7, h: 3.0, wall: 'stone2', roof: 'tin', veranda: true, bigDoor: true, doorX: 1, seed: 51 }),
+  saegewerk: () => buildHouse({ w: 11, d: 8, h: 3.0, wall: 'wood', roof: 'tin', veranda: true, bigDoor: true, doorX: 0, seed: 61 }),
+  muehle: () => {
+    const g = buildHouse({ w: 9, d: 7.5, h: 3.2, stories: 2, wall: 'stone', roof: 'tin', doorX: 1.5, lit: true, seed: 71 });
+    const wheel = new THREE.Group();
+    // Schaufelrad: Speichen und Schaufeln um die Achse (Achse entlang x)
+    const sp = new Builder(7);
+    for (let i = 0; i < 8; i++) { const ang = i / 8 * Math.PI * 2; sp.box('log', 0.16, 5.2, 0.16, 0, -2.6, 0, ang, 0, 0); }
+    for (let i = 0; i < 16; i++) { const ang = i / 16 * Math.PI * 2, y = Math.cos(ang) * 2.7, z = Math.sin(ang) * 2.7; sp.box('wood', 1.3, 0.12, 0.7, 0, y, z, 0, 0, 0); sp.box('wood', 0.08, 0.7, 0.9, -0.62, y - 0.35, z, 0, 0, 0); sp.box('wood', 0.08, 0.7, 0.9, 0.62, y - 0.35, z, 0, 0, 0); }
+    wheel.add(sp.build()); wheel.position.set(4.9 + 0.2, 2.75, 0); g.add(wheel); wheels.push(wheel);
+    return g;
+  }
+};
+const wheels = [];
+const MAT = c => new THREE.MeshStandardMaterial({ color: c, roughness: 1 });
+const M = { stone: MATS.stone, stoneDark: MATS.stone2, plaster: MATS.plasterLight, roof: MATS.earth, lead: MATS.lead, wood: MATS.wood, dark: MATS.dark, rubble: MATS.stone2 };
+const bx = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(boxG(w, h, d), mat); m.position.set(x, y + h / 2, z); return m; };
 const cy = (r1, r2, h, mat, x, y, z, seg = 10) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r2, r1, h, seg), mat); m.position.set(x, y + h / 2, z); return m; };
 const dome = (r, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2), mat); m.position.set(x, y, z); return m; };
 const cone = (r, h, mat, x, y, z, seg = 4) => { const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat); m.position.set(x, y + h / 2, z); return m; };
@@ -255,30 +405,32 @@ for (const p of storyB) {
   jobs.push((async () => {
     const y = heightAt(p.x, p.y);
     let obj, h = 8;
-    if (p.model && p.model.endsWith('.glb')) {
+    const sb = STORY_BUILD[p.id] || (p.id === 'haus1' || p.id === 'haus2' || p.id === 'haus3' ? () => buildHouse(Object.assign({ seed: p.id.charCodeAt(4) * 13 }, VARIANTS[p.id === 'haus1' ? 0 : p.id === 'haus2' ? 3 : 1])) : null);
+    if (sb) { obj = sb(); h = (obj.userData.h || 6) + 2; }
+    else if (p.model && p.model.endsWith('.glb')) {
       obj = await model(p.model); obj.scale.setScalar(2.8); h = 10;
     } else { obj = buildProcedural(p.id); h = (obj.userData.h || 6) + 2; }
     obj.position.set(p.x, y, p.y); obj.rotation.y = (p.rot || 0) * Math.PI / 180;
     // Leben im Dorf: nur das Haus der Großmutter (Rauch, Licht) und die Mühle (Hasan) sind erleuchtet
-    if (p.id === 'haus_oma') { litWindows(obj); addGlow(p.x, y + 4, p.y + 6, 160, 34); addPlume(p.x + 1.2, y + 9.6, p.y - 0.6, 0xb9bcc6, 11, 22, 7, 2.6, 0.5); }
-    if (p.id === 'muehle') { litWindows(obj); addGlow(p.x, y + 4, p.y + 6, 120, 30); }
+    if (p.id === 'haus_oma') { addGlow(p.x, y + 4, p.y + 6, 160, 34); const c = obj.userData.chimney || [2, 5, -1.5]; addPlume(p.x + c[0], y + c[1] + 0.3, p.y + c[2], 0xb9bcc6, 11, 22, 7, 2.6, 0.5); }
+    if (p.id === 'muehle') { addGlow(p.x, y + 4, p.y + 6, 120, 30); }
     if (p.id === 'hamam' && obj.userData.steam) obj.userData.steam.forEach(([sx, sy, sz]) => addPlume(p.x + sx, y + sy, p.y + sz, 0xe4ebf2, 9, 16, 5, 3.2, 0.42));
     shadowAll(obj); scene.add(obj);
     const d = p._d || [8, 8]; colliders.push({ x: p.x, z: p.y, r: Math.max(d[0], d[1]) * 0.55 });
     addLabel(p.name, p.x, y + h + 3, p.y, p.random ? 'free' : '');
   })());
 }
-// Kulissenhäuser
-for (const h of MAP.houses) {
+// Kulissenhäuser: Dorfhäuser aus den Varianten, jedes mit eigenem Zufallswert
+MAP.houses.forEach((h, i) => {
   jobs.push((async () => {
-    const obj = await model(h.model); obj.scale.setScalar(h.scale);
+    const obj = buildHouse(Object.assign({ seed: i * 7 + 3 }, h._v));
     const y = heightAt(h.x, h.z);
     obj.position.set(h.x, y, h.z); obj.rotation.y = (h.rot || 0) * Math.PI / 180;
-    shadowAll(obj); scene.add(obj);
-    const f = fpOf(h.model); colliders.push({ x: h.x, z: h.z, r: Math.max(f[0], f[1]) * 0.55 });
-    if (h.place) { const pl = P[h.place]; addLabel('? ' + pl.name, h.x, y + 11, h.z, 'free'); }
+    scene.add(obj);
+    const dm = vDims(h._v); colliders.push({ x: h.x, z: h.z, r: Math.max(dm[0], dm[1]) * 0.55 });
+    if (h.place) { const pl = P[h.place]; addLabel('? ' + pl.name, h.x, y + 8, h.z, 'free'); }
   })());
-}
+});
 // Brunnen
 for (const id of ['brunnen', 'brunnen2', 'brunnen3']) {
   const p = P[id];
@@ -323,7 +475,7 @@ for (const [name, x, z, sc, rot] of PROPS) jobs.push((async () => { const o = aw
 // Zaun um den Garten des Hauses der Großmutter (mit Lücke an der Südseite für den Weg)
 {
   const cx = P.haus_oma.x, cz = P.haus_oma.y, hw = 14, hd = 12, seg = 3.5;
-  const put = (x, z, rot) => jobs.push((async () => { const o = await model('village/props/Fence.glb'); o.scale.setScalar(4.4); o.position.set(x, heightAt(x, z), z); o.rotation.y = rot; shadowAll(o); scene.add(o); })());
+  const put = (x, z, rot) => jobs.push((async () => { const o = await model('village/props/Fence.glb'); o.scale.setScalar(3.2); o.position.set(x, heightAt(x, z), z); o.rotation.y = rot; shadowAll(o); scene.add(o); })());
   for (let x = -hw; x < hw; x += seg) { put(cx + x + seg / 2, cz - hd, 0); if (Math.abs(x + seg / 2) > 4) put(cx + x + seg / 2, cz + hd, 0); }
   for (let z = -hd; z < hd; z += seg) { put(cx - hw, cz + z + seg / 2, Math.PI / 2); put(cx + hw, cz + z + seg / 2, Math.PI / 2); }
 }
@@ -419,6 +571,7 @@ function setLight(name) {
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
 document.querySelectorAll('[data-walk]').forEach(b => b.onclick = () => walkTo(b.dataset.walk));
 document.querySelectorAll('[data-light]').forEach(b => b.onclick = () => setLight(b.dataset.light));
+$('btnSnow').onclick = e => { const steps = [[0.7, 'viel'], [0.36, 'mittel'], [0.12, 'wenig']]; const i = (steps.findIndex(s => s[0] === snowAmt) + 1) % steps.length; snowAmt = steps[i][0]; e.target.textContent = 'Schnee: ' + steps[i][1]; paintTerrain(); };
 $('btnLabels').onclick = e => { labelsOn = !labelsOn; e.target.classList.toggle('on', labelsOn); };
 
 addEventListener('keydown', e => { keys.add(e.code); });
@@ -458,6 +611,7 @@ function frame(now) {
   const L = LIGHTS[lightName]; sun.position.copy(sun.target.position).addScaledVector(new THREE.Vector3(...L.dir).normalize(), 900);
   camera.position.copy(cam.pos); camera.rotation.set(cam.pitch, cam.yaw, 0);
   updatePlumes(now / 1000);
+  for (const w of wheels) w.rotation.x += dt * 0.5;
   renderer.render(scene, camera);
   // Beschriftungen nur im Flugmodus
   const show = labelsOn && mode === 'fly';
