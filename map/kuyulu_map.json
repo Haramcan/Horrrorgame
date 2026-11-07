@@ -1,0 +1,30 @@
+{
+  "name": "Kuyulu",
+  "units": "Meter, Norden oben. x nach rechts (Osten), y nach unten (Süden). Ursprung oben links.",
+  "size": { "w": 400, "h": 300 },
+  "road": [[400, 38], [386, 58], [366, 84], [344, 112], [326, 140], [318, 150], [270, 152], [222, 150]],
+  "river": [[400, 236], [340, 244], [290, 262], [230, 258], [170, 254], [110, 264], [50, 252], [0, 258]],
+  "snowfield": [[80, 92], [138, 98], [148, 150], [138, 206], [80, 212], [70, 150]],
+  "places": [
+    { "id": "auto", "name": "Mietwagen im Graben", "lab": "left", "type": "point", "x": 372, "y": 72, "chapter": "Prolog", "note": "Emre weicht dem Mann im Schnee aus, der Wagen rutscht in den Graben. Kein Netz." },
+    { "id": "eingang", "name": "Dorfeingang", "type": "point", "x": 318, "y": 150, "chapter": "Prolog", "note": "Jede Tür trägt eine große Stecknadel, alles dunkel. Letztes Bild: Selin und die zugefrorene Pfütze." },
+    { "id": "haus_oma", "name": "Haus der Großmutter", "type": "building", "x": 280, "y": 122, "w": 26, "h": 20, "chapter": "K1", "model": "village/buildings/House_1.glb", "safe": true, "note": "Rauch aus dem Schornstein, Ofen brennt. Brief, Taschenspiegel, Tonband, Wiege auf dem Dachboden. Erste Karabasan-Nacht. Später: Spiegelwelt-Version (K5)." },
+    { "id": "stall", "name": "Stall (Funkgerät)", "type": "building", "x": 319, "y": 118, "w": 18, "h": 14, "chapter": "K1", "model": "village/buildings/Stable.glb", "safe": true, "note": "Stute mit Zöpfen in der Mähne. Funkgerät: Kör Hasan meldet sich." },
+    { "id": "platz", "name": "Dorfplatz", "type": "plaza", "x": 200, "y": 150, "r": 24, "chapter": "K2", "note": "Selins Stimme ruft am Ende von K2 vom Platz. Nicht antworten." },
+    { "id": "brunnen", "name": "Dorfbrunnen", "type": "well", "x": 200, "y": 150, "r": 5, "chapter": "K5", "water": true, "model": "village/props/Well.glb", "note": "Mitte des Dorfes. Abstieg in die Spiegelwelt (K5), Finale." },
+    { "id": "haus1", "name": "Haus: Möbel vor der Tür", "type": "building", "x": 240, "y": 182, "w": 20, "h": 16, "chapter": "K2", "model": "village/buildings/House_2.glb", "note": "Alle Möbel von innen vor die Tür geschoben." },
+    { "id": "haus2", "name": "Haus: Kinderzimmer", "type": "building", "x": 238, "y": 100, "w": 20, "h": 16, "chapter": "K2", "model": "village/buildings/House_3.glb", "note": "Dutzende Schuhe, alle verkehrt herum." },
+    { "id": "haus3", "name": "Haus: Tagebuch der Mutter", "type": "building", "x": 160, "y": 112, "w": 20, "h": 16, "chapter": "K2", "model": "village/buildings/House_4.glb", "note": "Tagebuch: „Nuriye ist tot. Sie hat keine Angst mehr vor ihr.“" },
+    { "id": "gasthaus", "name": "Gasthaus (Tandır-Ofen)", "type": "building", "x": 168, "y": 188, "w": 24, "h": 18, "chapter": "K2/K3", "model": "village/buildings/Inn.glb", "safe": true, "note": "Aufwärmen. Tandır-Ofen." },
+    { "id": "schmiede", "name": "Schmiede", "type": "building", "x": 128, "y": 150, "w": 18, "h": 14, "chapter": "K2", "model": "village/buildings/Blacksmith.glb", "safe": true, "note": "Quelle für Hufeisen und Nägel (Eisen). Esse zum Aufwärmen, Übergang zum Schneefeld." },
+    { "id": "archiv", "name": "Moschee-Bibliothek / Dorfarchiv", "type": "building", "x": 204, "y": 98, "w": 22, "h": 18, "chapter": "K2", "model": "FEHLT: Moschee-Gebäude", "note": "Heft des Dorflehrers (Bestiarium). Achtung: Das Paket hat keine Moschee. Der Glockenturm passt nicht, hier brauchen wir ein eigenes Modell." },
+    { "id": "hamam", "name": "Hamam", "type": "building", "x": 134, "y": 224, "w": 28, "h": 22, "chapter": "K2", "water": true, "model": "FEHLT: Hamam (Eigenbau)", "note": "Zentrales Set-Piece K2. Dampf, Kupferkessel, Wasserbecken (Al Karısı sichtbar), 3 Abflüsse für Destur. Kessel-Schlüssel für das Friedhofstor." },
+    { "id": "saegewerk", "name": "Sägewerk", "type": "building", "x": 196, "y": 232, "w": 20, "h": 14, "chapter": "K2", "model": "village/buildings/Sawmill.glb", "note": "Optional: Nebenort, Nazar-Amulett." },
+    { "id": "unterstand", "name": "Hirtenunterstand", "type": "building", "x": 110, "y": 120, "w": 12, "h": 10, "chapter": "K3", "safe": true, "model": "FEHLT: kleine Hütte (Eigenbau)", "note": "Wärmepunkt mitten im Schneefeld." },
+    { "id": "schneefeld", "name": "Schneefeld (Karakoncolos)", "type": "label", "x": 108, "y": 170, "chapter": "K3", "note": "Sicht 5 m, Sturm, Stimmen. Stillstehen schützt. Zwischen Dorf und Friedhof." },
+    { "id": "tor", "name": "Friedhofstor", "lab": "right", "type": "point", "x": 72, "y": 150, "chapter": "K3", "note": "Braucht den Kessel-Schlüssel aus dem Hamam." },
+    { "id": "friedhof", "name": "Friedhof", "type": "graveyard", "x": 40, "y": 150, "w": 52, "h": 64, "chapter": "K3", "note": "Gulyabani, Öllampe gegen Sturm. Nuriyes aufgewühltes Grab, Zettel in ihrer Handschrift." },
+    { "id": "muehle", "name": "Wassermühle", "type": "building", "x": 268, "y": 248, "w": 26, "h": 20, "chapter": "K4", "water": true, "safe": true, "model": "village/buildings/Mill.glb", "note": "Kör Hasan, Hufeisen an Wänden und Decke. Belagerung, Hasans Tod, echte Kassette." }
+  ],
+  "route": ["auto", "eingang", "haus_oma", "stall", "platz", "archiv", "haus2", "hamam", "tor", "friedhof", "muehle", "brunnen"]
+}
