@@ -127,7 +127,7 @@ function boxGeo(w, h, d, tile = TILEV) {
 }
 
 /* ------------------------------------------------------------------------ Welt: Gruppen, Kollision */
-const FLOOR_Y = 0.9, H = 2.6, TH = 0.2;
+const FLOOR_Y = 0.15, H = 2.6, TH = 0.2;
 const world = new THREE.Group(); scene.add(world);
 const apt = new THREE.Group(); apt.position.y = FLOOR_Y; world.add(apt);
 const colliders = [];
@@ -193,16 +193,15 @@ slab(M.wood, 4, 0, 6, 9.5); slab(M.carpet, 0, 0, 4, 5); slab(M.wood, 0, 5, 4, 9.
 box(M.ceiling, 10.2, 0.14, 9.7, 5, H, 4.75, { tile: 2 });
 // Obergeschosse (nur Hülle) und Nachbarhäuser
 const UP = FLOOR_Y + H + 0.14;
-box(M.brick, 10.4, 6.1, 9.9, 5, UP, 4.75, { parent: world, tile: 1.6 });
-for (let f = 0; f < 2; f++) for (let k = 0; k < 3; k++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.6), (f + k) % 3 === 1 ? glow(0xd8a850) : M.pane); p.position.set(1.7 + k * 3.3, UP + 1.6 + f * 3, 9.71); world.add(p); }
+box(M.brick, 10.4, 6.2 - UP, 9.8, 5, UP, 4.7, { parent: world, tile: 1.8 });
+box(M.concrete, 10.3, FLOOR_Y - 0.005, 9.7, 5, 0, 4.75, { parent: world, tile: 1.4 });   // Sockel unter der Wohnung
+for (let k = 0; k < 3; k++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.6), k === 1 ? glow(0xd8a850) : M.pane); p.position.set(1.9 + k * 3.1, UP + 0.95 + 0.8, 9.61); world.add(p); }
 function facadeRow(x0, x1, z0, z1, h, front, seed) {
   const w = x1 - x0, m = box(M.brick, w, h, z1 - z0, (x0 + x1) / 2, 0, (z0 + z1) / 2, { parent: world, tile: 1.8, solid: true });
   const r = (i) => { const s = Math.sin(seed * 91.7 + i * 12.9898) * 43758.5453; return s - Math.floor(s); };
   let i = 0;
   for (let x = x0 + 1.6; x < x1 - 1; x += 3.3) for (let y = 1.7; y < h - 1; y += 3.1) { const lit = r(i++) < 0.2; const p = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.6), lit ? glow(0xd8a850) : M.pane); p.position.set(x, y, front); if (front < (z0 + z1) / 2) p.rotation.y = Math.PI; world.add(p); }
 }
-facadeRow(-26, -0.2, 0, 9.5, 9.6, 9.51, 1); facadeRow(10.2, 34, 0, 9.5, 9.6, 9.51, 2);
-facadeRow(-26, 34, 23.5, 34, 11, 23.49, 3);
 facadeRow(-26, 34, -12, -4, 9, -3.99, 4);   // Rückseite
 
 /* ---- Straßen und Gehwege (die ganze Siedlung) ---- */
@@ -216,14 +215,15 @@ walk(-170, 9.5, 190, 14.4); walk(-170, 20.9, 190, 23.6);                        
 walk(-42, -70, -38, 9.5); walk(-30, -70, -26, 9.5); walk(34, -70, 38, 9.5); walk(46, -70, 50, 9.5);        // Gehwege an den Querstraßen
 walk(-42, 23.6, -38, 112); walk(-30, 23.6, -26, 112); walk(34, 23.6, 38, 112); walk(46, 23.6, 50, 112);
 for (let x = -164; x < 186; x += 3.2) box(flat(0xc8c0a0), 1.6, 0.02, 0.14, x, -0.09, 17.7, { parent: world });   // Mittelstreifen
-// Eingangstreppe: 5 Stufen
-for (let i = 0; i < 5; i++) { const top = FLOOR_Y - 0.18 * (i + 1) + 0.18 * 0; box(M.concrete, 1.6, top + 0.12, 0.44, 5, -0.12, 9.72 + 0.44 * i, { parent: world, tile: 1 }); }
-box(M.metal, 0.06, 1.0, 2.4, 4.15, 0, 10.7, { parent: world, solid: true }); box(M.metal, 0.06, 1.0, 2.4, 5.85, 0, 10.7, { parent: world, solid: true });
-box(M.concrete, 1.8, 0.14, 0.9, 5, FLOOR_Y - 0.14, 9.95, { parent: world, tile: 1 });
-// Wohnungstür (zu, bis alles erledigt ist)
-const doorLeaf = box(M.woodDark, 0.8, 2.1, 0.08, 5, 0, 9.5);
+// Eingang: eine Stufe wie bei den Nachbarhäusern
+box(M.concrete, 1.7, FLOOR_Y, 0.7, 5, 0, 9.95, { parent: world, tile: 1 });
+// Wohnungstür: Türblatt und Klinke hängen an einem Scharnier und schwingen auf
+const doorPivot = new THREE.Group(); doorPivot.position.set(4.6, 0, 9.5); apt.add(doorPivot);
+{ const leaf = new THREE.Mesh(boxGeo(0.8, 2.1, 0.07, 1), M.woodDark); leaf.position.set(0.4, 1.05, 0); doorPivot.add(leaf);
+  const knob = new THREE.Mesh(boxGeo(0.07, 0.07, 0.16, 1), flat(0xb8a040)); knob.position.set(0.7, 1.0, 0); doorPivot.add(knob);
+  box(M.woodDark, 0.07, 2.12, 0.28, 4.6 + 0.035, 0, 9.5); box(M.woodDark, 0.07, 2.12, 0.28, 5.4 - 0.035, 0, 9.5); box(M.woodDark, 0.8, 0.07, 0.28, 5.0, 2.07, 9.5); }
+let doorAngle = 0;
 const doorCol = { minX: 4.6, maxX: 5.4, minZ: 9.4, maxZ: 9.6 }; colliders.push(doorCol);
-box(flat(0xb8a040), 0.07, 0.07, 0.12, 5.28, 1.0, 9.42);
 
 /* ---- Straßenlampen, Autos, Taxi ---- */
 const streetLamps = [];
@@ -312,6 +312,15 @@ function bench(x, z, ry = 0) { sBox('wood', 1.6, 0.08, 0.5, x, 0.45, z, { ry });
 // Zeilen entlang der Hauptstraße
 rowHouses(-106.8, 9.5, 1, 12, 5.4, 9.5, 6.2); rowHouses(52, 9.5, 1, 14, 5.4, 9.5, 6.2);
 rowHouses(-106.8, 23.6, -1, 12, 5.4, 9.5, 6.2); rowHouses(52, 23.6, -1, 14, 5.4, 9.5, 6.2);
+rowHouses(-21.8, 9.5, 1, 4, 5.4, 9.5, 6.2); rowHouses(10.2, 9.5, 1, 4, 5.4, 9.5, 6.2);          // direkte Nachbarn links und rechts von Emres Haus
+rowHouses(-26, 23.6, -1, 11, 5.4, 9.5, 6.2);                                                       // gegenüber
+{ // Dach und Schornstein auch für Emres Haus
+  const L = 10.4, x0 = -0.2, d = 9.8, h = 6.2, cz = 9.6 - d / 2, a = 0.6, half = d / 2 + 0.4, rise = half * Math.tan(a), len = half / Math.cos(a);
+  for (const s of [1, -1]) { const g = boxGeo(L + 0.8, 0.12, len, 2); g.rotateX(s * a); g.translate(x0 + L / 2, h + rise / 2, cz + s * half / 2); sGeo('roof', g); }
+  const sh = new THREE.Shape(); sh.moveTo(-d / 2, 0); sh.lineTo(d / 2, 0); sh.lineTo(0, rise); sh.lineTo(-d / 2, 0);
+  for (const s of [-1, 1]) { const g = new THREE.ShapeGeometry(sh); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 1.8, uv.getY(i) / 1.8); g.rotateY(s * Math.PI / 2); g.translate(x0 + (s > 0 ? L : 0) + s * 0.02, h, cz); sGeo('brick', g); }
+  sBox('brickDark', 0.7, 1.9, 0.7, 5, h + rise * 0.55, cz);
+}
 // Rückseiten: Gärten, Garagenhöfe, Bäume
 sBox('lawn', 64, 0.03, 34, -74, 0, -18, { tile: 3 }); sBox('lawn', 76, 0.03, 20, 90, 0, -14, { tile: 3 });
 garages(56, -4, 1, 10); garages(-100, -4, 1, 8);
@@ -355,11 +364,12 @@ async function furn(path, x, z, ry, s, solid = true) {
   return wrap;
 }
 const P = Math.PI;
+const FACE = { N: Math.PI / 2, S: -Math.PI / 2, E: 0, W: Math.PI };   // Blickrichtung des Möbelstücks
 const furnJobs = [
-  furn('furniture/SofaDouble.glb', 2.1, 0.8, 0, 1.4), furn('furniture/CoffeeTable.glb', 2.1, 2.5, P / 2, 1.2), furn('furniture/BookCaseBooks.glb', 0.4, 4.15, P / 2, 1.3),
+  furn('furniture/SofaDouble.glb', 2.1, 0.7, FACE.S, 1.4), furn('furniture/CoffeeTable.glb', 2.1, 2.4, FACE.S, 1.2), furn('furniture/BookCaseBooks.glb', 0.42, 4.1, FACE.E, 1.3),
   furn('furniture/Lamp.glb', 3.55, 0.45, 0, 1.5, false), furn('furniture/Plant.glb', 0.5, 0.45, 0, 3, false),
-  furn('furniture/Table.glb', 7.9, 2.3, 0, 1.2), furn('furniture/Chair.glb', 6.85, 2.3, P / 2, 0.95, false), furn('furniture/Chair.glb', 8.95, 2.3, -P / 2, 0.95, false),
-  furn('furniture/BedKing.glb', 1.15, 7.35, P / 2, 1.3), furn('furniture/Closet.glb', 3.2, 5.4, P, 1.35),
+  furn('furniture/Table.glb', 7.9, 2.3, 0, 1.2), furn('furniture/Chair.glb', 6.8, 2.3, FACE.E, 0.95, false), furn('furniture/Chair.glb', 9.0, 2.3, FACE.W, 0.95, false),
+  furn('furniture/BedKing.glb', 1.15, 7.35, 0, 1.3), furn('furniture/Closet.glb', 3.2, 5.4, FACE.S, 1.35),
   furn('props/Wiege.glb', 8.4, 8.0, 0.3, 1.1, false)
 ];
 // Hilfsfunktionen für die Einrichtung
@@ -508,7 +518,7 @@ const R = 0.32;
 function resolve(p) { for (const c of colliders) { const cx = Math.max(c.minX, Math.min(p.x, c.maxX)), cz = Math.max(c.minZ, Math.min(p.z, c.maxZ)), dx = p.x - cx, dz = p.z - cz, d2 = dx * dx + dz * dz; if (d2 < R * R) { if (d2 > 1e-8) { const d = Math.sqrt(d2); p.x += dx / d * (R - d); p.z += dz / d * (R - d); } else { const a = p.x - c.minX, b = c.maxX - p.x, e = p.z - c.minZ, f = c.maxZ - p.z, m = Math.min(a, b, e, f); if (m === a) p.x = c.minX - R; else if (m === b) p.x = c.maxX + R; else if (m === e) p.z = c.minZ - R; else p.z = c.maxZ + R; } } } }
 function groundY(x, z) {
   if (x >= 0 && x <= 10 && z >= 0 && z <= 9.5) return FLOOR_Y;
-  if (x >= 4.2 && x <= 5.8 && z > 9.5 && z < 11.9) return Math.max(0, FLOOR_Y - 0.18 * (Math.floor((z - 9.5) / 0.44) + 1));
+  if (x >= 4.15 && x <= 5.85 && z > 9.5 && z < 10.3) return FLOOR_Y;
   if ((z >= 14.5 && z < 20.9) || (x >= -38 && x <= -30) || (x >= 38 && x <= 46)) return -0.09;
   return 0;
 }
@@ -554,7 +564,7 @@ const interactables = [
   { id: 'tv', pos: [2.1, 4.0], r: 1.5, label: () => 'E: Fernseher', act() { say(TEXT.tv, 4); burst(3000, 0.5, 0.4, 0.15, 'highpass'); } },
   { id: 'fridge', pos: [8.9, 3.45], r: 1.3, label: () => 'E: Kühlschrank öffnen', act() { say(TEXT.fridge, 3.5); } },
   { id: 'door', pos: [5, 9.2], r: 1.4, label: () => phase.doorOpen ? '' : 'E: Wohnungstür öffnen', act() {
-      phase.doorOpen = true; doorLeaf.visible = false; colliders.splice(colliders.indexOf(doorCol), 1); say(phase.v === 'tasks' ? TEXT.doorOpenFree : TEXT.doorOpen, 4); burst(500, 1, 0.25, 0.3); } },
+      phase.doorOpen = true; colliders.splice(colliders.indexOf(doorCol), 1); say(phase.v === 'tasks' ? TEXT.doorOpenFree : TEXT.doorOpen, 4); burst(500, 1, 0.25, 0.3); } },
   { id: 'taxi', pos: [8.2, 14.2], r: 2.8, label: () => (phase.v === 'ready' && taxi.visible) ? 'E: Ins Taxi steigen' : '', act() { if (phase.v === 'ready') finish(); } },
   { id: 'kiosk', pos: [49, 9.6], r: 2.8, label: () => 'E: Kiosk ansehen', act() { say(TEXT.kiosk, 5.5); } },
   { id: 'bus', pos: [27, 13.2], r: 2.4, label: () => 'E: Fahrplan lesen', act() { say(TEXT.bus, 5.5); tone(2000, 0.05, 0.08, 'square'); } },
@@ -632,13 +642,13 @@ function update(dt) {
     if (phase.v === 'ready' && !phase.mirrorDone && player.pos.x > 4 && player.pos.x < 6 && player.pos.z > 6.9 && player.pos.z < 9.4) mirrorEvent();
     const it = findInteractable(); $('prompt').textContent = it ? it.label() : '';
   }
+  doorAngle += ((phase.doorOpen ? 1.75 : 0) - doorAngle) * Math.min(1, dt * 4); doorPivot.rotation.y = doorAngle;
   // Anrufbeantworter blinkt rot
   abLed.visible = tasks.ab ? false : (Math.floor(time * 1.6) % 2 === 0);
   // Flackern in der Wohnung beim Spiegel-Ereignis
   const fl = performance.now() < flickerUntil;
   const BASE = { hall: 11, living: 15, kitchen: 18, bed: 11, bath: 9, nursery: 9 };
   for (const k in BASE) L[k].intensity = BASE[k] * (fl ? (Math.random() > 0.45 ? 1 : 0) : 1);
-  L.kitchen.intensity *= (0.92 + Math.sin(time * 70) * 0.04 + (Math.random() < 0.02 ? -0.5 : 0));
   lampTVL.intensity = 8 * (0.7 + Math.random() * 0.5);
   look.u.uFlash.value = fl && Math.random() < 0.06 ? 0.12 : 0;
   // Zufallsereignisse in der Siedlung: ferner Hund, Zug, flackernde Laterne
