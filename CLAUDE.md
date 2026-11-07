@@ -40,3 +40,11 @@ Datei: `index.html` (eine Datei, three.js r170 per CDN-Importmap von jsdelivr, C
 1. Feedback des Nutzers zum Prototyp einarbeiten (Angst-Werte, Takt-Minispiel, Atmung, Sichtbarkeit/Helligkeit).
 2. Phase 2: ein Gebiet mit echtem Look (Blender-Modelle, Beleuchtung, Sound), z. B. das Haus der Großmutter (Kapitel 1) inklusive erster Karabasan-Sequenz.
 3. Danach Kapitel für Kapitel gemäß Story.
+
+## Designänderungen (zweiter Chat, Vorrang vor älteren Angaben)
+- **Open World statt Schlauch:** Das Dorf Kuyulu (Köy auf einem Berg) ist ein freies Gebiet von ca. **1000 × 1000 m**, Hang steigt nach Norden, Fluss im Süden. Karte: `map/kuyulu_map.json` (Quelle der Wahrheit für Ortspositionen, Viertel, Zufallsorte). Kapitel sind keine Tore, sondern Story-Orte, die frei erreichbar sind. Gegenstände schalten Fortschritt frei (Kessel-Schlüssel, Nadel, Kassette, echter Brief).
+- **Zufalls-Ereignisse („Director"):** Ein System löst abhängig von Ort, Angst und Uhrzeit Ereignisse aus (Stimmen, Schatten, Türen, Funk, Spiegelbilder usw.). Freie Wohnhäuser, Hirtenhütten, Nebenbrunnen sind Zufallsorte mit kleinen Geschichten.
+- **Neuer Prolog in Oberhausen (PLZ 46117, Stadtname im Spiel frei wählbar):** Wohnung, Anrufbeantworter oder Brief über Nuriyes Tod, Selin packt, kleine unheimliche Spiegel-Szene. Dann Flug in die Türkei, Mietwagen, ca. 8 bis 9 Stunden Fahrt (Flughafen und Fahrzeit noch prüfen), Ankunft bei Sonnenuntergang, Mann im Schnee, Graben. Danach beginnt die Dorf-Nacht.
+- **Nachtverlauf mit Uhr:** Start ca. 17 Uhr (Sonnenuntergang), Ende ca. 7:30 Uhr. Vorschlag: 1 Spielstunde ≈ 12 Minuten echte Zeit.
+- **Assets:** Quaternius-Modelle (CC0) unter `assets/models/`, Quellen in `assets/CREDITS.md`. Es fehlen Moschee, Hamam, kleine Hütte (Eigenbau oder weitere Quellen). Kenney und Poly Pizza sind für die Cloud-Umgebung gesperrt, der Nutzer holt von dort selbst.
+- **Veröffentlichung:** GitHub Pages unter https://haramcan.github.io/Horrrorgame/ (Prototyp liegt in `index.html`). Pages lässt sich von Claude nicht einschalten, ist aber bereits aktiv.
