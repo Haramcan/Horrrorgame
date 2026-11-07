@@ -132,7 +132,7 @@ const N = 400, SIZE = 2000;
 // Pads vorab festlegen: Story-Gebäude, Häuser, Platz
 const FOOT = { 'House_1': [6.0, 7.4], 'House_2': [6.2, 9.6], 'House_3': [5.4, 5.9], 'House_4': [5.4, 5.9], 'Inn': [11.3, 11.3], 'Mill': [9.5, 7.6], 'Stable': [13.2, 9.3], 'Blacksmith': [10.9, 9.2], 'Sawmill': [12.3, 9.2] };
 const fpOf = m => FOOT[(m || '').split('/').pop().replace('.glb', '')];
-const PLACEHOLDER = { hamam: [18, 14, 6.5], archiv: [15, 17, 7], unterstand: [5, 4, 3], huette1: [5.5, 4.5, 3.2], huette2: [5.5, 4.5, 3.2], huette3: [5.5, 4.5, 3.2], ruine: [10, 8, 3.5], hoehle: [9, 6, 5] };
+const PLACEHOLDER = { hamam: [30, 16, 6.5], archiv: [20, 20, 7], unterstand: [5, 4, 3], huette1: [5.5, 4.5, 3.2], huette2: [5.5, 4.5, 3.2], huette3: [5.5, 4.5, 3.2], ruine: [10, 8, 3.5], hoehle: [9, 6, 5] };
 const storyB = MAP.places.filter(p => p.type === 'building' && !p.id.startsWith('wh'));
 storyB.forEach(p => { const f = fpOf(p.model); const dims = f ? [f[0] * 2.8 / 2.8, f[1]] : PLACEHOLDER[p.id]; p._d = f ? [f[0], f[1], 0] : dims; addPad(p.x, p.y, Math.max(p._d[0], p._d[1]) * 0.6); });
 MAP.houses.forEach(h => { const f = fpOf(h.model); addPad(h.x, h.z, Math.max(f[0], f[1]) * 0.6); });
@@ -179,13 +179,75 @@ const cache = {};
 const colliders = [];
 async function model(path) { if (!cache[path]) cache[path] = loader.loadAsync('assets/models/' + path).then(g => g.scene); return (await cache[path]).clone(true); }
 function shadowAll(o) { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); }
-const placeholderMat = new THREE.MeshStandardMaterial({ color: 0x8a4a42, roughness: 1 });
-const grayMat = new THREE.MeshStandardMaterial({ color: 0x6b6a70, roughness: 1 });
+/* ---------- Eigenbau-Gebäude (einfache Low-Poly-Formen, später durch Blender-Modelle ersetzbar) ---------- */
+const MAT = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 1, flatShading: true }, o));
+const M = { stone: MAT(0x7b7f86), stoneDark: MAT(0x555961), plaster: MAT(0xb4a98f), roof: MAT(0x6a3f30), lead: MAT(0x6d7885, { roughness: 0.7, metalness: 0.25 }), wood: MAT(0x5a3f28), dark: MAT(0x121317), rubble: MAT(0x6a6c72) };
+const bx = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y + h / 2, z); return m; };
+const cy = (r1, r2, h, mat, x, y, z, seg = 10) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r2, r1, h, seg), mat); m.position.set(x, y + h / 2, z); return m; };
+const dome = (r, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2), mat); m.position.set(x, y, z); return m; };
+const cone = (r, h, mat, x, y, z, seg = 4) => { const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat); m.position.set(x, y + h / 2, z); return m; };
+function buildProcedural(id) {
+  const g = new THREE.Group();
+  if (id === 'hamam') {
+    g.add(bx(18, 5, 14, M.plaster, 0, 0, 0), bx(8, 3.6, 7, M.plaster, -11, 0, 2), bx(6, 3.2, 5, M.plaster, 8, 0, 9));
+    g.add(dome(4.4, M.lead, -4.2, 5, 0), dome(4.4, M.lead, 4.2, 5, 0), dome(2.8, M.lead, -11, 3.6, 2));
+    g.add(cy(0.5, 0.5, 1.4, M.lead, -4.2, 9.3, 0, 6), cy(0.5, 0.5, 1.4, M.lead, 4.2, 9.3, 0, 6));
+    g.add(bx(1.6, 9, 1.6, M.stoneDark, 7.2, 0, -5.4));          // Schornstein
+    g.add(bx(2.2, 3.4, 0.4, M.dark, 8, 0, 11.6));                // Eingang
+    g.userData.steam = [[-4.2, 10.8, 0], [4.2, 10.8, 0], [7.2, 9.4, -5.4]]; g.userData.h = 11;
+  } else if (id === 'archiv') {
+    g.add(bx(12, 6, 14, M.plaster, 0, 0, 0), cy(4.8, 4.6, 2.2, M.plaster, 0, 6, 0, 12), dome(4.9, M.lead, 0, 8.2, 0), cy(0.25, 0.25, 2, M.lead, 0, 13, 0, 6));
+    g.add(bx(12, 3.4, 3.6, M.plaster, 0, 0, 8.6));
+    [-3.6, 0, 3.6].forEach(x => g.add(bx(1.8, 2.6, 0.3, M.dark, x, 0, 10.5)));
+    g.add(cy(1.2, 1.0, 14, M.plaster, 8.5, 0, 5, 10), cy(1.9, 1.9, 0.5, M.stone, 8.5, 12, 5, 10), cy(0.8, 0.8, 3, M.plaster, 8.5, 12.5, 5, 10), cone(1.1, 4.2, M.lead, 8.5, 15.5, 5, 10));
+    g.userData.h = 20;
+  } else if (id === 'unterstand') {
+    g.add(bx(5, 2.4, 4, M.stone, 0, 0, 0), bx(5.8, 0.3, 4.8, M.wood, 0, 2.4, 0), bx(1.1, 1.9, 0.3, M.dark, 0, 0, 2.1));
+    g.userData.h = 3.5;
+  } else if (id.startsWith('huette')) {
+    g.add(bx(5.5, 2.6, 4.5, M.stone, 0, 0, 0));
+    const r = cone(4.1, 2.6, M.roof, 0, 2.6, 0, 4); r.rotation.y = Math.PI / 4; r.scale.set(1.0, 1, 0.82); g.add(r);
+    g.add(bx(1.1, 1.9, 0.3, M.dark, 0, 0, 2.3), bx(0.9, 3.2, 0.9, M.stoneDark, 1.6, 2.4, -0.8));
+    g.userData.h = 6;
+  } else if (id === 'ruine') {
+    g.add(bx(10, 3.4, 0.9, M.stone, 0, 0, -3.5), bx(0.9, 2.6, 7, M.stone, -4.6, 0, 0), bx(0.9, 1.4, 5, M.stone, 4.6, 0, -0.5), bx(3.4, 2.0, 0.9, M.stone, 3.2, 0, 3.4));
+    for (let i = 0; i < 14; i++) g.add(bx(0.5 + hash(i, 1) * 0.8, 0.4 + hash(i, 2) * 0.5, 0.5 + hash(i, 3) * 0.8, M.rubble, (hash(i, 4) - .5) * 9, 0, (hash(i, 5) - .5) * 6));
+    g.userData.h = 4.5;
+  } else if (id === 'hoehle') {
+    g.add(bx(2.2, 6.5, 2.4, M.rubble, -3.4, 0, 0), bx(2.2, 6.5, 2.4, M.rubble, 3.4, 0, 0), bx(9.4, 2.2, 3, M.rubble, 0, 6, -0.2), bx(5, 6, 1.2, M.dark, 0, 0, -0.8));
+    for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2 + hash(i, 7) * 1.6, 0), M.rubble); m.position.set((hash(i, 8) - .5) * 14, 0.8, 0.5 + hash(i, 9) * 3); g.add(m); }
+    g.userData.h = 9;
+  } else g.add(bx(8, 4, 8, MAT(0x8a4a42), 0, 0, 0));
+  return g;
+}
+
+/* ---------- Rauch und Dampf: weiche Sprites, die aufsteigen ---------- */
+const puffTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 2, 32, 32, 30); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const plumes = [];
+function addPlume(x, y, z, color, count, rise, spread, size, alpha) {
+  const sprites = [];
+  for (let i = 0; i < count; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color, transparent: true, depthWrite: false, opacity: 0 })); scene.add(sp); sprites.push({ sp, t0: i / count, ph: hash(i, Math.round(x)) * 6.28 }); }
+  plumes.push({ x, y, z, sprites, rise, spread, size, alpha });
+}
+function updatePlumes(time) {
+  for (const p of plumes) for (const s of p.sprites) {
+    const u = (time * 0.09 + s.t0) % 1;
+    s.sp.position.set(p.x + Math.sin(s.ph + u * 3) * p.spread * u + u * p.spread * 0.8, p.y + p.rise * u, p.z + Math.cos(s.ph) * p.spread * u * 0.5);
+    const sc = p.size * (0.5 + u * 1.6); s.sp.scale.set(sc, sc, 1);
+    s.sp.material.opacity = p.alpha * (1 - u) * smooth(0, 0.12, u);
+  }
+}
+
 const labels = [];
 function addLabel(text, x, y, z, cls) {
   const d = document.createElement('div'); d.className = 'lbl' + (cls ? ' ' + cls : ''); d.textContent = text; document.body.appendChild(d);
   labels.push({ el: d, pos: new THREE.Vector3(x, y, z) });
 }
+function litWindows(obj) {
+  obj.traverse(m => { if (m.isMesh && m.material && m.material.name === 'Windows') { m.material = m.material.clone(); m.material.color.setHex(0x3a2a14); m.material.emissive.setHex(0xffa850); m.material.emissiveIntensity = 1.5; } });
+}
+const lights = [];
+function addGlow(x, y, z, intensity, dist) { const l = new THREE.PointLight(0xffa458, intensity, dist, 2); l.position.set(x, y, z); scene.add(l); lights.push(l); }
 
 const jobs = [];
 // Story-Gebäude
@@ -193,22 +255,17 @@ for (const p of storyB) {
   jobs.push((async () => {
     const y = heightAt(p.x, p.y);
     let obj, h = 8;
-    if (p.model && !p.model.startsWith('FEHLT')) {
+    if (p.model && p.model.endsWith('.glb')) {
       obj = await model(p.model); obj.scale.setScalar(2.8); h = 10;
-    } else {
-      const d = PLACEHOLDER[p.id] || [8, 8, 4];
-      obj = new THREE.Group();
-      const b = new THREE.Mesh(new THREE.BoxGeometry(d[0], d[2], d[1]), p.id === 'hoehle' || p.id === 'ruine' ? grayMat : placeholderMat);
-      b.position.y = d[2] / 2; obj.add(b);
-      if (p.id === 'archiv') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 16, 10), placeholderMat); m.position.set(d[0] / 2 + 1.5, 8, 0); obj.add(m); const k = new THREE.Mesh(new THREE.ConeGeometry(1.5, 4, 10), placeholderMat); k.position.set(d[0] / 2 + 1.5, 18, 0); obj.add(k); }
-      if (p.id === 'hamam') { const k = new THREE.Mesh(new THREE.SphereGeometry(5, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), placeholderMat); k.position.set(0, d[2], 0); obj.add(k); }
-      h = d[2] + 4;
-    }
+    } else { obj = buildProcedural(p.id); h = (obj.userData.h || 6) + 2; }
     obj.position.set(p.x, y, p.y); obj.rotation.y = (p.rot || 0) * Math.PI / 180;
+    // Leben im Dorf: nur das Haus der Großmutter (Rauch, Licht) und die Mühle (Hasan) sind erleuchtet
+    if (p.id === 'haus_oma') { litWindows(obj); addGlow(p.x, y + 4, p.y + 6, 160, 34); addPlume(p.x + 1.2, y + 9.6, p.y - 0.6, 0xb9bcc6, 11, 22, 7, 2.6, 0.5); }
+    if (p.id === 'muehle') { litWindows(obj); addGlow(p.x, y + 4, p.y + 6, 120, 30); }
+    if (p.id === 'hamam' && obj.userData.steam) obj.userData.steam.forEach(([sx, sy, sz]) => addPlume(p.x + sx, y + sy, p.y + sz, 0xe4ebf2, 9, 16, 5, 3.2, 0.42));
     shadowAll(obj); scene.add(obj);
     const d = p._d || [8, 8]; colliders.push({ x: p.x, z: p.y, r: Math.max(d[0], d[1]) * 0.55 });
-    const miss = !p.model || p.model.startsWith('FEHLT');
-    addLabel(p.name + (miss ? ' (Platzhalter)' : ''), p.x, y + h + 3, p.y, miss ? 'miss' : (p.random ? 'free' : ''));
+    addLabel(p.name, p.x, y + h + 3, p.y, p.random ? 'free' : '');
   })());
 }
 // Kulissenhäuser
@@ -226,6 +283,49 @@ for (const h of MAP.houses) {
 for (const id of ['brunnen', 'brunnen2', 'brunnen3']) {
   const p = P[id];
   jobs.push((async () => { const o = await model('village/props/Well.glb'); o.scale.setScalar(2.6); o.position.set(p.x, heightAt(p.x, p.y), p.y); shadowAll(o); scene.add(o); colliders.push({ x: p.x, z: p.y, r: 2.2 }); if (id === 'brunnen') addLabel('Dorfbrunnen', p.x, heightAt(p.x, p.y) + 6, p.y, ''); })());
+}
+// Wegweiser (handgemalte Holzschilder, türkische Ortsnamen)
+function boardTexture(text, side) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = '#8a6a43'; g.fillRect(0, 0, 256, 64); g.strokeStyle = '#4a3320'; g.lineWidth = 4; g.strokeRect(2, 2, 252, 60);
+  g.fillStyle = '#20140a'; g.font = 'bold 34px Georgia, serif'; g.textBaseline = 'middle';
+  if (side === 'front') { g.textAlign = 'left'; g.fillText(text, 14, 34); g.textAlign = 'right'; g.fillText('▶', 244, 34); }
+  else { g.textAlign = 'right'; g.fillText(text, 242, 34); g.textAlign = 'left'; g.fillText('◀', 12, 34); }
+  const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+}
+function signpost(x, z, boards) {
+  const y = heightAt(x, z), g = new THREE.Group();
+  g.add(bx(0.28, 3.6, 0.28, M.wood, 0, 0, 0));
+  boards.forEach((b, i) => {
+    const holder = new THREE.Group(); holder.position.set(0, 3.1 - i * 0.7, 0);
+    holder.rotation.y = Math.atan2(-(b.to[1] - z), b.to[0] - x);
+    const w = 2.8, ph = new THREE.PlaneGeometry(w, 0.62);
+    const f = new THREE.Mesh(ph, new THREE.MeshStandardMaterial({ map: boardTexture(b.text, 'front'), roughness: 1 })); f.position.set(w / 2 + 0.1, 0, 0.05);
+    const k = new THREE.Mesh(ph, new THREE.MeshStandardMaterial({ map: boardTexture(b.text, 'back'), roughness: 1 })); k.position.set(w / 2 + 0.1, 0, -0.05); k.rotation.y = Math.PI;
+    holder.add(f, k); g.add(holder);
+  });
+  g.position.set(x, y, z); shadowAll(g); scene.add(g); colliders.push({ x, z, r: 0.5 });
+}
+signpost(500, 488, [{ text: 'Hamam', to: [P.hamam.x, P.hamam.y] }, { text: 'Değirmen', to: [P.muehle.x, P.muehle.y] }, { text: 'Mezarlık', to: [P.tor.x, P.tor.y] }]);
+signpost(706, 486, [{ text: 'Kuyulu', to: [480, 510] }]);
+signpost(158, 553, [{ text: 'Mezarlık', to: [P.friedhof.x, P.friedhof.y] }]);
+
+// Requisiten rund um die Häuser (Fässer, Kisten, Heu, Karren, Bänke, Marktstände)
+const PROPS = [
+  ['Hay', P.stall.x - 12, P.stall.y + 4, 4.5], ['Hay', P.stall.x - 13.5, P.stall.y + 6, 4.5], ['Hay', P.stall.x - 11, P.stall.y + 7, 4.2], ['Cart', P.stall.x + 4, P.stall.y + 12, 3.4, 0.6],
+  ['Barrel', P.schmiede.x + 8, P.schmiede.y + 5, 4.5], ['Barrel', P.schmiede.x + 9.4, P.schmiede.y + 4.4, 4.5], ['Crate', P.schmiede.x - 7, P.schmiede.y + 6, 4.5], ['Crate', P.schmiede.x - 7.2, P.schmiede.y + 7.2, 4.5, 0.4],
+  ['Bench_1', P.gasthaus.x + 4, P.gasthaus.y + 11, 4.5, 0.1], ['Bench_2', P.gasthaus.x - 5, P.gasthaus.y + 11, 4.5, -0.1], ['Barrel', P.gasthaus.x + 10, P.gasthaus.y + 4, 4.5],
+  ['Barrel', P.muehle.x + 8, P.muehle.y + 6, 4.5], ['Crate', P.muehle.x + 9, P.muehle.y + 7.4, 4.5, 0.3], ['Crate', P.muehle.x + 7.6, P.muehle.y + 7.8, 4.5],
+  ['Barrel', P.haus_oma.x - 6, P.haus_oma.y + 6, 4.5], ['Crate', P.haus_oma.x + 7, P.haus_oma.y + 7, 4.5, 0.5],
+  ['MarketStand_1', 452, 530, 1.2, 0.5], ['MarketStand_2', 510, 536, 1.2, -0.4]
+];
+for (const [name, x, z, sc, rot] of PROPS) jobs.push((async () => { const o = await model('village/props/' + name + '.glb'); o.scale.setScalar(sc); o.position.set(x, heightAt(x, z), z); o.rotation.y = rot || 0; shadowAll(o); scene.add(o); })());
+// Zaun um den Garten des Hauses der Großmutter (mit Lücke an der Südseite für den Weg)
+{
+  const cx = P.haus_oma.x, cz = P.haus_oma.y, hw = 14, hd = 12, seg = 3.5;
+  const put = (x, z, rot) => jobs.push((async () => { const o = await model('village/props/Fence.glb'); o.scale.setScalar(4.4); o.position.set(x, heightAt(x, z), z); o.rotation.y = rot; shadowAll(o); scene.add(o); })());
+  for (let x = -hw; x < hw; x += seg) { put(cx + x + seg / 2, cz - hd, 0); if (Math.abs(x + seg / 2) > 4) put(cx + x + seg / 2, cz + hd, 0); }
+  for (let z = -hd; z < hd; z += seg) { put(cx - hw, cz + z + seg / 2, Math.PI / 2); put(cx + hw, cz + z + seg / 2, Math.PI / 2); }
 }
 // Quelle
 { const p = P.quelle; const m = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.5, 18), new THREE.MeshStandardMaterial({ color: 0x6fa0c8, roughness: 0.2 })); m.position.set(p.x, heightAt(p.x, p.y) + 0.1, p.y); scene.add(m); addLabel('Bergquelle', p.x, m.position.y + 6, p.y, 'free'); }
@@ -357,6 +457,7 @@ function frame(now) {
   }
   const L = LIGHTS[lightName]; sun.position.copy(sun.target.position).addScaledVector(new THREE.Vector3(...L.dir).normalize(), 900);
   camera.position.copy(cam.pos); camera.rotation.set(cam.pitch, cam.yaw, 0);
+  updatePlumes(now / 1000);
   renderer.render(scene, camera);
   // Beschriftungen nur im Flugmodus
   const show = labelsOn && mode === 'fly';
