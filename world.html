@@ -72,19 +72,22 @@ function dseg(px, py, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], l = dx *
 function dpoly(px, py, L) { let m = 1e9; for (let i = 0; i < L.length - 1; i++) m = Math.min(m, dseg(px, py, L[i], L[i + 1])); return m; }
 
 /* ------------------------------------------------------------------ Gelände */
+const MIN = -500, MAX = 1500;
+// Bergkranz-Anteil 0..1 (0 = Talboden, 1 = Kamm). Jede Seite hat eine eigene Hanglänge (Abstand vom Rand bis zum Talfuß).
+function ringT(x, z) {
+  const n = Math.min((x - MIN) / 600, (MAX - x) / 680, (z - MIN) / 830, (MAX - z) / 620);
+  return smooth(1, 0.04, n);
+}
 function baseH(x, z) {
   // Talboden mit Dorfterrasse: Fluss im Süden (0 m), sanft ansteigend bis ca. 40 m im Norden des Dorfes
   let h = smooth(860, 560, z) * 22 + smooth(560, 380, z) * 18;
-  // Bergkranz rundherum. Die Abstände zu den Rändern sind unterschiedlich gewichtet, damit das Tal im Westen (Friedhof)
-  // und im Süden (Hamam, Mühle) genug Platz hat und die Berge im Norden und Osten breit auslaufen.
-  const d = Math.min(x * 2.2, (1000 - x) * 1.6, z * 0.8, (1000 - z) * 1.5);
-  const t = smooth(280, 20, d);
+  const t = ringT(x, z);
   const dRoad = dpoly(x, z, MAP.road), dRiv = dpoly(x, z, MAP.river);
   // Pass für die Straße und Schlucht für den Fluss: dort bleibt der Kranz niedrig
-  const gap = Math.min(lerp(0.2, 1, smooth(25, 120, dRoad)), lerp(0.2, 1, smooth(25, 100, dRiv)));
-  const Hm = 190 + 140 * fbm(x / 200 + 5, z / 200 + 9);
-  const rid = 1 - Math.abs(fbm(x / 70 + 3, z / 70) - 0.5) * 2;
-  h += (Hm * Math.pow(t, 1.25) + (rid * rid * 28 + (fbm(x / 40, z / 40) - 0.5) * 14) * t * t) * gap;
+  const gap = Math.min(lerp(0.25, 1, smooth(30, 330, dRoad)), lerp(0.3, 1, smooth(30, 380, dRiv)));
+  const Hm = 210 + 130 * fbm(x / 260 + 5, z / 260 + 9);
+  const rid = 1 - Math.abs(fbm(x / 90 + 3, z / 90) - 0.5) * 2;
+  h += (Hm * Math.pow(t, 1.1) + (rid * rid * 30 + (fbm(x / 45, z / 45) - 0.5) * 16) * t * t) * gap;
   // leichtes Relief im Talboden
   h += (fbm(x / 90, z / 90) - 0.5) * 2 * (1.5 + 3 * (1 - t));
   h += 10 * Math.exp(-((x - 60) ** 2 + (z - 540) ** 2) / (2 * 70 * 70)) * (1 - t);
@@ -107,7 +110,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.3, 5000);
+const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.3, 8000);
 camera.rotation.order = 'YXZ';
 const hemi = new THREE.HemisphereLight(0xaab4d0, 0x2a2a30, 0.8);
 const sun = new THREE.DirectionalLight(0xffa060, 2.2);
@@ -125,7 +128,7 @@ scene.background = new THREE.Color(LIGHTS.daemmerung.bg);
 scene.fog = new THREE.FogExp2(LIGHTS.daemmerung.bg, LIGHTS.daemmerung.fog);
 
 /* Terrain-Mesh */
-const N = 250, SIZE = 1000;
+const N = 400, SIZE = 2000;
 // Pads vorab festlegen: Story-Gebäude, Häuser, Platz
 const FOOT = { 'House_1': [6.0, 7.4], 'House_2': [6.2, 9.6], 'House_3': [5.4, 5.9], 'House_4': [5.4, 5.9], 'Inn': [11.3, 11.3], 'Mill': [9.5, 7.6], 'Stable': [13.2, 9.3], 'Blacksmith': [10.9, 9.2], 'Sawmill': [12.3, 9.2] };
 const fpOf = m => FOOT[(m || '').split('/').pop().replace('.glb', '')];
@@ -138,7 +141,7 @@ addPad(480, 510, 28);
 
 const geo = new THREE.PlaneGeometry(SIZE, SIZE, N, N);
 geo.rotateX(-Math.PI / 2);
-geo.translate(SIZE / 2, 0, SIZE / 2);
+geo.translate(MIN + SIZE / 2, 0, MIN + SIZE / 2);
 {
   const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)));
@@ -166,8 +169,8 @@ terrain.receiveShadow = true;
 scene.add(terrain);
 // Kartenrand: Wand nach unten, damit die Kante sauber aussieht
 {
-  const skirt = new THREE.Mesh(new THREE.BoxGeometry(SIZE * 1.6, 1, SIZE * 1.6), new THREE.MeshBasicMaterial({ color: 0x05070b }));
-  skirt.position.set(SIZE / 2, -60, SIZE / 2); scene.add(skirt);
+  const skirt = new THREE.Mesh(new THREE.BoxGeometry(SIZE * 1.2, 1, SIZE * 1.2), new THREE.MeshBasicMaterial({ color: 0x05070b }));
+  skirt.position.set(MIN + SIZE / 2, -60, MIN + SIZE / 2); scene.add(skirt);
 }
 
 /* ------------------------------------------------------------------- Modelle */
@@ -246,10 +249,9 @@ await Promise.all(jobs);
 {
   const names = ['Rock_1', 'Rock_2', 'Rock_3'];
   let k = 0;
-  for (let i = 0; i < 260; i++) {
-    const x = hash(i, 1) * 1000, z = hash(i, 2) * 1000;
-    const inNorth = z < 360, side = Math.abs(x - 500) > 380;
-    if (!(inNorth || side)) continue;
+  for (let i = 0; i < 900; i++) {
+    const x = MIN + hash(i, 1) * SIZE, z = MIN + hash(i, 2) * SIZE;
+    if (ringT(x, z) < 0.1) continue;
     if (dpoly(x, z, MAP.river) < 25 || dpoly(x, z, MAP.road) < 15) continue;
     jobs.push((async () => { const o = await model('village/props/' + names[i % 3] + '.glb'); o.scale.setScalar(14 + hash(i, 5) * 30); o.position.set(x, heightAt(x, z) - 1, z); o.rotation.set(0, hash(i, 6) * 6.28, 0); shadowAll(o); scene.add(o); })());
     k++;
@@ -271,11 +273,11 @@ const keys = new Set();
 let labelsOn = true, locked = false, dragging = false;
 function lookAt(from, to) { const d = new THREE.Vector3().subVectors(to, from); cam.yaw = Math.atan2(-d.x, -d.z); cam.pitch = Math.atan2(d.y, Math.hypot(d.x, d.z)); }
 const VIEWS = {
-  dorf: [[640, 120, 838], [470, 40, 470]],
-  sued: [[500, 640, 1180], [480, 40, 480]],
-  oben: [[500, 1650, 540], [500, 0, 500]],
-  ost: [[985, 110, 262], [560, 40, 470]],
-  west: [[60, 90, 520], [480, 40, 520]]
+  dorf: [[640, 100, 900], [470, 40, 470]],
+  sued: [[500, 900, 1500], [480, 40, 450]],
+  oben: [[500, 2500, 520], [500, 0, 500]],
+  ost: [[1420, 150, 160], [700, 40, 450]],
+  west: [[-250, 150, 520], [480, 40, 520]]
 };
 function setView(name) {
   const v = VIEWS[name]; if (!v) return;
@@ -301,7 +303,7 @@ function setMode(m) {
   camera.near = walk ? 0.1 : 1; camera.updateProjectionMatrix();
   sun.shadow.mapSize.set(walk ? 2048 : 4096, walk ? 2048 : 4096);
   if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
-  const e = walk ? 90 : 700; Object.assign(sun.shadow.camera, { left: -e, right: e, top: e, bottom: -e, near: 1, far: 2500 }); sun.shadow.camera.updateProjectionMatrix();
+  const e = walk ? 90 : 1500; Object.assign(sun.shadow.camera, { left: -e, right: e, top: e, bottom: -e, near: 1, far: 2500 }); sun.shadow.camera.updateProjectionMatrix();
   if (!walk && document.pointerLockElement) document.exitPointerLock();
   labels.forEach(l => l.el.style.display = 'none');
   $('help').innerHTML = walk
@@ -342,7 +344,7 @@ function frame(now) {
   if (mode === 'walk') {
     const sp = fast ? 6 : 3.4, sn = Math.sin(cam.yaw), cs = Math.cos(cam.yaw);
     let vx = -sn * fwd + cs * rgt, vz = -cs * fwd - sn * rgt; const l = Math.hypot(vx, vz) || 1;
-    cam.pos.x = clamp(cam.pos.x + vx / l * sp * dt * (fwd || rgt ? 1 : 0), 2, 998); cam.pos.z = clamp(cam.pos.z + vz / l * sp * dt * (fwd || rgt ? 1 : 0), 2, 998);
+    cam.pos.x = clamp(cam.pos.x + vx / l * sp * dt * (fwd || rgt ? 1 : 0), MIN + 5, MAX - 5); cam.pos.z = clamp(cam.pos.z + vz / l * sp * dt * (fwd || rgt ? 1 : 0), MIN + 5, MAX - 5);
     resolveColl(cam.pos, 0.5);
     const ty = heightAt(cam.pos.x, cam.pos.z) + 1.65; cam.pos.y += (ty - cam.pos.y) * Math.min(1, dt * 12);
     sun.target.position.set(cam.pos.x, cam.pos.y, cam.pos.z);
@@ -350,7 +352,7 @@ function frame(now) {
     const sp = (fast ? 400 : 110), f = new THREE.Vector3(-Math.sin(cam.yaw) * Math.cos(cam.pitch), Math.sin(cam.pitch), -Math.cos(cam.yaw) * Math.cos(cam.pitch)), r = new THREE.Vector3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
     cam.pos.addScaledVector(f, fwd * sp * dt).addScaledVector(r, rgt * sp * dt);
     cam.pos.y += ((keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0)) * sp * dt;
-    cam.pos.y = Math.max(cam.pos.y, heightAt(clamp(cam.pos.x, 0, 1000), clamp(cam.pos.z, 0, 1000)) + 3);
+    cam.pos.y = Math.max(cam.pos.y, heightAt(clamp(cam.pos.x, MIN, MAX), clamp(cam.pos.z, MIN, MAX)) + 3);
     sun.target.position.set(500, 0, 500);
   }
   const L = LIGHTS[lightName]; sun.position.copy(sun.target.position).addScaledVector(new THREE.Vector3(...L.dir).normalize(), 900);
