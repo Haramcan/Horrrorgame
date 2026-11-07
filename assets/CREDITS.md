@@ -14,3 +14,6 @@ Die Modelle wurden von FBX nach GLB umgewandelt (FBX2glTF), sonst unverändert.
 Quelle: https://polyhaven.com/textures, Lizenz CC0. Verkleinert auf 512 px.
 old_stone_wall, rustic_stone_wall, rough_plaster_broken, brown_mud_dry, worn_corrugated_iron, weathered_planks (Wände, Dächer, Holz),
 dry_ground_01 und snow_02 (zusammen als `ground_detail.jpg` / `ground_nor.jpg` für den Boden).
+
+## Texturen Heimstadt (Poly Haven, CC0), auf 128 px verkleinert
+beige_wall_001, white_plaster_02, old_wood_floor, dirty_tiles, dirty_carpet, red_bricks_04, asphalt_03, dirty_concrete. Quelle: https://polyhaven.com/textures

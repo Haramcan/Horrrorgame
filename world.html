@@ -44,6 +44,7 @@
   <button data-light="daemmerung" class="on">Dämmerung</button>
   <button data-light="tag">Tag</button>
   <button data-light="nacht">Nacht</button>
+  <button id="btnLook" class="on">VHS-Look</button>
   <button id="btnSnow">Schnee: mittel</button>
   <button id="btnLabels" class="on">Beschriftung</button>
 </div>
@@ -55,6 +56,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { FtfLook } from './lib/ftf_look.js';
 
 const $ = id => document.getElementById(id);
 addEventListener('error', e => { $('err').textContent = 'Fehler: ' + e.message; });
@@ -117,6 +119,8 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.prepend(renderer.domElement);
+const look = new FtfLook(renderer, { height: 360 });
+look.enabled = (location.search.indexOf('clean') < 0);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.3, 8000);
 camera.rotation.order = 'YXZ';
@@ -571,6 +575,7 @@ function setLight(name) {
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
 document.querySelectorAll('[data-walk]').forEach(b => b.onclick = () => walkTo(b.dataset.walk));
 document.querySelectorAll('[data-light]').forEach(b => b.onclick = () => setLight(b.dataset.light));
+$('btnLook').onclick = e => { look.enabled = !look.enabled; e.target.classList.toggle('on', look.enabled); };
 $('btnSnow').onclick = e => { const steps = [[0.7, 'viel'], [0.36, 'mittel'], [0.12, 'wenig']]; const i = (steps.findIndex(s => s[0] === snowAmt) + 1) % steps.length; snowAmt = steps[i][0]; e.target.textContent = 'Schnee: ' + steps[i][1]; paintTerrain(); };
 $('btnLabels').onclick = e => { labelsOn = !labelsOn; e.target.classList.toggle('on', labelsOn); };
 
@@ -585,7 +590,7 @@ addEventListener('mousemove', e => {
   cam.yaw -= e.movementX * k; cam.pitch = clamp(cam.pitch - e.movementY * k, -1.5707, 1.5);
 });
 renderer.domElement.addEventListener('wheel', e => { if (mode !== 'fly') return; e.preventDefault(); const f = new THREE.Vector3(-Math.sin(cam.yaw) * Math.cos(cam.pitch), Math.sin(cam.pitch), -Math.cos(cam.yaw) * Math.cos(cam.pitch)); cam.pos.addScaledVector(f, -e.deltaY * 0.6); }, { passive: false });
-addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); look.resize(); });
 
 /* ------------------------------------------------------------------ Schleife */
 let last = performance.now(), shadowT = 0;
@@ -612,7 +617,7 @@ function frame(now) {
   camera.position.copy(cam.pos); camera.rotation.set(cam.pitch, cam.yaw, 0);
   updatePlumes(now / 1000);
   for (const w of wheels) w.rotation.x += dt * 0.5;
-  renderer.render(scene, camera);
+  look.render(scene, camera);
   // Beschriftungen nur im Flugmodus
   const show = labelsOn && mode === 'fly';
   const v = new THREE.Vector3();
