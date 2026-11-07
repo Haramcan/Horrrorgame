@@ -73,11 +73,20 @@ function dpoly(px, py, L) { let m = 1e9; for (let i = 0; i < L.length - 1; i++) 
 
 /* ------------------------------------------------------------------ Gelände */
 function baseH(x, z) {
-  const s = clamp((860 - z) / 860, 0, 1);
-  let h = 200 * Math.pow(s, 1.8);
+  // Aufbau von Süden nach Norden: Flusstal, sanfter Anstieg zur Dorfterrasse, Terrasse, steiler Berghang, Gipfelkamm.
+  const lower = smooth(860, 560, z) * 22;
+  const bench = smooth(560, 380, z) * 18;
+  const steep = smooth(400, 40, z);
+  let h = lower + bench + 190 * Math.pow(steep, 1.35);
+  // Gipfel: Hauptgipfel im Norden, Schulter im Westen, zweiter Gipfel im Osten, dazwischen Sättel
+  const g = (cx, cz, sx, sz, a) => a * Math.exp(-(((x - cx) ** 2) / (2 * sx * sx) + ((z - cz) ** 2) / (2 * sz * sz)));
+  h += g(520, 40, 130, 120, 95) + g(190, 110, 110, 100, 70) + g(830, 90, 100, 110, 60);
+  // Talseiten steigen an
   const side = smooth(380, 520, Math.abs(x - 500));
-  h += side * side * 45 * (0.35 + s);
-  h += (fbm(x / 90, z / 90) - 0.5) * 2 * (2 + 26 * s * s * s);
+  h += side * side * 45 * (0.35 + steep);
+  // Felsiges Relief: im Norden grob, im Dorfbereich nur leicht
+  const rid = 1 - Math.abs(fbm(x / 70 + 3, z / 70) - 0.5) * 2;
+  h += (fbm(x / 90, z / 90) - 0.5) * 2 * (2 + 20 * steep * steep) + rid * rid * 22 * steep * steep * steep;
   h += 10 * Math.exp(-((x - 60) ** 2 + (z - 540) ** 2) / (2 * 70 * 70));
   if (z > 860) h += (z - 860) * 0.08;
   const dr = dpoly(x, z, MAP.river);
@@ -142,7 +151,7 @@ geo.translate(SIZE / 2, 0, SIZE / 2);
     c.setRGB(0.90, 0.92, 0.96);
     const n = fbm(x / 14, z / 14);
     c.multiplyScalar(0.92 + n * 0.12);
-    const rock = smooth(0.86, 0.66, ny) + smooth(110, 150, y) * 0.5;
+    const rock = smooth(0.88, 0.66, ny) + smooth(150, 230, y) * 0.5;
     c.lerp(new THREE.Color(0.34, 0.35, 0.39), clamp(rock, 0, 1));
     if (y < 45 && ny > 0.8) { const g = smooth(0.62, 0.78, fbm(x / 37 + 9, z / 37)); c.lerp(new THREE.Color(0.40, 0.36, 0.28), g * 0.7); }
     let dl = 1e9; for (const L of MAP.lanes) dl = Math.min(dl, dpoly(x, z, L));
@@ -265,7 +274,7 @@ let labelsOn = true, locked = false, dragging = false;
 function lookAt(from, to) { const d = new THREE.Vector3().subVectors(to, from); cam.yaw = Math.atan2(-d.x, -d.z); cam.pitch = Math.atan2(d.y, Math.hypot(d.x, d.z)); }
 const VIEWS = {
   dorf: [[640, 75, 900], [470, 35, 470]],
-  sued: [[500, 250, 1380], [500, 30, 440]],
+  sued: [[500, 330, 1420], [500, 60, 380]],
   oben: [[500, 1650, 540], [500, 0, 500]],
   ost: [[1380, 230, 540], [480, 30, 470]],
   west: [[-380, 200, 520], [480, 30, 520]]
