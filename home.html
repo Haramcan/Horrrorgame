@@ -59,6 +59,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FtfLook } from './lib/ftf_look.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const $ = id => document.getElementById(id);
 addEventListener('error', e => { $('err').textContent = 'Fehler: ' + e.message; });
@@ -80,6 +81,13 @@ const TEXT = {
   mirror: ['Der Flurspiegel …', 'Da stand jemand hinter mir.', 'Nur Müdigkeit. Nur Müdigkeit.'],
   doorLocked: 'Erst noch erledigen, was wir brauchen.',
   doorOpen: 'Die Tür ist offen. Das Taxi wartet.',
+  doorOpenFree: 'Draußen ist es still. Das Taxi kommt erst, wenn wir fertig gepackt haben.',
+  kiosk: 'Das Büdchen ist zu. Im Fenster hängt ein vergilbter Zettel: „Bin gleich zurück.“ Das Datum ist drei Jahre alt.',
+  bus: 'Nachtbus, letzte Abfahrt 0:12. Die Anzeige flackert und zeigt zweimal dieselbe Uhrzeit.',
+  swing: 'Die Schaukel quietscht. Der Wind war es nicht.',
+  tower: 'Hunderte Klingelschilder. Keinen Namen kenne ich.',
+  mailbox: 'Nur Werbung und eine Mahnung.',
+  bounds: 'Weiter weg will ich nicht. Das Taxi kommt gleich.',
   taxiWait: 'Ich sollte erst alles Nötige einpacken.',
   end: 'Teil 1 endet hier. Als Nächstes: die Fahrt durch die Berge und der Mann im Schnee.'
 };
@@ -190,13 +198,17 @@ facadeRow(-26, 34, 23.5, 34, 11, 23.49, 3);
 facadeRow(-26, 34, -12, -4, 9, -3.99, 4);   // Rückseite
 box(M.brick, 0.4, 9.6, 10, -0.1, 0, 4.75, { parent: world, solid: true });
 
-/* ---- Straße ---- */
-box(M.asphalt, 120, 0.3, 120, 4, -0.42, 20, { parent: world, tile: 3 });                // Grundfläche
-box(M.concrete, 60, 0.12, 4.9, 4, -0.12, 11.95, { parent: world, tile: 1.4 });          // Gehweg vorn (Oberkante y = 0)
-box(M.concrete, 60, 0.12, 2.6, 4, -0.12, 22.2, { parent: world, tile: 1.4 });           // Gehweg gegenüber
-box(M.concrete, 60, 0.14, 0.25, 4, -0.14, 14.5, { parent: world, tile: 1 });             // Bordstein
-box(M.concrete, 60, 0.14, 0.25, 4, -0.14, 20.9, { parent: world, tile: 1 });
-for (let x = -24; x < 32; x += 3.2) box(flat(0xc8c0a0), 1.6, 0.02, 0.14, x, 0, 17.7, { parent: world });   // Mittelstreifen
+/* ---- Straßen und Gehwege (die ganze Siedlung) ---- */
+const GROUND_C = new THREE.MeshLambertMaterial({ map: T.concrete, color: 0x66665f });
+box(GROUND_C, 420, 0.3, 420, 10, -0.42, 20, { parent: world, tile: 3 });                      // Grundfläche (Betonboden)
+const road = (x0, z0, x1, z1) => box(M.asphalt, x1 - x0, 0.03, z1 - z0, (x0 + x1) / 2, -0.12, (z0 + z1) / 2, { parent: world, tile: 3 });
+const walk = (x0, z0, x1, z1) => box(M.concrete, x1 - x0, 0.12, z1 - z0, (x0 + x1) / 2, -0.12, (z0 + z1) / 2, { parent: world, tile: 1.4 });
+road(-170, 14.5, 190, 20.9);                      // Hauptstraße
+road(-38, -70, -30, 112); road(38, -70, 46, 112); // zwei Querstraßen
+walk(-170, 9.5, 190, 14.4); walk(-170, 20.9, 190, 23.6);                        // Gehwege an der Hauptstraße
+walk(-42, -70, -38, 9.5); walk(-30, -70, -26, 9.5); walk(34, -70, 38, 9.5); walk(46, -70, 50, 9.5);        // Gehwege an den Querstraßen
+walk(-42, 23.6, -38, 112); walk(-30, 23.6, -26, 112); walk(34, 23.6, 38, 112); walk(46, 23.6, 50, 112);
+for (let x = -164; x < 186; x += 3.2) box(flat(0xc8c0a0), 1.6, 0.02, 0.14, x, -0.09, 17.7, { parent: world });   // Mittelstreifen
 // Eingangstreppe: 5 Stufen
 for (let i = 0; i < 5; i++) { const top = FLOOR_Y - 0.18 * (i + 1) + 0.18 * 0; box(M.concrete, 1.6, top + 0.12, 0.44, 5, -0.12, 9.72 + 0.44 * i, { parent: world, tile: 1 }); }
 box(M.metal, 0.06, 1.0, 2.4, 4.15, 0, 10.7, { parent: world, solid: true }); box(M.metal, 0.06, 1.0, 2.4, 5.85, 0, 10.7, { parent: world, solid: true });
@@ -207,12 +219,18 @@ const doorCol = { minX: 4.6, maxX: 5.4, minZ: 9.4, maxZ: 9.6 }; colliders.push(d
 box(flat(0xb8a040), 0.07, 0.07, 0.12, 5.28, 1.0, 9.42);
 
 /* ---- Straßenlampen, Autos, Taxi ---- */
-for (const lx of [-10, 6.5, 22]) {
-  box(M.metal, 0.14, 5.2, 0.14, lx, 0, 13.6, { parent: world });
-  box(M.metal, 0.9, 0.1, 0.1, lx + 0.4, 5.15, 13.6, { parent: world });
-  box(glow(0xffb060), 0.5, 0.12, 0.3, lx + 0.8, 5.05, 13.6, { parent: world });
-  lamp(lx + 0.8, 4.8, 13.6, 0xffa850, 110, 26);
+const streetLamps = [];
+function streetLamp(lx, lz, dir = 1) {
+  box(M.metal, 0.14, 5.2, 0.14, lx, 0, lz, { parent: world });
+  box(M.metal, 0.9, 0.1, 0.1, lx + 0.4 * dir, 5.15, lz, { parent: world });
+  box(glow(0xffb060), 0.5, 0.12, 0.3, lx + 0.8 * dir, 5.05, lz, { parent: world });
+  streetLamps.push({ x: lx + 0.8 * dir, z: lz });
 }
+for (const lx of [-10, 6.5, 22]) streetLamp(lx, 13.6);
+for (const lx of [-100, -78, -56, 56, 78, 100, 122, 144]) streetLamp(lx, 13.6);
+for (const lx of [-90, -60, -34, 12, 40, 70, 100, 130]) streetLamp(lx, 21.6, -1);
+for (const lz of [-40, -10, 40, 75, 105]) { streetLamp(-34, lz); streetLamp(42, lz); }
+const lampPool = Array.from({ length: 8 }, () => lamp(0, 4.8, 0, 0xffa850, 190, 30));   // nur die 8 nächsten Laternen leuchten wirklich (Leistung)
 function car(x, z, color, ry = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry;
   box(flat(color), 4.2, 0.7, 1.8, 0, 0.35, 0, { parent: g }); box(flat(color), 2.2, 0.6, 1.6, -0.2, 1.05, 0, { parent: g });
@@ -225,6 +243,96 @@ car(-5.5, 15.6, 0x3a4a5a); car(-17, 15.6, 0x5a3a3a); car(14, 15.6, 0x4a4a42); ca
 const taxi = car(9.5, 15.7, 0xd8cfa8); taxi.visible = false;
 box(glow(0xffd060), 0.7, 0.22, 0.28, -0.2, 1.65, 0, { parent: taxi });
 const taxiLight = lamp(1.5, 0.8, 0, 0xfff0c0, 24, 9, taxi); taxiLight.visible = false;
+{
+  const cols = [0x3a4a5a, 0x5a3a3a, 0x4a4a42, 0x2a3a2a, 0x4a4a4a, 0x6a5a3a, 0x3a3a4a, 0x5a4a4a];
+  let k = 0;
+  for (const x of [-30, 30, -52, -74, -96, 52, 70, 92, 114, 136]) car(x, 15.6, cols[k++ % cols.length], (k % 3 === 0) ? Math.PI : 0);
+  for (const x of [-20, -44, -66, -88, 18, 56, 84, 108]) car(x, 19.4, cols[k++ % cols.length], Math.PI);
+}
+
+/* ---- Siedlung: Reihenhäuser, Kiosk, Hochhaus, Park, Garagen, Bäume, Skyline (zusammengefasst für gute Leistung) ---- */
+const SM = {
+  brick: M.brick, brickDark: tex('brick', 0x9a8070), roof: tex('asphalt', 0xa07468), conc: tex('concrete', 0xb4b0a8), white: M.white, dark: M.dark, pane: M.pane, warm: M.warm,
+  wood: M.woodDark, metal: M.metal, lawn: flat(0x202a1c), sand: flat(0x9a8a62), red: flat(0xa02820), yellow: flat(0xb89030), bark: flat(0x2a2018), glowR: glow(0xff2020), cream: flat(0xd8d0b8), green: flat(0x2a5a3a)
+};
+const SP = {};
+function sBox(key, w, h, d, x, y, z, o = {}) {
+  const g = boxGeo(w, h, d, o.tile || 1.8); if (o.rx) g.rotateX(o.rx); if (o.rz) g.rotateZ(o.rz); if (o.ry) g.rotateY(o.ry); g.translate(x, y + (o.rx || o.rz ? 0 : h / 2), z);
+  (SP[key] = SP[key] || []).push(g);
+  if (o.solid) colliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
+}
+function sGeo(key, g) { (SP[key] = SP[key] || []).push(g); }
+let seedN = 7; const rnd = () => { seedN = (seedN * 16807) % 2147483647; return seedN / 2147483647; };
+function windowAt(lit, x, y, z, out, wdt = 0.95, hgt = 1.3) {
+  sBox(lit ? 'warm' : 'pane', wdt, hgt, 0.06, x, y, z + out * 0.03); sBox('white', wdt + 0.2, 0.08, 0.14, x, y - 0.1, z + out * 0.08);
+}
+// Reihenhaus-Zeile aus Backstein mit Satteldach. out = +1: Fassade blickt nach +z (Körper liegt bei kleineren z), out = -1: nach -z.
+function rowHouses(x0, zf, out, n, w, d, h) {
+  const L = n * w, cx = x0 + L / 2, cz = zf - out * d / 2;
+  sBox('brick', L, h, d, cx, 0, cz, { solid: true, tile: 1.8 });
+  const a = 0.6, half = d / 2 + 0.4, rise = half * Math.tan(a), len = half / Math.cos(a);
+  for (const s of [1, -1]) { const g = boxGeo(L + 0.8, 0.12, len, 2); g.rotateX(s * a); g.translate(cx, h + rise / 2, cz + s * half / 2); sGeo('roof', g); }
+  const sh = new THREE.Shape(); sh.moveTo(-d / 2, 0); sh.lineTo(d / 2, 0); sh.lineTo(0, rise); sh.lineTo(-d / 2, 0);
+  for (const s of [-1, 1]) { const g = new THREE.ShapeGeometry(sh); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 1.8, uv.getY(i) / 1.8); g.rotateY(s * Math.PI / 2); g.translate(x0 + (s > 0 ? L : 0) + s * 0.02, h, cz); sGeo('brick', g); }
+  for (let i = 0; i < n; i++) {
+    const ux = x0 + i * w, left = i % 2 === 0, dx = ux + w * (left ? 0.28 : 0.72), wx = ux + w * (left ? 0.72 : 0.28);
+    sBox('wood', 0.95, 2.0, 0.1, dx, 0, zf + out * 0.04); sBox('conc', 1.5, 0.15, 0.7, dx, 0, zf + out * 0.4); sBox('white', 1.15, 0.1, 0.14, dx, 2.05, zf + out * 0.06);
+    windowAt(rnd() < 0.12, wx, 1.0, zf, out); windowAt(rnd() < 0.14, ux + w * 0.28, 3.6, zf, out); windowAt(rnd() < 0.14, ux + w * 0.72, 3.6, zf, out);
+    if (i % 2 === 0) sBox('brickDark', 0.7, 1.9, 0.7, ux + w, h + rise * 0.55, cz);
+    // Vorgarten-Mäuerchen
+    sBox('conc', w - 0.4, 0.5, 0.18, ux + w / 2, 0, zf + out * 2.6, { tile: 1 });
+  }
+}
+function garages(x0, zf, out, n) {
+  for (let i = 0; i < n; i++) { const x = x0 + i * 3.2 + 1.6, z = zf - out * 2.9; sBox('conc', 3.0, 2.4, 5.6, x, 0, z, { solid: true }); sBox('dark', 2.5, 2.0, 0.08, x, 0, zf + out * 0.04); sBox('metal', 3.2, 0.14, 5.8, x, 2.4, z); }
+}
+function tower(x, z, w, d, h) {
+  sBox('conc', w, h, d, x, 0, z, { solid: true, tile: 2.4 }); sBox('metal', w + 0.6, 0.5, d + 0.6, x, h, z);
+  for (const [nx, nz, face] of [[0, 1, 0], [0, -1, 0], [1, 0, 1], [-1, 0, 1]]) {
+    const span = face ? d : w, cols = Math.floor(span / 3.4);
+    for (let c = 0; c < cols; c++) for (let f = 0; f < Math.floor(h / 3.1) - 1; f++) {
+      const u = -span / 2 + 1.7 + c * 3.4, y = 1.8 + f * 3.1, lit = rnd() < 0.22;
+      if (face) sBox(lit ? 'warm' : 'pane', 0.06, 1.3, 1.1, x + nx * (w / 2 + 0.03), y, z + u); else sBox(lit ? 'warm' : 'pane', 1.1, 1.3, 0.06, x + u, y, z + nz * (d / 2 + 0.03));
+    }
+  }
+  sBox('metal', 0.2, 6, 0.2, x, h + 0.5, z); sBox('glowR', 0.5, 0.5, 0.5, x, h + 6.5, z);
+}
+function tree(x, z, s = 1) {
+  sBox('bark', 0.3 * s, 3.4 * s, 0.3 * s, x, 0, z, { solid: true, tile: 1 });
+  for (let k = 0; k < 7; k++) { const len = 1.7 * s * (0.7 + rnd() * 0.7), g = boxGeo(0.1 * s, len, 0.1 * s, 1); g.translate(0, len / 2, 0); g.rotateZ((rnd() > 0.5 ? 1 : -1) * (0.5 + rnd() * 0.7)); g.rotateY(k * 0.9 + rnd()); g.translate(x, 2.0 * s + k * 0.28 * s, z); sGeo('bark', g); }
+}
+function bench(x, z, ry = 0) { sBox('wood', 1.6, 0.08, 0.5, x, 0.45, z, { ry }); sBox('wood', 1.6, 0.5, 0.06, x - Math.sin(ry) * 0.25, 0.55, z - Math.cos(ry) * 0.25, { ry }); }
+// Zeilen entlang der Hauptstraße
+rowHouses(-106.8, 9.5, 1, 12, 5.4, 9.5, 6.2); rowHouses(52, 9.5, 1, 14, 5.4, 9.5, 6.2);
+rowHouses(-106.8, 23.6, -1, 12, 5.4, 9.5, 6.2); rowHouses(52, 23.6, -1, 14, 5.4, 9.5, 6.2);
+// Rückseiten: Gärten, Garagenhöfe, Bäume
+sBox('lawn', 64, 0.03, 34, -74, 0, -18, { tile: 3 }); sBox('lawn', 76, 0.03, 20, 90, 0, -14, { tile: 3 });
+garages(56, -4, 1, 10); garages(-100, -4, 1, 8);
+for (const [x, z] of [[-96, -10], [-84, -22], [-70, -12], [-60, -26], [-50, -8], [60, -14], [72, -26], [88, -24], [104, -26], [118, -22], [-96, 40], [-80, 50], [-62, 42], [-90, 58]]) tree(x, z, 0.9 + rnd() * 0.5);
+// Kiosk an der Ecke
+sBox('yellow', 4.2, 3.0, 3.2, 49, 0, 5.8, { solid: true }); sBox('warm', 2.4, 1.0, 0.06, 49, 1.2, 7.43); sBox('red', 3.8, 0.12, 1.5, 49, 2.5, 8.0); sBox('wood', 2.8, 0.1, 0.5, 49, 1.05, 7.75); sBox('metal', 4.4, 0.2, 3.4, 49, 3.0, 5.8);
+// Bushaltestelle
+sBox('metal', 3.4, 0.1, 1.4, 27, 2.4, 12.3); sBox('pane', 3.2, 2.2, 0.05, 27, 0.2, 11.7); sBox('wood', 2.4, 0.1, 0.45, 27, 0.5, 12.0); for (const dx of [-1.6, 1.6]) sBox('metal', 0.08, 2.5, 0.08, 27 + dx, 0, 11.7);
+// Hochhaus, Wohnblock
+tower(82, 54, 22, 14, 34); tower(-84, 70, 16, 12, 22);
+// Park mit Weg, Bänken, Spielplatz
+sBox('lawn', 52, 0.03, 66, 4, 0, 71, { tile: 3 }); sBox('conc', 3, 0.03, 66, 4, 0, 71, { tile: 1.4 }); sBox('conc', 52, 0.03, 3, 4, 0, 60, { tile: 1.4 });
+for (const [x, z, ry] of [[1.8, 44, Math.PI / 2], [6.2, 52, -Math.PI / 2], [1.8, 84, Math.PI / 2], [6.2, 92, -Math.PI / 2]]) bench(x, z, ry);
+for (const [x, z] of [[-14, 42], [-18, 58], [-10, 78], [-16, 96], [22, 44], [26, 66], [20, 88], [28, 100], [-4, 100], [14, 100]]) tree(x, z, 0.9 + rnd() * 0.5);
+// Spielplatz: Sandkasten, Rutsche, Schaukel (Sitze sind einzelne Teile für die Animation)
+sBox('conc', 4.2, 0.3, 0.2, 16, 0, 68, { tile: 1 }); sBox('conc', 4.2, 0.3, 0.2, 16, 0, 72.2, { tile: 1 }); sBox('conc', 0.2, 0.3, 4.2, 13.9, 0, 70.1, { tile: 1 }); sBox('conc', 0.2, 0.3, 4.2, 18.1, 0, 70.1, { tile: 1 }); sBox('sand', 4.0, 0.2, 4.0, 16, 0, 70.1);
+sBox('metal', 0.1, 2.6, 0.1, 19, 0, 76, { solid: true }); sBox('metal', 0.1, 2.6, 0.1, 21, 0, 76); sBox('metal', 1.6, 0.1, 1.2, 20, 2.2, 76); sBox('red', 0.9, 0.08, 3.4, 20, 1.1, 78.2, { rx: -0.6 });
+sBox('metal', 0.12, 2.8, 0.12, 8.4, 0, 54); sBox('metal', 0.12, 2.8, 0.12, 12.6, 0, 54); sBox('metal', 4.5, 0.12, 0.12, 10.5, 2.75, 54); sBox('metal', 0.12, 2.8, 0.12, 8.4, 0, 56.4); sBox('metal', 0.12, 2.8, 0.12, 12.6, 0, 56.4);
+colliders.push({ minX: 8.2, maxX: 12.8, minZ: 53.8, maxZ: 56.6 });
+// Parkplatz mit Autos
+sBox('conc', 40, 0.03, 20, -74, 0, 52, { tile: 2 }); for (let i = 0; i < 8; i++) car(-90 + i * 4.8, 48, [0x4a4a42, 0x3a4a5a, 0x5a3a3a, 0x2a3a2a][i % 4], Math.PI / 2);
+// Skyline der Zechen: Fördergerüst, Schornstein, Hallen (ohne Kollision, weit hinten)
+function headframe(x, z) { for (const s of [-1, 1]) { sBox('metal', 0.5, 38, 0.5, x + s * 5, 0, z, { rz: 0 }); sBox('metal', 0.4, 40, 0.4, x + s * 2.4, 0, z, { tile: 4 }); } sBox('metal', 12, 1.2, 1.2, x, 36, z); const g = new THREE.CylinderGeometry(4.5, 4.5, 0.8, 14); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI / 2); g.translate(x, 38.5, z); sGeo('metal', g); sBox('dark', 18, 14, 14, x + 14, 0, z + 8); sBox('glowR', 0.6, 0.6, 0.6, x, 42, z); }
+headframe(-70, -110); headframe(96, -118);
+sBox('conc', 5, 90, 5, 20, 0, -126); sBox('glowR', 0.8, 0.8, 0.8, 20, 90, -126); sBox('conc', 5, 70, 5, -20, 0, -130); sBox('glowR', 0.8, 0.8, 0.8, -20, 70, -130);
+sBox('dark', 60, 22, 24, 0, 0, -146); sBox('dark', 50, 16, 20, 60, 0, -150);
+for (const k in SP) { const m = new THREE.Mesh(mergeGeometries(SP[k], false), SM[k]); world.add(m); }
+
 
 /* ---- Möbel: Modelle (Quaternius CC0) und Eigenbau ---- */
 const gl = new GLTFLoader(), gcache = {};
@@ -273,6 +381,10 @@ const photo = box(M.woodDark, 0.22, 0.28, 0.03, 0.45, 1.9, 3.1, { ry: 0 }); phot
 for (const [x, z, s] of [[6.6, 7.2, 0.8], [6.7, 8.5, 0.7], [9.3, 7.2, 0.9], [9.4, 8.7, 0.6]]) box(M.cardboard, s, s * 0.7, s, x, 0, z, { solid: true });
 // Sperrmüll im Flur, Jacken am Haken
 box(flat(0x3a3a4a), 0.12, 0.9, 0.45, 4.15, 1.0, 5.2); box(flat(0x4a3a2a), 0.12, 0.8, 0.4, 4.15, 1.0, 5.7);
+// Briefkasten neben dem Eingang, Schaukelsitze (animiert)
+box(flat(0xb89030), 0.35, 0.5, 0.2, 3.2, 1.0, 11.2, { parent: world }); box(M.metal, 0.08, 1.0, 0.08, 3.2, 0, 11.2, { parent: world });
+const swingSeats = [9.4, 11.6].map(sx => { const g = new THREE.Group(); g.position.set(sx, 2.75, 55.2); const chain = new THREE.Mesh(boxGeo(0.04, 1.9, 0.04, 1), M.metal); chain.position.y = -0.95; g.add(chain); const seat = new THREE.Mesh(boxGeo(0.7, 0.06, 0.28, 1), M.woodDark); seat.position.y = -1.9; g.add(seat); world.add(g); return g; });
+let swingKick = 0;
 // Spiegel im Flur (Ost-Wand, neben der Wohnungstür)
 class MirrorSurface {
   constructor(w, h, x, y, z, rotY) {
@@ -331,7 +443,7 @@ function resolve(p) { for (const c of colliders) { const cx = Math.max(c.minX, M
 function groundY(x, z) {
   if (x >= 0 && x <= 10 && z >= 0 && z <= 9.5) return FLOOR_Y;
   if (x >= 4.2 && x <= 5.8 && z > 9.5 && z < 11.9) return Math.max(0, FLOOR_Y - 0.18 * (Math.floor((z - 9.5) / 0.44) + 1));
-  if (z >= 14.5 && z < 20.9) return -0.14;
+  if ((z >= 14.5 && z < 20.9) || (x >= -38 && x <= -30) || (x >= 38 && x <= 46)) return -0.09;
   return 0;
 }
 
@@ -375,10 +487,14 @@ const interactables = [
   { id: 'crib', pos: [8.6, 8.2], r: 1.8, label: () => 'E: Wiege ansehen', act() { say(TEXT.crib, 5); } },
   { id: 'tv', pos: [2.1, 4.4], r: 1.6, label: () => 'E: Fernseher', act() { say(TEXT.tv, 4); burst(3000, 0.5, 0.4, 0.15, 'highpass'); } },
   { id: 'fridge', pos: [9.5, 3.4], r: 1.4, label: () => 'E: Kühlschrank öffnen', act() { say(TEXT.fridge, 3.5); } },
-  { id: 'door', pos: [5, 9.2], r: 1.4, label: () => phase.doorOpen ? '' : 'E: Wohnungstür', act() {
-      if (phase.v !== 'ready' || !phase.mirrorDone) { say(phase.v === 'tasks' ? TEXT.doorLocked : TEXT.doorLocked, 3.5); return; }
-      phase.doorOpen = true; doorLeaf.visible = false; colliders.splice(colliders.indexOf(doorCol), 1); say(TEXT.doorOpen, 4); burst(500, 1, 0.25, 0.3); } },
-  { id: 'taxi', pos: [8.2, 14.2], r: 2.6, label: () => phase.doorOpen ? 'E: Ins Taxi steigen' : '', act() { if (phase.doorOpen) finish(); } }
+  { id: 'door', pos: [5, 9.2], r: 1.4, label: () => phase.doorOpen ? '' : 'E: Wohnungstür öffnen', act() {
+      phase.doorOpen = true; doorLeaf.visible = false; colliders.splice(colliders.indexOf(doorCol), 1); say(phase.v === 'tasks' ? TEXT.doorOpenFree : TEXT.doorOpen, 4); burst(500, 1, 0.25, 0.3); } },
+  { id: 'taxi', pos: [8.2, 14.2], r: 2.8, label: () => (phase.v === 'ready' && taxi.visible) ? 'E: Ins Taxi steigen' : '', act() { if (phase.v === 'ready') finish(); } },
+  { id: 'kiosk', pos: [49, 9.6], r: 2.8, label: () => 'E: Kiosk ansehen', act() { say(TEXT.kiosk, 5.5); } },
+  { id: 'bus', pos: [27, 13.2], r: 2.4, label: () => 'E: Fahrplan lesen', act() { say(TEXT.bus, 5.5); tone(2000, 0.05, 0.08, 'square'); } },
+  { id: 'swing', pos: [10.5, 57.4], r: 2.6, label: () => 'E: Schaukel anstoßen', act() { say(TEXT.swing, 5); swingKick = 1; burst(1500, 6, 0.5, 0.12); } },
+  { id: 'tower', pos: [82, 46.3], r: 3.2, label: () => 'E: Klingelschilder ansehen', act() { say(TEXT.tower, 5.5); } },
+  { id: 'mailbox', pos: [3.2, 11.8], r: 1.6, label: () => 'E: Briefkasten', act() { say(TEXT.mailbox, 4.5); } }
 ];
 let abLedBlink = 0;
 function findInteractable() {
@@ -431,7 +547,7 @@ $('overlay').addEventListener('click', begin);
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); look.resize(); });
 
 /* ------------------------------------------------------------------------ Hauptschleife */
-let last = performance.now(), stepT = 0;
+let last = performance.now(), stepT = 0, boundsT = -99, nextEvent = 25, towerBlink = 0;
 function update(dt) {
   time += dt;
   if (subTimer > 0) { subTimer -= dt; if (subTimer <= 0) { $('sub').textContent = ''; subShift(); } }
@@ -440,7 +556,9 @@ function update(dt) {
     const sp = (f || r) ? (run ? 3.4 : 1.9) : 0, sn = Math.sin(player.yaw), cs = Math.cos(player.yaw);
     let vx = -sn * f + cs * r, vz = -cs * f - sn * r; const l = Math.hypot(vx, vz) || 1;
     player.pos.x += vx / l * sp * dt; player.pos.z += vz / l * sp * dt;
-    player.pos.x = Math.max(-24, Math.min(30, player.pos.x)); player.pos.z = Math.max(0.35, Math.min(32, player.pos.z));
+    const bx = Math.max(-108, Math.min(128, player.pos.x)), bz = Math.max(-66, Math.min(106, player.pos.z));
+    if ((bx !== player.pos.x || bz !== player.pos.z) && time - boundsT > 8) { boundsT = time; say(TEXT.bounds, 4); }
+    player.pos.x = bx; player.pos.z = bz;
     resolve(player.pos);
     const gy = groundY(player.pos.x, player.pos.z) + 1.65; player.pos.y += (gy - player.pos.y) * Math.min(1, dt * 12);
     if (sp > 0) { player.bob += dt * (run ? 10 : 7); stepT -= dt * (run ? 3 : 1.9); if (stepT <= 0) { stepT = 1; burst(player.pos.z < 9.5 && player.pos.x > 0 && player.pos.x < 10 ? 300 : 700, 1, 0.07, 0.13, 'lowpass'); } }
@@ -452,10 +570,22 @@ function update(dt) {
   abLed.visible = tasks.ab ? false : (Math.floor(time * 1.6) % 2 === 0);
   // Flackern in der Wohnung beim Spiegel-Ereignis
   const fl = performance.now() < flickerUntil;
-  for (const k of ['hall', 'living', 'kitchen', 'bed', 'bath', 'nursery']) L[k].visible = fl ? Math.random() > 0.45 : true;
-  L.kitchen.intensity = 18 * (0.92 + Math.sin(time * 70) * 0.04 + (Math.random() < 0.02 ? -0.5 : 0));
+  const BASE = { hall: 11, living: 15, kitchen: 18, bed: 11, bath: 9, nursery: 9 };
+  for (const k in BASE) L[k].intensity = BASE[k] * (fl ? (Math.random() > 0.45 ? 1 : 0) : 1);
+  L.kitchen.intensity *= (0.92 + Math.sin(time * 70) * 0.04 + (Math.random() < 0.02 ? -0.5 : 0));
   lampTVL.intensity = 8 * (0.7 + Math.random() * 0.5);
   look.u.uFlash.value = fl && Math.random() < 0.06 ? 0.12 : 0;
+  // Zufallsereignisse in der Siedlung: ferner Hund, Zug, flackernde Laterne
+  if (started && !ended && time > nextEvent) {
+    nextEvent = time + 28 + Math.random() * 40;
+    const k = Math.floor(Math.random() * 3);
+    if (k === 0) { for (let i = 0; i < 3; i++) setTimeout(() => { burst(650, 4, 0.16, 0.1); tone(420, 0.14, 0.05, 'sawtooth', 240); }, i * 380); }
+    else if (k === 1 && AC) { const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true; const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 160; const g = AC.createGain(), t0 = AC.currentTime; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.18, t0 + 3); g.gain.linearRampToValueAtTime(0, t0 + 7); s.connect(f).connect(g).connect(master); s.start(); s.stop(t0 + 7.2); setTimeout(() => { tone(311, 1.2, 0.04, 'sine'); tone(392, 1.2, 0.04, 'sine'); }, 2500); }
+    else { const l = lampPool[Math.floor(Math.random() * 4)]; let n = 0; const iv = setInterval(() => { l.intensity = l.intensity > 0 ? 0 : 190; if (++n > 8) { clearInterval(iv); l.intensity = 190; } }, 90); }
+  }
+  { const px = player.pos.x, pz = player.pos.z, near = streetLamps.map(l => [Math.hypot(l.x - px, l.z - pz), l]).sort((a, b) => a[0] - b[0]); for (let i = 0; i < lampPool.length; i++) lampPool[i].position.set(near[i][1].x, 4.8, near[i][1].z); }
+  swingKick = Math.max(0, swingKick - dt * 0.18); swingSeats.forEach((g, i) => { g.rotation.x = Math.sin(time * 2.1 + i) * 0.45 * swingKick; });
+  towerBlink += dt;
   camera.position.set(player.pos.x, player.pos.y + Math.sin(player.bob) * 0.035, player.pos.z); camera.rotation.set(player.pitch, player.yaw, 0);
   const d = new Date(Date.UTC(2026, 10, 7, 23, 41, 0) + time * 1000); $('stamp').textContent = 'OBERHAUSEN  ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ':' + String(d.getUTCSeconds()).padStart(2, '0');
 }
