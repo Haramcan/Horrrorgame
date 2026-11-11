@@ -56,7 +56,7 @@
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 5 · Nummern mit Taste N, Ansicht melden mit Taste B</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 6 · Eingänge im Innenhof, Balkone außen, Parkplätze mit Spielplätzen</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -198,8 +198,8 @@ function windowPane(horiz, c, from, to, y0, y1, lit) {
 /* ---- Grundriss der Wohnung (Hochparterre), 10 x 9,5 m, Norden oben (z = 0) ---- */
 const WIN = [0.95, 2.05];
 // Außenwände
-wall(0, 0, 10, 0, [[1.2, 3.0, ...WIN], [7.0, 8.6, ...WIN]], 'N');
-wall(0, 9.5, 10, 9.5, [[1.0, 3.0, ...WIN], [4.6, 5.4, 0, 2.1], [7.0, 9.0, ...WIN]], 'S');
+wall(0, 0, 10, 0, [[1.2, 3.0, ...WIN], [4.6, 5.4, 0, 2.1], [7.0, 8.6, ...WIN]], 'N');
+wall(0, 9.5, 10, 9.5, [[1.0, 3.0, ...WIN], [7.0, 9.0, ...WIN]], 'S');
 wall(0, -0.1, 0, 9.6, [], 'W');
 wall(10, -0.1, 10, 9.6, [], 'E');
 windowPane(true, 0, 1.2, 3.0, ...WIN); windowPane(true, 0, 7.0, 8.6, ...WIN); windowPane(true, 9.5, 1.0, 3.0, ...WIN); windowPane(true, 9.5, 7.0, 9.0, ...WIN);
@@ -266,20 +266,27 @@ function facePut(key, ew, along, h, norm, a, y, fc, nOff, o = {}) {
   if (ew) sBox(key, along, h, norm, a, y, fc + nOff, o); else sBox(key, norm, h, along, fc + nOff, y, a, o);
 }
 
-/* ---------- Die zwölf Hausteile ---------- */
+/* ---------- Die zwölf Hausteile ----------
+   Regel (Nutzer): Eingänge, Treppentürme, Hecken und Wege liegen auf der Hofseite (innen), Balkone nur auf der Außenseite.
+   N-S-Flügel ('e'): Hofseite = Osten, Außenseite = Westen. O-W-Flügel ('s'): Hofseite = Norden, Außenseite = Süden (Straße). */
 const SEGS = [
-  { id: 'A1', x0: -77.2, z0: -42.9, x1: -66.7, z1: -25.3, front: 'e' }, { id: 'A2', x0: -77.2, z0: -25.3, x1: -66.7, z1: -4.8, front: 'e' },
-  { id: 'A3', x0: -73.0, z0: -4.8, x1: -56.9, z1: 4.9, front: 's' }, { id: 'A4', x0: -56.9, z0: -3.7, x1: -40.1, z1: 6.0, front: 's' },
+  { id: 'A1', x0: -80.2, z0: -42.9, x1: -69.7, z1: -25.3, front: 'e' }, { id: 'A2', x0: -80.2, z0: -25.3, x1: -69.7, z1: -4.8, front: 'e' },
+  { id: 'A3', x0: -76.0, z0: -4.8, x1: -59.9, z1: 4.9, front: 's', tc: -64.8 }, { id: 'A4', x0: -59.9, z0: -3.7, x1: -43.1, z1: 6.0, front: 's', tc: -51.5 },
   { id: 'B1', x0: -21.0, z0: -38.7, x1: -10.5, z1: -21.1, front: 'e' }, { id: 'B2', x0: -21.0, z0: -21.1, x1: -10.5, z1: -1.3, front: 'e' },
-  { id: 'B3', x0: -18.1, z0: -1.3, x1: -0.1, z1: 8.4, front: 's' }, { id: 'B4', x0: -0.1, z0: -0.1, x1: 17.9, z1: 9.6, front: 's', emre: true },
+  { id: 'B3', x0: -18.1, z0: -1.3, x1: -0.1, z1: 8.4, front: 's', tc: -5.3 }, { id: 'B4', x0: -0.1, z0: -0.1, x1: 17.9, z1: 9.6, front: 's', emre: true, tc: 5.0 },
   { id: 'C1', x0: 34.5, z0: -34.5, x1: 45.0, z1: -17.7, front: 'e' }, { id: 'C2', x0: 34.5, z0: -17.7, x1: 45.0, z1: 2.2, front: 'e' },
-  { id: 'C3', x0: 39.1, z0: 2.2, x1: 55.1, z1: 11.9, front: 's' }, { id: 'C4', x0: 55.1, z0: 3.3, x1: 72.0, z1: 13.0, front: 's' }
+  { id: 'C3', x0: 39.1, z0: 2.2, x1: 55.1, z1: 11.9, front: 's', tc: 50.0 }, { id: 'C4', x0: 55.1, z0: 3.3, x1: 72.0, z1: 13.0, front: 's', tc: 63.5 }
 ];
 const TOWERS = [];
 for (const s of SEGS) {
-  s.ew = s.front === 's'; s.tC = (s.ew ? s.x0 : s.z0) + 5.1; s.tp = s.emre ? 2.0 : 1.2;
-  TOWERS.push(s.ew ? [s.tC - 1.7, s.z1, s.tC + 1.7, s.z1 + s.tp] : [s.x1, s.tC - 1.7, s.x1 + s.tp, s.tC + 1.7]);
+  s.ew = s.front === 's';
+  s.fcIn = s.ew ? s.z0 : s.x1; s.sgIn = s.ew ? -1 : 1;           // Hofseite
+  s.fcOut = s.ew ? s.z1 : s.x0; s.sgOut = s.ew ? 1 : -1;         // Außenseite
+  s.tp = s.emre ? 2.0 : 1.2;
+  s.tC = s.tc !== undefined ? s.tc : s.z0 + 5.1;
+  TOWERS.push(s.ew ? [s.tC - 1.7, s.z0 - s.tp, s.tC + 1.7, s.z0] : [s.x1, s.tC - 1.7, s.x1 + s.tp, s.tC + 1.7]);
 }
+const doorOut = (s, d) => s.ew ? [s.tC, s.fcIn + s.sgIn * d] : [s.fcIn + s.sgIn * d, s.tC];     // Punkt vor der Tür im Abstand d
 const rectHit = (a, b, m = 0) => a[0] < b[2] - m && a[2] > b[0] + m && a[1] < b[3] - m && a[3] > b[1] + m;
 function hitsAny(r, self, m = 0.15) {
   for (const o of SEGS) if (o !== self && rectHit(r, [o.x0, o.z0, o.x1, o.z1], m)) return true;
@@ -287,7 +294,7 @@ function hitsAny(r, self, m = 0.15) {
   return false;
 }
 const inSeg = (x, z, pad = 0) => SEGS.some(o => x > o.x0 - pad && x < o.x1 + pad && z > o.z0 - pad && z < o.z1 + pad);
-const PATHS = [];
+const SWINGS = [], PLAYS = [];
 
 function win(ew, a, fy, fc, n, kind) {
   const w = 1.4, h = 1.15, y = FLOOR_Y + fy;
@@ -297,15 +304,17 @@ function win(ew, a, fy, fc, n, kind) {
   facePut('white', ew, 0.07, h, 0.07, a, y, fc, n * 0.07);
   facePut('white', ew, w + 0.34, 0.07, 0.2, a, y - 0.16, fc, n * 0.1);
 }
-function balcony(ew, a, f, fc) {
+function balcony(ew, a, f, fc, sg) {
   const y = FLOOR_Y + f * FP, ww = 2.7, dp = 1.4;
-  facePut('paneB', ew, 1.9, 2.0, 0.06, a, y + 0.05, fc, 0.03);
-  facePut('white', ew, 2.1, 2.2, 0.04, a, y - 0.05, fc, 0.015);
-  facePut('white', ew, 0.07, 2.0, 0.07, a, y + 0.05, fc, 0.07);
-  facePut('balc', ew, ww, 0.16, dp, a, y - 0.1, fc, dp / 2);
-  facePut('balc', ew, ww, 0.42, 0.07, a, y + 0.08, fc, dp - 0.04); facePut('balc', ew, ww, 0.42, 0.07, a, y + 0.56, fc, dp - 0.04);
-  facePut('balc', ew, 0.07, 0.9, dp, a - ww / 2 + 0.035, y + 0.08, fc, dp / 2); facePut('balc', ew, 0.07, 0.9, dp, a + ww / 2 - 0.035, y + 0.08, fc, dp / 2);
+  facePut('paneB', ew, 1.9, 2.0, 0.06, a, y + 0.05, fc, sg * 0.03);
+  facePut('white', ew, 2.1, 2.2, 0.04, a, y - 0.05, fc, sg * 0.015);
+  facePut('white', ew, 0.07, 2.0, 0.07, a, y + 0.05, fc, sg * 0.07);
+  facePut('balc', ew, ww, 0.16, dp, a, y - 0.1, fc, sg * dp / 2);
+  facePut('balc', ew, ww, 0.42, 0.07, a, y + 0.08, fc, sg * (dp - 0.04)); facePut('balc', ew, ww, 0.42, 0.07, a, y + 0.56, fc, sg * (dp - 0.04));
+  facePut('balc', ew, 0.07, 0.9, dp, a - ww / 2 + 0.035, y + 0.08, fc, sg * dp / 2); facePut('balc', ew, 0.07, 0.9, dp, a + ww / 2 - 0.035, y + 0.08, fc, sg * dp / 2);
 }
+// Hecken- und Wegprüfung: wird erst nach den Wegen und Parkplätzen aufgerufen
+function freeSpot(x, z, m) { return !nearWalk(x, z, m) && !inLot(x, z, m) && !PLAYS.some(p => x > p[0] - m && x < p[2] + m && z > p[1] - m && z < p[3] + m); }
 
 function buildSeg(s) {
   const ew = s.ew, w = s.x1 - s.x0, d = s.z1 - s.z0, cx = (s.x0 + s.x1) / 2, cz = (s.z0 + s.z1) / 2, emre = !!s.emre;
@@ -321,81 +330,85 @@ function buildSeg(s) {
   // Sockel
   sBox('plinth', w, 0.5, 0.06, cx, 0, s.z1 + 0.03); sBox('plinth', w, 0.5, 0.06, cx, 0, s.z0 - 0.03);
   sBox('plinth', 0.06, 0.5, d, s.x0 - 0.03, 0, cz); sBox('plinth', 0.06, 0.5, d, s.x1 + 0.03, 0, cz);
-  // Fenster, Balkone, Kellerfenster
-  const a0 = ew ? s.x0 : s.z0, aLen = ew ? w : d, tC = s.tC, fcF = ew ? s.z1 : s.x1, fcB = ew ? s.z0 : s.x0;
+  // Fenster und Balkone
+  const a0 = ew ? s.x0 : s.z0, aLen = ew ? w : d, tC = s.tC, tp = s.tp;
   const bays = []; for (let k = 0; a0 + 2.1 + 3 * k < a0 + aLen - 0.7; k++) bays.push(a0 + 2.1 + 3 * k);
-  const covered = (a, fc, n) => ew ? inSeg(a, fc + n * 0.4) : inSeg(fc + n * 0.4, a);
+  const covered = (a, fc, sg) => ew ? inSeg(a, fc + sg * 0.4) : inSeg(fc + sg * 0.4, a);
   for (let k = 0; k < bays.length; k++) {
     const a = bays[k], nearT = Math.abs(a - tC) < 1.8;
-    if (!nearT) {
-      if (!covered(a, fcF, 1)) facePut('dark', ew, 0.8, 0.25, 0.05, a, 0.12, fcF, 0.07);
+    // Hofseite (innen): nur Fenster, daneben der Treppenturm mit der Eingangstür
+    if (!nearT && !covered(a, s.fcIn, s.sgIn)) {
+      facePut('dark', ew, 0.8, 0.25, 0.05, a, 0.12, s.fcIn, s.sgIn * 0.07);
+      for (let f = 0; f < 4; f++) { if (emre && f === 0 && a < 10.8) continue; win(ew, a, f * FP + 0.95, s.fcIn, s.sgIn); }
+    }
+    // Außenseite: Balkone ab dem ersten Obergeschoss, daneben Fenster
+    if (!covered(a, s.fcOut, s.sgOut)) {
       for (let f = 0; f < 4; f++) {
-        if (emre && f === 0 && a < 10.8) continue;                                       // dort liegt Emres Wohnung mit eigenen Fenstern
-        if (covered(a, fcF, 1)) continue;
-        const bal = f >= 1 && k >= 2 && k % 2 === 0, br = ew ? [a - 1.4, fcF, a + 1.4, fcF + 1.45] : [fcF, a - 1.4, fcF + 1.45, a + 1.4];
-        if (bal && !hitsAny(br, s)) balcony(ew, a, f, fcF); else win(ew, a, f * FP + 0.95, fcF, 1);
+        if (emre && f === 0 && a < 10.8) continue;
+        if (nearT) { facePut('paneC', ew, 0.7, 1.4, 0.06, a, FLOOR_Y + f * FP + 0.9, s.fcOut, s.sgOut * 0.03); facePut('white', ew, 0.9, 1.6, 0.04, a, FLOOR_Y + f * FP + 0.8, s.fcOut, s.sgOut * 0.015); continue; }
+        const e1 = s.fcOut + s.sgOut * 1.45, lo = Math.min(s.fcOut, e1), hi = Math.max(s.fcOut, e1);
+        const br = ew ? [a - 1.4, lo, a + 1.4, hi] : [lo, a - 1.4, hi, a + 1.4];
+        if (f >= 1 && k % 2 === 0 && !hitsAny(br, s)) balcony(ew, a, f, s.fcOut, s.sgOut); else win(ew, a, f * FP + 0.95, s.fcOut, s.sgOut);
+      }
+      if (!nearT) facePut('dark', ew, 0.8, 0.25, 0.05, a, 0.12, s.fcOut, s.sgOut * 0.07);
+    }
+  }
+  // Treppenturm auf der Hofseite
+  const fc = s.fcIn, sg = s.sgIn;
+  if (!emre) {
+    facePut('concL', ew, 3.2, TOPY + 0.9, tp, tC, 0, fc, sg * tp / 2);
+    facePut('door', ew, 1.1, 2.1, 0.06, tC, FLOOR_Y, fc, sg * (tp + 0.03));
+    facePut('concL', ew, 1.4, 0.04, 0.06, tC, FLOOR_Y + 1.3, fc, sg * (tp + 0.04));
+  } else {
+    facePut('concL', ew, 3.4, TOPY + 0.9 - (FLOOR_Y + H), tp, tC, FLOOR_Y + H, fc, sg * tp / 2);
+  }
+  facePut('concL', ew, 2.4, 0.12, 1.1, tC, FLOOR_Y + 2.35, fc, sg * (tp + 0.5));                 // Vordach
+  facePut('warm', ew, 0.3, 0.08, 0.2, tC, FLOOR_Y + 2.26, fc, sg * (tp + 0.15));                  // Lampe über der Tür
+  facePut('conc', ew, 1.9, 0.15, 0.7, tC, 0, fc, sg * (tp + 0.35));                               // Stufe
+  for (let f = 1; f < 4; f++) { facePut('paneC', ew, 0.8, 1.2, 0.06, tC, FLOOR_Y + f * FP + 1.0, fc, sg * (tp + 0.03)); facePut('white', ew, 1.0, 1.4, 0.04, tC, FLOOR_Y + f * FP + 0.9, fc, sg * (tp + 0.015)); }
+  sBox('fas', ew ? 3.6 : tp + 0.4, 0.15, ew ? tp + 0.4 : 3.6, ew ? tC : fc + sg * tp / 2, TOPY + 0.9, ew ? fc + sg * tp / 2 : tC);   // Dach des Turms
+  // Hecken vor dem Erdgeschoss, beidseitig, nie auf Wegen, Parkplätzen und Spielplätzen
+  for (const [fcx, sgx] of [[s.fcIn, s.sgIn], [s.fcOut, s.sgOut]]) {
+    for (const [h0, h1] of [[a0 + 0.4, tC - 2.1], [tC + 2.1, a0 + aLen - 0.4]]) {
+      for (let p0 = h0; p0 < h1 - 0.6; p0 += 4) {
+        const p1 = Math.min(p0 + 4, h1), e0 = fcx + sgx * 0.5, e1 = fcx + sgx * 1.4, lo = Math.min(e0, e1), hi = Math.max(e0, e1);
+        const r = ew ? [p0, lo, p1, hi] : [lo, p0, hi, p1];
+        if (hitsAny(r, s, 0.05)) continue;
+        let ok = true; for (let q = p0; q <= p1 + 0.01; q += 1) { const px = ew ? q : (lo + hi) / 2, pz = ew ? (lo + hi) / 2 : q; if (!freeSpot(px, pz, 0.4)) ok = false; }
+        if (!ok) continue;
+        facePut('hedge', ew, p1 - p0, 0.85, 0.9, (p0 + p1) / 2, 0, fcx, sgx * 0.95); colliders.push({ minX: r[0], minZ: r[1], maxX: r[2], maxZ: r[3] });
       }
     }
-    for (let f = 0; f < 4; f++) {                                                         // Rückseite
-      if (emre && f === 0 && a < 10.8) continue;
-      if (covered(a, fcB, -1)) continue;
-      if (nearT) { facePut('paneC', ew, 0.7, 1.4, 0.06, a, FLOOR_Y + f * FP + 0.9, fcB, -0.03); facePut('white', ew, 0.9, 1.6, 0.04, a, FLOOR_Y + f * FP + 0.8, fcB, -0.015); }
-      else win(ew, a, f * FP + 0.95, fcB, -1);
-    }
-  }
-  // Treppenturm
-  const tp = s.tp;
-  if (!emre) {
-    facePut('concL', ew, 3.2, TOPY + 0.9, tp, tC, 0, fcF, tp / 2);
-    facePut('door', ew, 1.1, 2.1, 0.06, tC, FLOOR_Y, fcF, tp + 0.03);
-    facePut('concL', ew, 1.4, 0.04, 0.06, tC, FLOOR_Y + 1.3, fcF, tp + 0.04);
-  } else {
-    facePut('concL', ew, 3.4, TOPY + 0.9 - (FLOOR_Y + H), tp, tC, FLOOR_Y + H, fcF, tp / 2);
-  }
-  facePut('concL', ew, 2.4, 0.12, 1.1, tC, FLOOR_Y + 2.35, fcF, tp + 0.5);                 // Vordach
-  facePut('warm', ew, 0.3, 0.08, 0.2, tC, FLOOR_Y + 2.26, fcF, tp + 0.15);                  // Lampe über der Tür
-  facePut('conc', ew, 1.9, 0.15, 0.7, tC, 0, fcF, tp + 0.35);                               // Stufe
-  for (let f = 1; f < 4; f++) { facePut('paneC', ew, 0.8, 1.2, 0.06, tC, FLOOR_Y + f * FP + 1.0, fcF, tp + 0.03); facePut('white', ew, 1.0, 1.4, 0.04, tC, FLOOR_Y + f * FP + 0.9, fcF, tp + 0.015); }
-  sBox('fas', ew ? 3.6 : tp + 0.4, 0.15, ew ? tp + 0.4 : 3.6, ew ? tC : fcF + tp / 2, TOPY + 0.9, ew ? fcF + tp / 2 : tC);   // Dach des Turms
-  // Weg zum Gehweg (Südseite) und Hecken vor dem Erdgeschoss
-  // (keine Wege vom Treppenturm zur Straße: dort liegt Rasen, die echten Wege stehen unten in WALKS)
-  for (const [h0, h1] of [[a0 + 0.4, tC - 2.1], [tC + 2.1, a0 + aLen - 0.4]]) {
-    if (h1 - h0 < 0.8) continue;
-    const r = ew ? [h0, fcF + 0.5, h1, fcF + 1.4] : [fcF + 0.5, h0, fcF + 1.4, h1];
-    if (hitsAny(r, s, 0.05)) continue;
-    facePut('hedge', ew, h1 - h0, 0.85, 0.9, (h0 + h1) / 2, 0, fcF, 0.95); colliders.push({ minX: r[0], minZ: r[1], maxX: r[2], maxZ: r[3] });
   }
   if (!emre) { const tr = TOWERS[SEGS.indexOf(s)]; colliders.push({ minX: tr[0], minZ: tr[1], maxX: tr[2], maxZ: tr[3] }); }
 }
 
-/* ---------- Emres Treppenhaus-Vorbau (Windfang) vor der Wohnungstür: echte Wände, Boden, Decke, Haustür ---------- */
-wall(3.4, 9.5, 3.4, 11.6, [], 'W', M.towerWall);
-wall(6.6, 9.5, 6.6, 11.6, [], 'E', M.towerWall);
-wall(3.4, 11.5, 6.6, 11.5, [[4.4, 5.6, 0, 2.2]], 'S', M.towerWall);
-slab(M.tiles, 3.4, 9.5, 6.6, 11.5);
-{ const vc = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 1.9), M.ceiling); vc.rotation.x = Math.PI / 2; vc.position.set(5, H - 0.005, 10.55); apt.add(vc); }
-// Nordwand des Windfangs (Außenseite der Wohnungswand) innen mit Putz verkleiden, Türöffnung bleibt frei
-box(M.wall, 1.2, H, 0.02, 4.0, 0, 9.61); box(M.wall, 1.2, H, 0.02, 6.0, 0, 9.61); box(M.wall, 0.8, H - 2.1, 0.02, 5.0, 2.1, 9.61);
-box(flat(0x4a3a30), 0.9, 0.02, 0.6, 5.0, 0, 10.05);                                                    // Fußmatte
-for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) box(((i + j) % 2) ? M.metal : flat(0xb8a040), 0.12, 0.3, 0.22, 3.53, 1.05 + j * 0.36, 9.85 + i * 0.28);   // Briefkästen
-box(M.woodDark, 0.07, 2.1, 0.9, 6.46, 0, 10.5); box(flat(0xb8a040), 0.04, 0.06, 0.06, 6.41, 1.0, 10.15);     // Nachbartür
-box(M.white, 0.1, 0.6, 0.9, 6.45, 0.2, 9.95);                                                          // Heizkörper
-lamp(5, H - 0.25, 10.5, 0xffe0a0, 7, 4.5, apt);
-const haus = { pivot: new THREE.Group(), ang: 0, open: false, col: { minX: 4.4, maxX: 5.6, minZ: 11.4, maxZ: 11.6 } };
-haus.pivot.position.set(4.4, 0, 11.5); apt.add(haus.pivot);
+/* ---------- Emres Treppenhaus-Vorbau (Windfang) auf der Hofseite (Norden): Wände, Boden, Decke, Haustür ---------- */
+wall(3.4, -2.2, 3.4, 0.1, [], 'W', M.towerWall);
+wall(6.6, -2.2, 6.6, 0.1, [], 'E', M.towerWall);
+wall(3.4, -2.1, 6.6, -2.1, [[4.4, 5.6, 0, 2.2]], 'N', M.towerWall);
+slab(M.tiles, 3.4, -2.1, 6.6, 0);
+{ const vc = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 2.0), M.ceiling); vc.rotation.x = Math.PI / 2; vc.position.set(5, H - 0.005, -1.05); apt.add(vc); }
+// Nordwand der Wohnung (Außenseite) im Windfang mit Putz verkleiden, die Türöffnung bleibt frei
+box(M.wall, 1.2, H, 0.02, 4.0, 0, -0.11); box(M.wall, 1.2, H, 0.02, 6.0, 0, -0.11); box(M.wall, 0.8, H - 2.1, 0.02, 5.0, 2.1, -0.11);
+box(flat(0x4a3a30), 0.9, 0.02, 0.6, 5.0, 0, -0.75);                                                     // Fußmatte
+for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) box(((i + j) % 2) ? M.metal : flat(0xb8a040), 0.12, 0.3, 0.22, 3.53, 1.05 + j * 0.36, -0.45 - i * 0.28);   // Briefkästen
+box(M.woodDark, 0.07, 2.1, 0.9, 6.46, 0, -1.5); box(flat(0xb8a040), 0.04, 0.06, 0.06, 6.41, 1.0, -1.15);     // Nachbartür
+box(M.white, 0.1, 0.6, 0.9, 6.45, 0.2, -0.6);                                                          // Heizkörper
+lamp(5, H - 0.25, -1.05, 0xffe0a0, 7, 4.5, apt);
+const haus = { pivot: new THREE.Group(), ang: 0, open: false, col: { minX: 4.4, maxX: 5.6, minZ: -2.2, maxZ: -2.0 } };
+haus.pivot.position.set(4.4, 0, -2.1); apt.add(haus.pivot);
 { const leaf = new THREE.Mesh(boxGeo(1.2, 2.2, 0.07, 1), M.woodDark); leaf.position.set(0.6, 1.1, 0); haus.pivot.add(leaf);
   const gl2 = new THREE.Mesh(boxGeo(0.8, 1.0, 0.075, 1), flat(0x1c2a36)); gl2.position.set(0.6, 1.45, 0); haus.pivot.add(gl2);
   const kn = new THREE.Mesh(boxGeo(0.07, 0.07, 0.18, 1), flat(0xb8a040)); kn.position.set(1.05, 1.0, 0); haus.pivot.add(kn); }
 colliders.push(haus.col);
-// Wohnungstür: Türblatt und Klinke hängen an einem Scharnier und schwingen auf
-const doorPivot = new THREE.Group(); doorPivot.position.set(4.6, 0, 9.5); apt.add(doorPivot);
-{ const leaf = new THREE.Mesh(boxGeo(0.8, 2.1, 0.07, 1), M.woodDark); leaf.position.set(0.4, 1.05, 0); doorPivot.add(leaf);
-  const knob = new THREE.Mesh(boxGeo(0.07, 0.07, 0.16, 1), flat(0xb8a040)); knob.position.set(0.7, 1.0, 0); doorPivot.add(knob);
-  box(M.woodDark, 0.07, 2.12, 0.28, 4.6 + 0.035, 0, 9.5); box(M.woodDark, 0.07, 2.12, 0.28, 5.4 - 0.035, 0, 9.5); box(M.woodDark, 0.8, 0.07, 0.28, 5.0, 2.07, 9.5); }
+// Wohnungstür in der Nordwand: Scharnier an der Ostseite, die Tür schwingt in den Flur
+const doorPivot = new THREE.Group(); doorPivot.position.set(5.4, 0, 0); apt.add(doorPivot);
+{ const leaf = new THREE.Mesh(boxGeo(0.8, 2.1, 0.07, 1), M.woodDark); leaf.position.set(-0.4, 1.05, 0); doorPivot.add(leaf);
+  const knob = new THREE.Mesh(boxGeo(0.07, 0.07, 0.16, 1), flat(0xb8a040)); knob.position.set(-0.7, 1.0, 0); doorPivot.add(knob); }
 let doorAngle = 0;
-const doorCol = { minX: 4.6, maxX: 5.4, minZ: 9.4, maxZ: 9.6 }; colliders.push(doorCol);
+const doorCol = { minX: 4.6, maxX: 5.4, minZ: -0.1, maxZ: 0.1 }; colliders.push(doorCol);
 
-for (const s of SEGS) buildSeg(s);
 
 /* ---------- Boden, Straßen, Gehwege ---------- */
 sBox('lawn', 440, 0.3, 300, -4, -0.3, -10, { tile: 5 });
@@ -432,29 +445,45 @@ function parkedCar(x, z, color, ry, solid = true) {
 const sidewalkN = x => zQ(x) - 6.4;                       // Nordkante des Gehwegs an der Quellstraße
 const WALKS = [
   { w: 2.4, pts: [[-60.3, -41.5], [-60.4, -12.0], [-58.5, -9.8], [-50.6, -9.2], [-44.6, -7.2], [-42.0, -6.2], [-39.0, -3.0], [-38.6, 0], [-38.6, sidewalkN(-38.6)]] },            // Block A bis zur Quellstraße
-  { w: 2.4, pts: [[-3.8, -38.0], [-3.9, -9.8], [-2.2, -7.0], [5, -6.2], [13.5, -5.6], [18.2, -4.2], [20.9, -0.7], [22.4, 6.9], [21.2, sidewalkN(21.2)]] },                    // Block B bis zur Quellstraße
+  { w: 2.4, pts: [[-3.8, -38.0], [-3.9, -9.8], [-2.2, -7.0], [5, -6.2], [13.5, -5.6], [18.2, -4.2], [21.0, -0.7], [21.0, 6.9], [21.0, sidewalkN(21.0)]] },                    // Block B bis zur Quellstraße
   { w: 2.4, pts: [[51.0, -37.0], [51.8, -26.0], [52.6, -3.0]] },                                                                                                           // Block C, östlich des Flügels
   { w: 3.4, pts: [[52.6, -2.6], [53.5, -2.2], [70, -1.6], [89.5, -0.7]] }                                                                                                  // Zufahrt zu den Garagen bis zum Klaumer Bruch
 ];
+const WALKSEGS = [];
 const segOf = (a, b) => ({ x0: a[0], z0: a[1], x1: b[0], z1: b[1] });
 function dSeg(px, pz, s) { const dx = s.x1 - s.x0, dz = s.z1 - s.z0, l = dx * dx + dz * dz, u = l ? Math.max(0, Math.min(1, ((px - s.x0) * dx + (pz - s.z0) * dz) / l)) : 0; return Math.hypot(px - (s.x0 + u * dx), pz - (s.z0 + u * dz)); }
-const WALKSEGS = [];
+function nearestOn(px, pz, segs) { let best = null; for (const s of segs) { const dx = s.x1 - s.x0, dz = s.z1 - s.z0, l = dx * dx + dz * dz, u = l ? Math.max(0, Math.min(1, ((px - s.x0) * dx + (pz - s.z0) * dz) / l)) : 0, qx = s.x0 + u * dx, qz = s.z0 + u * dz, dd = Math.hypot(px - qx, pz - qz); if (!best || dd < best.d) best = { x: qx, z: qz, d: dd }; } return best; }
+function stripe(a2, b2, w) {
+  const dx = b2[0] - a2[0], dz = b2[1] - a2[1], len = Math.hypot(dx, dz), ang = -Math.atan2(dz, dx);
+  sBox('conc', len + 0.2, 0.12, w, (a2[0] + b2[0]) / 2, -0.06, (a2[1] + b2[1]) / 2, { ry: ang, tile: 1.5 });
+}
 for (const wk of WALKS) {
   for (let i = 0; i < wk.pts.length - 1; i++) {
-    const a2 = wk.pts[i], b2 = wk.pts[i + 1], dx = b2[0] - a2[0], dz = b2[1] - a2[1], len = Math.hypot(dx, dz), ang = -Math.atan2(dz, dx);
-    sBox('conc', len + 0.2, 0.12, wk.w, (a2[0] + b2[0]) / 2, -0.06 + (i % 3) * 0.006, (a2[1] + b2[1]) / 2, { ry: ang, tile: 1.5 });
+    const a2 = wk.pts[i], b2 = wk.pts[i + 1], dx = b2[0] - a2[0], dz = b2[1] - a2[1], ang = -Math.atan2(dz, dx);
+    sBox('conc', Math.hypot(dx, dz) + 0.2, 0.12, wk.w, (a2[0] + b2[0]) / 2, -0.06 + (i % 3) * 0.006, (a2[1] + b2[1]) / 2, { ry: ang, tile: 1.5 });
     sBox('conc', wk.w, 0.12, wk.w, b2[0], -0.042, b2[1], { ry: ang, tile: 1.5 });         // Gelenk, damit an den Knicken keine Lücke entsteht
     WALKSEGS.push(Object.assign(segOf(a2, b2), { w: wk.w }));
   }
 }
+const MAINWALKS = WALKSEGS.slice();
+// Stichwege von jeder Eingangstür zum nächsten Hauptweg (alle Türen liegen im Innenhof)
+const SPURS = [];
+for (const s of SEGS) {
+  const d0 = doorOut(s, s.tp + 0.6), n = nearestOn(d0[0], d0[1], MAINWALKS);
+  if (!n || n.d < 0.3) continue;
+  const a2 = d0, b2 = [n.x, n.z]; stripe(a2, b2, 1.8); WALKSEGS.push(Object.assign(segOf(a2, b2), { w: 1.8 })); SPURS.push({ id: s.id, from: a2, to: b2 });
+}
 const nearWalk = (x, z, m) => WALKSEGS.some(s => dSeg(x, z, s) < s.w / 2 + m);
 
-/* ---------- Parkplätze (rot) mit Einfahrten (X): zwei von der Scheppmannstraße, zwei von der Quellstraße ---------- */
+/* ---------- Parkplätze (rot) mit Einfahrten (X) ----------
+   Senkrechte Parkbuchten nur links und rechts, in der Mitte eine freie Fahrgasse. Die Fahrgasse ist breit genug zum Wenden,
+   am Ende bleibt eine freie Wendefläche, damit niemand zugeparkt wird. Je Seite 8 (P1, P2) beziehungsweise 5 (P3, P4) Buchten. */
+const BAYW = 2.6, BAYD = 4.6;
 const LOTS = [
-  { id: 'P1', x0: -54.3, z0: -42.3, x1: -26.5, z1: -12.7, ex: -40.1, side: 'n', aisles: [[-39.8, -34.3], [-24.3, -18.8]], rows: [[-34.3, -29.3, 1], [-29.3, -24.3, -1], [-18.8, -13.8, 1]] },
-  { id: 'P2', x0: 5.5, z0: -39.9, x1: 30.5, z1: -16.6, ex: 17.6, side: 'n', aisles: [[-39.9, -34.4], [-24.4, -18.9]], rows: [[-34.4, -29.4, 1], [-29.4, -24.4, -1]] },
-  { id: 'P3', x0: -37.2, z0: -1.9, x1: -21.6, z1: 16.2, ex: -28.0, side: 's', aisles: [[10.7, 16.2]], rows: [[5.7, 10.7, -1], [0.7, 5.7, 1]] },
-  { id: 'P4', x0: 24.0, z0: 2.9, x1: 38.8, z1: 20.3, ex: 29.7, side: 's', aisles: [[14.8, 20.3]], rows: [[9.8, 14.8, -1], [4.8, 9.8, 1]] }
+  { id: 'P1', ex: -40.1, x0: -48.6, x1: -31.6, z0: -42.3, z1: -17.3, side: 'n', nb: 8 },
+  { id: 'P2', ex: 17.6, x0: 9.1, x1: 26.1, z0: -39.9, z1: -14.9, side: 'n', nb: 8 },
+  { id: 'P3', ex: -27.8, x0: -35.9, x1: -19.7, z0: -0.7, z1: 16.2, side: 's', nb: 5 },
+  { id: 'P4', ex: 30.7, x0: 23.2, x1: 38.2, z0: 3.4, z1: 20.3, side: 's', nb: 5 }
 ];
 const EW = 6.0;   // Breite der Einfahrt
 const inLot = (x, z, m) => LOTS.some(l => x > l.x0 - m && x < l.x1 + m && z > l.z0 - m && z < l.z1 + m) ||
@@ -465,17 +494,32 @@ for (const l of LOTS) {
   // Einfahrt: Asphalt bis zur Fahrbahn, über den Gehweg etwas erhöht
   if (l.side === 'n') { const zr = zS(l.ex) + 2.2; sBox('road', EW, 0.1, l.z0 - zr + 0.3, l.ex, -0.035, (zr + l.z0 + 0.3) / 2, { tile: 3 }); }
   else { const zr = zQ(l.ex) - 4.0; sBox('road', EW, 0.1, zr - l.z1 + 0.3, l.ex, -0.035, (zr + l.z1 - 0.3) / 2, { tile: 3 }); sBox('road', EW, 0.05, 2.5, l.ex, 0.09, zQ(l.ex) - 5.2, { tile: 3, ry: RQ }); }
-  // Parkbuchten: weiße Linien und geparkte Autos
-  const n = Math.floor((w - 1.6) / 2.6), ox = l.x0 + (w - n * 2.6) / 2, cols2 = [0x3a4a5a, 0x5a3a3a, 0x4a4a42, 0x2a3a2a, 0x6a5a3a, 0x3a3a4a, 0x5a4a4a, 0x7a7a74, 0x2a2a30, 0x8a8a84];
-  for (const [za, zb, face] of l.rows) {
-    for (let i = 0; i <= n; i++) sBox('white', 0.1, 0.01, zb - za - 0.4, ox + i * 2.6, 0.06, (za + zb) / 2);
-    for (let i = 0; i < n; i++) {
-      if (rnd() < 0.34) continue;
-      const cx = ox + (i + 0.5) * 2.6 + (rnd() - 0.5) * 0.3, cz = (za + zb) / 2 + (rnd() - 0.5) * 0.4;
-      parkedCar(cx, cz, cols2[Math.floor(rnd() * 10)], rnd() < 0.8 ? (face > 0 ? Math.PI / 2 : -Math.PI / 2) : (face > 0 ? -Math.PI / 2 : Math.PI / 2), true);
-    }
+  // Parkbuchten links und rechts: weiße Striche und geparkte Autos, die Buchten beginnen an der Einfahrt, die Wendefläche liegt am Ende
+  const zs = l.side === 'n' ? l.z0 : l.z1 - l.nb * BAYW, cols2 = [0x3a4a5a, 0x5a3a3a, 0x4a4a42, 0x2a3a2a, 0x6a5a3a, 0x3a3a4a, 0x5a4a4a, 0x7a7a74, 0x2a2a30, 0x8a8a84];
+  for (let i = 0; i <= l.nb; i++) { const z = zs + i * BAYW; sBox('white', BAYD, 0.01, 0.1, l.x0 + BAYD / 2, 0.06, z); sBox('white', BAYD, 0.01, 0.1, l.x1 - BAYD / 2, 0.06, z); }
+  for (let i = 0; i < l.nb; i++) for (const sd of [-1, 1]) {
+    if (rnd() < 0.28) continue;
+    const cz = zs + (i + 0.5) * BAYW + (rnd() - 0.5) * 0.25, cxx = (sd < 0 ? l.x0 + BAYD / 2 : l.x1 - BAYD / 2) + (rnd() - 0.5) * 0.2;
+    parkedCar(cxx, cz, cols2[Math.floor(rnd() * 10)], sd < 0 ? (rnd() < 0.85 ? 0 : Math.PI) : (rnd() < 0.85 ? Math.PI : 0), true);   // Nase zur Fahrgasse
   }
 }
+
+/* ---------- Spielplätze im Innenhof hinter P1 und P2, jeweils mit Weg nach links zum Hauptweg ---------- */
+function playground(x0, x1, z0, z1, wx) {
+  const zm = (z0 + z1) / 2, sx = x0 + 3.1, cx = x1 - 3.1;
+  PLAYS.push([x0, z0, x1, z1]);
+  sBox('conc', 4.4, 0.3, 0.2, sx, 0, zm - 2.1, { tile: 1 }); sBox('conc', 4.4, 0.3, 0.2, sx, 0, zm + 2.1, { tile: 1 }); sBox('conc', 0.2, 0.3, 4.4, sx - 2.1, 0, zm, { tile: 1 }); sBox('conc', 0.2, 0.3, 4.4, sx + 2.1, 0, zm, { tile: 1 }); sBox('sand', 4.0, 0.2, 4.0, sx, 0, zm);
+  for (const [px, pz] of [[cx - 2.1, zm - 0.9], [cx - 2.1, zm + 0.9], [cx + 2.1, zm - 0.9], [cx + 2.1, zm + 0.9]]) sBox('metal', 0.12, 2.8, 0.12, px, 0, pz);
+  sBox('metal', 4.5, 0.12, 0.12, cx, 2.7, zm);
+  colliders.push({ minX: cx - 2.2, maxX: cx + 2.2, minZ: zm - 1.0, maxZ: zm + 1.0 }); SWINGS.push({ x: cx, z: zm });
+  bench((sx + 2.1 + cx - 2.1) / 2, z1 - 0.5, Math.PI);
+  const a2 = [x0, zm], b2 = [wx, zm]; stripe(a2, b2, 1.8); WALKSEGS.push(Object.assign(segOf(a2, b2), { w: 1.8 }));
+  return { sx, cx, zm };
+}
+const PGA = playground(-48.2, -33.0, -16.2, -10.8, -60.3);
+const PGB = playground(11.0, 26.0, -14.0, -8.6, -3.9);
+
+for (const s of SEGS) buildSeg(s);
 
 /* ---------- Straßenlampen, Autos, Taxi ---------- */
 const streetLamps = [];
@@ -486,7 +530,7 @@ function streetLamp(lx, lz, dir = 1) {
 }
 for (const lx of [-88, -62, -36, -10, 18, 44, 70, 88]) streetLamp(lx, zQ(lx) - 4.6, 1);
 for (const lx of [-75, -49, -23, 3, 29, 55, 81]) streetLamp(lx, zQ(lx) + 4.6, -1);
-for (const [lx, lz] of [[-57.6, -28], [-57.6, -12.5], [-26.0, -27], [-1.9, -27], [31.5, -27], [-20.8, 8], [-2.0, -12.0], [39.8, 15], [54.2, -14], [76, 0.8], [-56, 11], [19.4, 12]]) streetLamp(lx, lz, 1);
+for (const [lx, lz] of [[-57.6, -28], [-50.2, -30], [-30.6, -30], [-1.9, -27], [7.9, -27], [27.3, -27], [-19.0, 12.5], [-2.0, -12.0], [39.8, 15], [54.2, -14], [76, 0.8], [-56, 11], [19.0, 12], [-31.4, -13.5], [10.0, -13.2]]) streetLamp(lx, lz, 1);
 for (const lx of [-70, -20, 30, 80]) streetLamp(lx, zS(lx) + 3.2, 1);
 const lampPool = Array.from({ length: 8 }, () => lamp(0, 5, 0, 0xffa850, 190, 30));   // nur die 8 nächsten Laternen leuchten wirklich (Leistung)
 function car(x, z, color, ry = 0) {
@@ -503,7 +547,7 @@ box(glow(0xffd060), 0.7, 0.22, 0.28, -0.2, 1.65, 0, { parent: taxi });
 const taxiLight = lamp(1.5, 0.8, 0, 0xfff0c0, 24, 9, taxi); taxiLight.visible = false;
 {
   const cols = [0x3a4a5a, 0x5a3a3a, 0x4a4a42, 0x2a3a2a, 0x4a4a4a, 0x6a5a3a, 0x3a3a4a, 0x5a4a4a, 0x7a7a74, 0x2a2a30];
-  const mouths = LOTS.filter(l => l.side === 's').map(l => l.ex).concat([TAXI_X, -38.6, 21.2]);          // an den Einfahrten und beim Taxi bleibt der Straßenrand frei
+  const mouths = LOTS.filter(l => l.side === 's').map(l => l.ex).concat([TAXI_X, -38.6, 21.0]);          // an den Einfahrten und beim Taxi bleibt der Straßenrand frei
   let k = 0, x = -88;
   while (x < 84) { if (!mouths.some(m => Math.abs(x - m) < 6.5)) parkedCar(x, zQ(x) - 2.85, cols[k++ % 10], RQ + (rnd() < 0.5 ? 0 : Math.PI)); x += 6.8 + rnd() * 6; }
   x = -86; while (x < 84) { parkedCar(x, zQ(x) + 2.85, cols[k++ % 10], RQ + (rnd() < 0.5 ? 0 : Math.PI)); x += 6.8 + rnd() * 7; }
@@ -550,16 +594,12 @@ for (const [z0, k] of [[-30, 'garA'], [-20.2, 'garB'], [-10.4, 'garC']]) {
   for (let i = 0; i < 8; i++) sBox('dark', 2.3, 2.0, 0.06, 56.6 + i * 3.0 + 0.2, 0, z0 + 5.85);
 }
 
-/* ---------- Spielplatz zwischen Block B und C ---------- */
-sBox('conc', 4.4, 0.3, 0.2, 21, 0, -14.3, { tile: 1 }); sBox('conc', 4.4, 0.3, 0.2, 21, 0, -9.9, { tile: 1 }); sBox('conc', 0.2, 0.3, 4.4, 18.8, 0, -12.1, { tile: 1 }); sBox('conc', 0.2, 0.3, 4.4, 23.2, 0, -12.1, { tile: 1 }); sBox('sand', 4.2, 0.2, 4.2, 21, 0, -12.1);
-sBox('metal', 0.12, 2.8, 0.12, 8.4, 0, -12.9); sBox('metal', 0.12, 2.8, 0.12, 8.4, 0, -11.1); sBox('metal', 0.12, 2.8, 0.12, 12.6, 0, -12.9); sBox('metal', 0.12, 2.8, 0.12, 12.6, 0, -11.1); sBox('metal', 4.5, 0.12, 0.12, 10.5, 2.7, -12);
-colliders.push({ minX: 8.2, maxX: 12.8, minZ: -13.1, maxZ: -10.9 });
 function bench(x, z, ry = 0) { sBox('wood', 1.6, 0.08, 0.5, x, 0.45, z, { ry }); sBox('wood', 1.6, 0.5, 0.06, x - Math.sin(ry) * 0.25, 0.55, z - Math.cos(ry) * 0.25, { ry }); colliders.push({ minX: x - 0.9, maxX: x + 0.9, minZ: z - 0.5, maxZ: z + 0.5 }); }
-bench(15, -9.6, Math.PI); bench(27, -4.8, 0); bench(1.5, 16.5, 0); bench(-45, 14, 0); bench(50, 14, 0);
+bench(1.5, 16.5, 0); bench(-45, 14, 0); bench(50, 14, 0);
 
 /* ---------- Niedriger grüner Zaun am Gehweg (Fotos), mit Lücken an den Wegen ---------- */
 {
-  const gaps = [[-39.8, -37.4], [20.0, 22.4]].concat(LOTS.filter(l => l.side === 's').map(l => [l.ex - EW / 2, l.ex + EW / 2]));
+  const gaps = [[-39.8, -37.4], [19.8, 22.2]].concat(LOTS.filter(l => l.side === 's').map(l => [l.ex - EW / 2, l.ex + EW / 2]));
   for (let x = -92; x < 86; x += 8) {
     const mid = x + 4, p = 8, h2 = 0.9;
     for (let i = 0; i <= 3; i++) {
@@ -581,7 +621,7 @@ function okTree(x, z) {
   if (Math.abs(z - zQ(x)) < 7.6) return false;
   if (Math.abs(z - zS(x)) < 3.6 && x > -97 && x < 92) return false;
   if (Math.abs(x - X_EIN) < 5.8 || Math.abs(x - X_KLB) < 5.8) return false;
-  if (x > 7 && x < 25 && z > -17 && z < -7) return false;                           // Spielplatz
+  if (PLAYS.some(p => x > p[0] - 2 && x < p[2] + 2 && z > p[1] - 2 && z < p[3] + 2)) return false;   // Spielplätze
   if (x > 16 && x < 26 && z > 0 && z < 24) return false;                           // Weg und Taxi
   if (x > 54 && x < 80 && z > -33 && z < -2) return false;                          // Garagenhof
   for (const t of treeSpots) if (Math.hypot(t[0] - x, t[1] - z) < t[2]) return false;
@@ -720,7 +760,7 @@ box(M.woodDark, 0.3, 0.25, 0.8, 4.3, 0, 8.9);                                   
 framePic(5.88, 1.6, 3.0, '-x', 0, 0.5, 0.4); fixture(5, 4.7);
 box(M.wood, 0.1, 0.05, 1.5, 4.12, 1.9, 5.5);                                                        // Garderobenleiste
 // Briefkasten neben dem Eingang, Schaukelsitze (animiert)
-const swingSeats = [9.5, 11.5].map(sx => { const g = new THREE.Group(); g.position.set(sx, 2.7, -12); const chain = new THREE.Mesh(boxGeo(0.04, 1.9, 0.04, 1), M.metal); chain.position.y = -0.95; g.add(chain); const seat = new THREE.Mesh(boxGeo(0.7, 0.06, 0.28, 1), M.woodDark); seat.position.y = -1.9; g.add(seat); world.add(g); return g; });
+const swingSeats = SWINGS.flatMap(sp => [sp.x - 1.0, sp.x + 1.0].map(sx => [sx, sp.z])).map(([sx, sz]) => { const g = new THREE.Group(); g.position.set(sx, 2.7, sz); const chain = new THREE.Mesh(boxGeo(0.04, 1.9, 0.04, 1), M.metal); chain.position.y = -0.95; g.add(chain); const seat = new THREE.Mesh(boxGeo(0.7, 0.06, 0.28, 1), M.woodDark); seat.position.y = -1.9; g.add(seat); world.add(g); return g; });
 let swingKick = 0;
 // Spiegel im Flur (Ost-Wand, neben der Wohnungstür)
 class MirrorSurface {
@@ -749,7 +789,7 @@ class MirrorSurface {
     m.visible = false; renderer.clippingPlanes = [plane]; renderer.setRenderTarget(this.rt); renderer.clear(); renderer.render(scene, cam); renderer.setRenderTarget(null); renderer.clippingPlanes = []; m.visible = true;
   }
 }
-const mirror = new MirrorSurface(0.62, 1.25, 5.87, FLOOR_Y + 1.5, mirrorLampZ, -Math.PI / 2);
+const mirror = new MirrorSurface(0.62, 1.25, 4.13, FLOOR_Y + 1.5, 4.0, Math.PI / 2);   // Westwand des Flurs, blickt nach Osten
 
 /* ---- Die Gestalt, nur im Spiegel sichtbar (Layer 1) ---- */
 const ent = (() => {
@@ -759,7 +799,7 @@ const ent = (() => {
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), skin); head.position.y = 2.0; body.add(head);
   for (let i = 0; i < 11; i++) { const h = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.5 + (i % 3) * 0.2, 0.05), hair); const a = i / 11 * Math.PI * 2; h.position.set(Math.cos(a) * 0.24, 1.55, Math.sin(a) * 0.24 - 0.05); body.add(h); }
   [-1, 1].forEach(s => { const arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.4, 0.09), skin); arm.position.set(s * 0.45, 1.1, 0.05); body.add(arm); const foot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.38), skin); foot.position.set(s * 0.18, 0.05, -0.12); g.add(foot); });
-  g.traverse(o => o.layers.set(1)); g.position.set(4.5, FLOOR_Y, 8.3); g.rotation.y = -Math.PI / 2; g.visible = false; scene.add(g); return g;
+  g.traverse(o => o.layers.set(1)); g.position.set(5.35, FLOOR_Y, 6.3); g.rotation.y = -Math.PI / 2; g.visible = false; scene.add(g); return g;
 })();
 
 /* ---- Lichter der Wohnung ---- */
@@ -779,7 +819,7 @@ const R = 0.32;
 function resolve(p) { for (const c of colliders) { const cx = Math.max(c.minX, Math.min(p.x, c.maxX)), cz = Math.max(c.minZ, Math.min(p.z, c.maxZ)), dx = p.x - cx, dz = p.z - cz, d2 = dx * dx + dz * dz; if (d2 < R * R) { if (d2 > 1e-8) { const d = Math.sqrt(d2); p.x += dx / d * (R - d); p.z += dz / d * (R - d); } else { const a = p.x - c.minX, b = c.maxX - p.x, e = p.z - c.minZ, f = c.maxZ - p.z, m = Math.min(a, b, e, f); if (m === a) p.x = c.minX - R; else if (m === b) p.x = c.maxX + R; else if (m === e) p.z = c.minZ - R; else p.z = c.maxZ + R; } } } }
 function groundY(x, z) {
   if (x >= 0 && x <= 10 && z >= 0 && z <= 9.5) return FLOOR_Y;
-  if (x >= 3.4 && x <= 6.6 && z > 9.5 && z < 11.6) return FLOOR_Y;
+  if (x >= 3.4 && x <= 6.6 && z >= -2.2 && z <= 0) return FLOOR_Y;
   return 0;
 }
 
@@ -814,7 +854,7 @@ function checkAll() {
   }
 }
 const interactables = [
-  { id: 'ab', pos: [4.6, 1.0], r: 1.7, label: () => tasks.ab ? 'E: Nachricht noch einmal hören' : 'E: Anrufbeantworter abhören', act() {
+  { id: 'ab', pos: [4.4, 0.35], r: 1.7, label: () => tasks.ab ? 'E: Nachricht noch einmal hören' : 'E: Anrufbeantworter abhören', act() {
       const first = !tasks.ab; tone(880, 0.12, 0.2, 'square'); sayList(TEXT.ab, 3.4); abLedBlink = 0;
       if (first) setTimeout(() => { tasks.ab = true; renderTasks(); say(TEXT.abDone, 5); checkAll(); }, TEXT.ab.length * 3400 + 200); } },
   { id: 'pass', pos: [7.85, 2.2], r: 1.6, label: () => tasks.pass ? '' : 'E: Pässe nehmen', act() { if (tasks.pass) return; tasks.pass = true; passports.visible = false; say(TEXT.passports, 5); renderTasks(); checkAll(); burst(2500, 2, 0.1, 0.2); } },
@@ -823,16 +863,17 @@ const interactables = [
   { id: 'crib', pos: [8.6, 8.2], r: 1.8, label: () => 'E: Wiege ansehen', act() { say(TEXT.crib, 5); } },
   { id: 'tv', pos: [2.1, 4.0], r: 1.5, label: () => 'E: Fernseher', act() { say(TEXT.tv, 4); burst(3000, 0.5, 0.4, 0.15, 'highpass'); } },
   { id: 'fridge', pos: [8.9, 3.45], r: 1.3, label: () => 'E: Kühlschrank öffnen', act() { say(TEXT.fridge, 3.5); } },
-  { id: 'door', pos: [5, 9.2], r: 1.4, label: () => phase.doorOpen ? '' : 'E: Wohnungstür öffnen', act() {
+  { id: 'door', pos: [5, 0.8], r: 1.4, bias: 0.8, label: () => phase.doorOpen ? '' : 'E: Wohnungstür öffnen', act() {
       phase.doorOpen = true; colliders.splice(colliders.indexOf(doorCol), 1); say(phase.v === 'tasks' ? TEXT.doorOpenFree : TEXT.doorOpen, 4); burst(500, 1, 0.25, 0.3); } },
-  { id: 'haustuer', pos: [5.0, 11.0], r: 1.5, label: () => haus.open ? '' : 'E: Haustür öffnen', act() {
+  { id: 'haustuer', pos: [5.0, -1.2], r: 1.5, label: () => haus.open ? '' : 'E: Haustür öffnen', act() {
       haus.open = true; colliders.splice(colliders.indexOf(haus.col), 1); say(TEXT.haus, 4); burst(450, 1, 0.25, 0.3); } },
   { id: 'taxi', pos: [TAXI_X + 1.0, zQ(TAXI_X) - 5.6], r: 4.2, label: () => (phase.v === 'ready' && taxi.visible) ? 'E: Ins Taxi steigen' : '', act() { if (phase.v === 'ready') finish(); } },
   { id: 'friseur', pos: [shopX1, zQ(-35.2 + 10.8) + 7.2], r: 2.8, label: () => 'E: Schaufenster ansehen', act() { say(TEXT.friseur, 5.5); } },
   { id: 'post', pos: [shopX2, zQ(72.8 + 10.8) + 7.2], r: 2.8, label: () => 'E: Aushang lesen', act() { say(TEXT.post, 5); } },
-  { id: 'swing', pos: [10.5, -10.3], r: 2.4, label: () => 'E: Schaukel anstoßen', act() { say(TEXT.swing, 5); swingKick = 1; burst(1500, 6, 0.5, 0.12); } },
-  { id: 'nachbar', pos: [6.0, 10.5], r: 1.2, label: () => 'E: Nachbartür', act() { say(TEXT.nachbar, 5); } },
-  { id: 'mailbox', pos: [4.2, 10.6], r: 1.4, label: () => 'E: Briefkästen', act() { say(TEXT.mailbox, 4.5); } }
+  { id: 'swing', pos: [PGB.cx, PGB.zm + 2.3], r: 2.6, label: () => 'E: Schaukel anstoßen', act() { say(TEXT.swing, 5); swingKick = 1; burst(1500, 6, 0.5, 0.12); } },
+  { id: 'swingA', pos: [PGA.cx, PGA.zm + 2.3], r: 2.6, label: () => 'E: Schaukel anstoßen', act() { say(TEXT.swing, 5); swingKick = 1; burst(1500, 6, 0.5, 0.12); } },
+  { id: 'nachbar', pos: [6.0, -1.4], r: 1.2, label: () => 'E: Nachbartür', act() { say(TEXT.nachbar, 5); } },
+  { id: 'mailbox', pos: [4.2, -1.0], r: 1.4, label: () => 'E: Briefkästen', act() { say(TEXT.mailbox, 4.5); } }
 ];
 let abLedBlink = 0;
 function findInteractable() {
@@ -841,7 +882,8 @@ function findInteractable() {
     const dx = it.pos[0] - player.pos.x, dz = it.pos[1] - player.pos.z, d = Math.hypot(dx, dz);
     if (d > it.r || !it.label()) continue;
     if (d > 0.9 && (dx * fx + dz * fz) / d < 0.45) continue;
-    if (d < bd) { bd = d; best = it; }
+    const eff = d - (it.bias || 0);
+    if (eff < bd) { bd = eff; best = it; }
   }
   return best;
 }
@@ -907,12 +949,12 @@ function update(dt) {
     resolve(player.pos);
     const gy = groundY(player.pos.x, player.pos.z) + 1.65; player.pos.y += (gy - player.pos.y) * Math.min(1, dt * 12);
     if (sp > 0) { player.bob += dt * (run ? 10 : 7); stepT -= dt * (run ? 3 : 1.9); if (stepT <= 0) { stepT = 1; burst(player.pos.z < 9.5 && player.pos.x > 0 && player.pos.x < 10 ? 300 : 700, 1, 0.07, 0.13, 'lowpass'); } }
-    // Spiegel-Ereignis: nach dem Packen, auf dem Weg zur Tür
-    if (phase.v === 'ready' && !phase.mirrorDone && player.pos.x > 4 && player.pos.x < 6 && player.pos.z > 6.9 && player.pos.z < 9.4) mirrorEvent();
+    // Spiegel-Ereignis: nach dem Packen, im Flur vor der Wohnungstür
+    if (phase.v === 'ready' && !phase.mirrorDone && player.pos.x > 4 && player.pos.x < 6 && player.pos.z > 2.4 && player.pos.z < 5.2) mirrorEvent();
     const it = findInteractable(); $('prompt').textContent = it ? it.label() : '';
   }
   doorAngle += ((phase.doorOpen ? 1.75 : 0) - doorAngle) * Math.min(1, dt * 4); doorPivot.rotation.y = doorAngle;
-  haus.ang += ((haus.open ? -1.75 : 0) - haus.ang) * Math.min(1, dt * 4); haus.pivot.rotation.y = haus.ang;
+  haus.ang += ((haus.open ? 1.75 : 0) - haus.ang) * Math.min(1, dt * 4); haus.pivot.rotation.y = haus.ang;
   // Anrufbeantworter blinkt rot
   abLed.visible = tasks.ab ? false : (Math.floor(time * 1.6) % 2 === 0);
   // Flackern in der Wohnung beim Spiegel-Ereignis
@@ -946,11 +988,11 @@ let numsOn = location.search.indexOf('nummern') >= 0;
 const NUMS = [];
 const addNum = (c, n, txt, x, y, z) => { const el = document.createElement('div'); el.className = 'nm ' + c; el.textContent = c + n; el.title = txt; el.style.display = 'none'; document.body.appendChild(el); NUMS.push({ el, p: new THREE.Vector3(x, y, z), txt: c + n + ' ' + txt }); };
 SEGS.forEach((s, i) => { addNum('G', i + 1, 'Gebäude ' + s.id, (s.x0 + s.x1) / 2 - (s.ew ? 0 : 2.2), TOPY + 1.5, (s.z0 + s.z1) / 2 - (s.ew ? 2.2 : 0)); });
-{ let k = 0; SEGS.forEach((s, i) => { k++; if (s.emre) addNum('T', k, 'Haustür Emre (Block B)', 5, 2.4, 11.6); else addNum('T', k, 'Tür Treppenturm ' + s.id, s.ew ? s.tC : s.x1 + s.tp + 0.4, 2.4, s.ew ? s.z1 + s.tp + 0.4 : s.tC); }); }
+{ let k = 0; SEGS.forEach((s, i) => { k++; if (s.emre) addNum('T', k, 'Haustür Emre (Block B, Hofseite)', 5, 2.4, -2.4); else { const dd = doorOut(s, s.tp + 0.5); addNum('T', k, 'Tür Treppenturm ' + s.id + ' (Hofseite)', dd[0], 2.4, dd[1]); } }); }
 LOTS.forEach((l, i) => addNum('P', i + 1, 'Parkplatz ' + l.id, (l.x0 + l.x1) / 2, 3, (l.z0 + l.z1) / 2));
 LOTS.forEach((l, i) => addNum('E', i + 1, 'Einfahrt zu Parkplatz ' + l.id, l.ex, 3, l.side === 'n' ? zS(l.ex) + 4 : zQ(l.ex) - 6));
 WALKS.forEach((w, i) => { const m = w.pts[Math.floor(w.pts.length / 2)]; addNum('W', i + 1, i < 3 ? 'Weg Block ' + 'ABC'[i] : 'Garagenzufahrt', m[0], 2.5, m[1]); });
-addNum('X', 1, 'Spielplatz', 21, 3, -12); addNum('X', 2, 'Garagenhof', 67, 5, -15); addNum('X', 3, 'Quellstraße', -60, 3, zQ(-60)); addNum('X', 4, 'Scheppmannstraße (Baumgürtel)', -60, 3, zS(-60)); addNum('X', 5, 'Einblickstraße', X_EIN, 3, -12); addNum('X', 6, 'Klaumer Bruch', X_KLB, 3, -12);
+addNum('X', 1, 'Spielplatz Block A', PGA.sx + 4.5, 3, PGA.zm); addNum('X', 2, 'Spielplatz Block B', PGB.sx + 4.5, 3, PGB.zm); addNum('X', 3, 'Garagenhof', 67, 5, -15); addNum('X', 4, 'Quellstraße', -60, 3, zQ(-60)); addNum('X', 5, 'Scheppmannstraße (Baumgürtel)', -60, 3, zS(-60)); addNum('X', 6, 'Einblickstraße', X_EIN, 3, -12); addNum('X', 7, 'Klaumer Bruch', X_KLB, 3, -12);
 function updateNums() {
   const v = new THREE.Vector3(), cp = camera.position;
   for (const n of NUMS) {
@@ -963,7 +1005,7 @@ function updateNums() {
 }
 await Promise.all(furnJobs);
 renderTasks();
-window.__home = { NUMS, setNums: v => { numsOn = v; }, haus, SEGS, zQ, zS, free: null, THREE, ent, mirror, player, begin, camera, interactables, tasks, phase, look, say, mirrorEvent, scene, colliders };
+window.__home = { WALKSEGS, MAINWALKS, SPURS, LOTS, PLAYS, TOWERS, NUMS, setNums: v => { numsOn = v; }, haus, SEGS, zQ, zS, free: null, THREE, ent, mirror, player, begin, camera, interactables, tasks, phase, look, say, mirrorEvent, scene, colliders };
 requestAnimationFrame(frame);
 </script>
 </body>
