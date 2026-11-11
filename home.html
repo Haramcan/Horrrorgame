@@ -30,6 +30,8 @@
   #card td{padding:2px 14px 2px 0;font-size:14px;vertical-align:top}
   #card kbd{background:#222;border:1px solid #555;padding:0 6px;font-size:12px}
   #card .go{margin-top:16px;text-align:center;letter-spacing:.2em;font-size:14px}
+  .nm{position:fixed;left:0;top:0;transform:translate(-50%,-50%);font:bold 13px 'Courier New',monospace;padding:1px 5px;border-radius:3px;pointer-events:none;white-space:nowrap;z-index:6;color:#000;border:1px solid #000}
+  .nm.G{background:#ffd34d}.nm.T{background:#7ee07e}.nm.P{background:#ff8c8c}.nm.W{background:#7ec8ff}.nm.E{background:#e08cff}.nm.X{background:#ddd}
   #err{color:#f88;margin-top:10px;font-size:13px;white-space:pre-wrap}
 </style>
 <script type="importmap">
@@ -49,11 +51,12 @@
   <table>
     <tr><td><kbd>W A S D</kbd></td><td>Gehen &nbsp; <kbd>Shift</kbd> schneller &nbsp; Maus: Umsehen</td></tr>
     <tr><td><kbd>E</kbd></td><td>Benutzen / Aufheben</td></tr>
+    <tr><td><kbd>N</kbd></td><td>Nummern an Gebäuden, Türen, Wegen, Parkplätzen ein/aus</td></tr>
     <tr><td><kbd>B</kbd></td><td>Ansicht melden: kopiert Standort und Blickrichtung für den Chat</td></tr>
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 4 · Wege, Parkplätze und Einfahrten nach deiner Skizze, Südflügel bündig</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 5 · Nummern mit Taste N, Ansicht melden mit Taste B</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -867,6 +870,7 @@ addEventListener('keydown', e => {
   if (!started || ended) return;
   if (e.code === 'KeyE') { const it = findInteractable(); if (it) it.act(); }
   if (e.code === 'KeyL') look.enabled = !look.enabled;
+  if (e.code === 'KeyN') { numsOn = !numsOn; say(numsOn ? 'Nummern an' : 'Nummern aus', 1.5); }
   if (e.code === 'KeyB') {
     const v = 'ANSICHT v4 x=' + player.pos.x.toFixed(2) + ' y=' + player.pos.y.toFixed(2) + ' z=' + player.pos.z.toFixed(2) + ' yaw=' + player.yaw.toFixed(3) + ' pitch=' + player.pitch.toFixed(3) + ' tasks=' + (tasks.ab ? 'A' : '-') + (tasks.pass ? 'P' : '-') + (tasks.case ? 'K' : '-') + ' tür=' + (phase.doorOpen ? 'auf' : 'zu');
     let ok = false; try { navigator.clipboard.writeText(v).then(() => say('Kopiert. Füge es im Chat ein und schreib, was falsch ist.', 6), () => say(v, 15)); ok = true; } catch (err) { }
@@ -934,12 +938,32 @@ function update(dt) {
 }
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  try { if (!paused) update(dt); mirror.update(); look.render(scene, camera); } catch (e) { $('err').textContent = 'Fehler im Spiel: ' + e.message; console.error(e); }
+  try { if (!paused) update(dt); mirror.update(); look.render(scene, camera); updateNums(); } catch (e) { $('err').textContent = 'Fehler im Spiel: ' + e.message; console.error(e); }
   requestAnimationFrame(frame);
+}
+/* ---------- Nummern zum Besprechen (Taste N): G = Gebäude, T = Tür, P = Parkplatz, E = Einfahrt, W = Weg, X = Sonstiges ---------- */
+let numsOn = location.search.indexOf('nummern') >= 0;
+const NUMS = [];
+const addNum = (c, n, txt, x, y, z) => { const el = document.createElement('div'); el.className = 'nm ' + c; el.textContent = c + n; el.title = txt; el.style.display = 'none'; document.body.appendChild(el); NUMS.push({ el, p: new THREE.Vector3(x, y, z), txt: c + n + ' ' + txt }); };
+SEGS.forEach((s, i) => { addNum('G', i + 1, 'Gebäude ' + s.id, (s.x0 + s.x1) / 2 - (s.ew ? 0 : 2.2), TOPY + 1.5, (s.z0 + s.z1) / 2 - (s.ew ? 2.2 : 0)); });
+{ let k = 0; SEGS.forEach((s, i) => { k++; if (s.emre) addNum('T', k, 'Haustür Emre (Block B)', 5, 2.4, 11.6); else addNum('T', k, 'Tür Treppenturm ' + s.id, s.ew ? s.tC : s.x1 + s.tp + 0.4, 2.4, s.ew ? s.z1 + s.tp + 0.4 : s.tC); }); }
+LOTS.forEach((l, i) => addNum('P', i + 1, 'Parkplatz ' + l.id, (l.x0 + l.x1) / 2, 3, (l.z0 + l.z1) / 2));
+LOTS.forEach((l, i) => addNum('E', i + 1, 'Einfahrt zu Parkplatz ' + l.id, l.ex, 3, l.side === 'n' ? zS(l.ex) + 4 : zQ(l.ex) - 6));
+WALKS.forEach((w, i) => { const m = w.pts[Math.floor(w.pts.length / 2)]; addNum('W', i + 1, i < 3 ? 'Weg Block ' + 'ABC'[i] : 'Garagenzufahrt', m[0], 2.5, m[1]); });
+addNum('X', 1, 'Spielplatz', 21, 3, -12); addNum('X', 2, 'Garagenhof', 67, 5, -15); addNum('X', 3, 'Quellstraße', -60, 3, zQ(-60)); addNum('X', 4, 'Scheppmannstraße (Baumgürtel)', -60, 3, zS(-60)); addNum('X', 5, 'Einblickstraße', X_EIN, 3, -12); addNum('X', 6, 'Klaumer Bruch', X_KLB, 3, -12);
+function updateNums() {
+  const v = new THREE.Vector3(), cp = camera.position;
+  for (const n of NUMS) {
+    if (!numsOn) { n.el.style.display = 'none'; continue; }
+    v.copy(n.p).project(camera); const d = cp.distanceTo(n.p);
+    if (v.z > 1 || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05 || d > 260) { n.el.style.display = 'none'; continue; }
+    n.el.style.display = ''; n.el.style.left = ((v.x + 1) / 2 * innerWidth) + 'px'; n.el.style.top = ((1 - v.y) / 2 * innerHeight) + 'px';
+    n.el.style.fontSize = Math.max(11, Math.min(15, 900 / Math.max(d, 1) + 9)) + 'px';
+  }
 }
 await Promise.all(furnJobs);
 renderTasks();
-window.__home = { haus, SEGS, zQ, zS, free: null, THREE, ent, mirror, player, begin, camera, interactables, tasks, phase, look, say, mirrorEvent, scene, colliders };
+window.__home = { NUMS, setNums: v => { numsOn = v; }, haus, SEGS, zQ, zS, free: null, THREE, ent, mirror, player, begin, camera, interactables, tasks, phase, look, say, mirrorEvent, scene, colliders };
 requestAnimationFrame(frame);
 </script>
 </body>
