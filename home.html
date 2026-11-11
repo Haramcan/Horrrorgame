@@ -49,6 +49,7 @@
   <table>
     <tr><td><kbd>W A S D</kbd></td><td>Gehen &nbsp; <kbd>Shift</kbd> schneller &nbsp; Maus: Umsehen</td></tr>
     <tr><td><kbd>E</kbd></td><td>Benutzen / Aufheben</td></tr>
+    <tr><td><kbd>B</kbd></td><td>Ansicht melden: kopiert Standort und Blickrichtung für den Chat</td></tr>
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
@@ -866,6 +867,12 @@ addEventListener('keydown', e => {
   if (!started || ended) return;
   if (e.code === 'KeyE') { const it = findInteractable(); if (it) it.act(); }
   if (e.code === 'KeyL') look.enabled = !look.enabled;
+  if (e.code === 'KeyB') {
+    const v = 'ANSICHT v4 x=' + player.pos.x.toFixed(2) + ' y=' + player.pos.y.toFixed(2) + ' z=' + player.pos.z.toFixed(2) + ' yaw=' + player.yaw.toFixed(3) + ' pitch=' + player.pitch.toFixed(3) + ' tasks=' + (tasks.ab ? 'A' : '-') + (tasks.pass ? 'P' : '-') + (tasks.case ? 'K' : '-') + ' tür=' + (phase.doorOpen ? 'auf' : 'zu');
+    let ok = false; try { navigator.clipboard.writeText(v).then(() => say('Kopiert. Füge es im Chat ein und schreib, was falsch ist.', 6), () => say(v, 15)); ok = true; } catch (err) { }
+    if (!ok) say(v, 12);
+    console.log(v);
+  }
   if (e.code === 'KeyK') { const hs = [200, 300, 450, 720]; look.setHeight(hs[(hs.indexOf(look.height) + 1) % hs.length]); say('Auflösung: ' + look.height + 'p', 1.5); }
 });
 addEventListener('keyup', e => keys.delete(e.code));
