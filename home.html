@@ -57,7 +57,7 @@
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9b · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9c · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -1041,6 +1041,8 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('mousemove', e => { if (!started || ended || (window.__EDIT && window.__EDIT.on) || !(locked || e.buttons & 1)) return; player.yaw -= e.movementX * 0.0022; player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch - e.movementY * 0.0022)); });
+// Maus nach dem Editor: jede Taste/Mausbewegung mit Tastendruck holt die Sperre zurück, ohne Klick
+addEventListener('keydown', () => { if (started && !ended && !paused && !locked && !(window.__EDIT && window.__EDIT.on)) { try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (e) { } } });
 document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === renderer.domElement; if (!locked && started && !ended && !(window.__EDIT && window.__EDIT.on)) setPaused(true); });
 function begin() {
   initAudio(); if (AC && AC.state === 'suspended') AC.resume();
