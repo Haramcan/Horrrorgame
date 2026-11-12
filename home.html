@@ -51,12 +51,13 @@
   <table>
     <tr><td><kbd>W A S D</kbd></td><td>Gehen &nbsp; <kbd>Shift</kbd> schneller &nbsp; Maus: Umsehen</td></tr>
     <tr><td><kbd>E</kbd></td><td>Benutzen / Aufheben</td></tr>
+    <tr><td><kbd>Tab</kbd></td><td><b>Editor</b>: Bäume, Autos, Möbel setzen, Dinge löschen, Räume einrichten</td></tr>
     <tr><td><kbd>N</kbd></td><td>Nummern an Gebäuden, Türen, Wegen, Parkplätzen ein/aus</td></tr>
     <tr><td><kbd>B</kbd></td><td>Ansicht melden: kopiert Standort und Blickrichtung für den Chat</td></tr>
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 7 · Wohnung in G3 (1. Obergeschoss), kürzere Parkplätze, große Spielplätze, Garagentore innen</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 8 · Editor mit Tab, neue Gegenstände (Bäume, Autos, Bücher, Möbel)</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -64,6 +65,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FtfLook } from './lib/ftf_look.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { initEditor } from './lib/editor.js';
 
 const $ = id => document.getElementById(id);
 addEventListener('error', e => { $('err').textContent = 'Fehler: ' + e.message; });
@@ -246,7 +248,8 @@ const SM = {
   lawn: new THREE.MeshLambertMaterial({ map: lawnTex })
 };
 const SP = {};
-function sGeo(key, g) { (SP[key] = SP[key] || []).push(g.index ? g.toNonIndexed() : g); }
+const SPARTS = {}, MERGED = [];   // SPARTS: Liste der Einzelteile je Material (für den Editor), damit sich zusammengefasste Teile gezielt entfernen lassen
+function sGeo(key, g) { const ng = g.index ? g.toNonIndexed() : g; ng.computeBoundingBox(); (SPARTS[key] = SPARTS[key] || []).push({ tris: ng.attributes.position.count / 3, bb: ng.boundingBox.clone() }); (SP[key] = SP[key] || []).push(ng); }
 function sBox(key, w, h, d, x, y, z, o = {}) {
   const g = boxGeo(w, h, d, o.tile || 1.8);
   if (o.rx) g.rotateX(o.rx); if (o.rz) g.rotateZ(o.rz); if (o.ry) g.rotateY(o.ry);
@@ -709,7 +712,7 @@ for (const k in SP) {
   const gs = mergeGeometries(SP[k], false);
   if (!gs) { console.error('Zusammenfassen fehlgeschlagen: ' + k); continue; }
   if (!SM[k]) { console.error('Material fehlt: ' + k); continue; }
-  const m = new THREE.Mesh(gs, SM[k]); world.add(m);
+  const m = new THREE.Mesh(gs, SM[k]); m.userData.parts = SPARTS[k]; m.userData.key = k; MERGED.push(m); world.add(m);
 }
 
 /* ---- Möbel: Modelle (Quaternius CC0) und Eigenbau ---- */
@@ -982,6 +985,8 @@ function finish() {
 /* ------------------------------------------------------------------------ Eingabe */
 function setPaused(p) { if (p === paused) return; paused = p; if (p) { keys.clear(); $('overlay').style.display = 'flex'; $('overlay').querySelector('.go').textContent = 'PAUSE – KLICKEN ZUM WEITERSPIELEN'; } }
 addEventListener('keydown', e => {
+  if (e.code === 'Tab' && started && window.__EDITOR) { e.preventDefault(); if (!e.repeat) window.__EDITOR.toggle(!(window.__EDIT && window.__EDIT.on)); return; }
+  if (window.__EDIT && window.__EDIT.on) return;
   if (e.repeat) return;
   if (started && e.code === 'Escape') { setPaused(true); return; }
   if (paused) return; keys.add(e.code);
@@ -998,13 +1003,14 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyK') { const hs = [200, 300, 450, 720]; look.setHeight(hs[(hs.indexOf(look.height) + 1) % hs.length]); say('Auflösung: ' + look.height + 'p', 1.5); }
 });
 addEventListener('keyup', e => keys.delete(e.code));
-addEventListener('mousemove', e => { if (!started || ended || !(locked || e.buttons & 1)) return; player.yaw -= e.movementX * 0.0022; player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch - e.movementY * 0.0022)); });
-document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === renderer.domElement; if (!locked && started && !ended) setPaused(true); });
+addEventListener('mousemove', e => { if (!started || ended || (window.__EDIT && window.__EDIT.on) || !(locked || e.buttons & 1)) return; player.yaw -= e.movementX * 0.0022; player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch - e.movementY * 0.0022)); });
+document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === renderer.domElement; if (!locked && started && !ended && !(window.__EDIT && window.__EDIT.on)) setPaused(true); });
 function begin() {
   initAudio(); if (AC && AC.state === 'suspended') AC.resume();
   $('overlay').style.display = 'none'; paused = false;
   if (!started) { started = true; renderTasks(); setTimeout(() => say(TEXT.start, 5), 600); setTimeout(() => say(TEXT.hintTasks, 5), 7500); }
-  try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (e) { }
+  if (!(window.__EDIT && window.__EDIT.on)) { try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (e) { } }
+  if (location.search.indexOf('editor') >= 0 && window.__EDITOR && !(window.__EDIT && window.__EDIT.on)) window.__EDITOR.toggle(true);
 }
 $('overlay').addEventListener('click', begin);
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); look.resize(); });
@@ -1014,7 +1020,8 @@ let last = performance.now(), stepT = 0, boundsT = -99, nextEvent = 25, towerBli
 function update(dt) {
   time += dt;
   if (subTimer > 0) { subTimer -= dt; if (subTimer <= 0) { $('sub').textContent = ''; subShift(); } }
-  if (started && !ended) {
+  if (window.__EDITOR) { window.__EDITOR.update(dt); if (window.__EDIT.on) $('prompt').textContent = ''; }
+  if (started && !ended && !(window.__EDIT && window.__EDIT.on)) {
     const f = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0), r = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0), run = keys.has('ShiftLeft') || keys.has('ShiftRight');
     const sp = (f || r) ? (run ? 3.4 : 1.9) : 0, sn = Math.sin(player.yaw), cs = Math.cos(player.yaw);
     let vx = -sn * f + cs * r, vz = -cs * f - sn * r; const l = Math.hypot(vx, vz) || 1;
@@ -1080,6 +1087,10 @@ function updateNums() {
   }
 }
 await Promise.all(furnJobs);
+const EDITOR = initEditor({ scene, world, apt, camera, canvas: renderer.domElement, look, colliders, streetLamps, say, merged: MERGED,
+  getPlayerPose: () => ({ pos: player.pos, yaw: player.yaw, pitch: player.pitch }), setFree: v => { window.__home.free = v; } });
+window.__EDITOR = EDITOR;
+try { await EDITOR.loadInitial(); } catch (err) { console.error('Editor-Daten konnten nicht geladen werden', err); }
 renderTasks();
 window.__home = { WALKSEGS, MAINWALKS, SPURS, LOTS, PLAYS, TOWERS, NUMS, setNums: v => { numsOn = v; }, haus, SEGS, zQ, zS, free: null, THREE, ent, mirror, player, begin, camera, interactables, tasks, phase, look, say, mirrorEvent, scene, colliders };
 requestAnimationFrame(frame);
