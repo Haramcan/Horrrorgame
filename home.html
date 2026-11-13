@@ -57,7 +57,7 @@
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9h · weichere Schatten · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9j · Nebel ohne Kreise, Lichthöfe · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -114,7 +114,7 @@ const look = new FtfLook(renderer, { height: 720 });
 const scene = new THREE.Scene();
 const SKY = 0x161e2a;
 scene.background = new THREE.Color(SKY);
-scene.fog = new THREE.FogExp2(SKY, 0.05);
+scene.fog = new THREE.FogExp2(SKY, 0.058);
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 300);
 camera.rotation.order = 'YXZ';
 scene.add(camera);
@@ -382,6 +382,7 @@ function buildSeg(s) {
   }
   facePut('concL', ew, 2.4, 0.12, 1.1, tC, FLOOR_Y + 2.35, fc, sg * (tp + 0.5));                 // Vordach
   facePut('warm', ew, 0.3, 0.08, 0.2, tC, FLOOR_Y + 2.26, fc, sg * (tp + 0.15));                  // Lampe über der Tür
+  doorGlowPts.push([ew ? tC : fc + sg * (tp + 0.35), ew ? fc + sg * (tp + 0.35) : tC, ew ? 0 : sg, ew ? sg : 0]);
   facePut('conc', ew, 1.9, 0.15, 0.7, tC, 0, fc, sg * (tp + 0.35));                               // Stufe
   if (!home) for (let f = 1; f < 4; f++) { facePut('paneC', ew, 0.8, 1.2, 0.06, tC, FLOOR_Y + f * FP + 1.0, fc, sg * (tp + 0.03)); facePut('white', ew, 1.0, 1.4, 0.04, tC, FLOOR_Y + f * FP + 0.9, fc, sg * (tp + 0.015)); }
   if (!home) sBox('fas', ew ? 3.6 : tp + 0.4, 0.15, ew ? tp + 0.4 : 3.6, ew ? tC : fc + sg * tp / 2, TOPY + 0.9, ew ? fc + sg * tp / 2 : tC);   // Dach des Turms
@@ -627,14 +628,32 @@ function playground(x0, x1, z0, z1, wx) {
 const PGA = playground(-52.0, -30.0, -23.2, -11.6, -60.3);
 const PGB = playground(8.0, 30.0, -21.2, -9.6, -3.9);
 
+var doorGlowPts = [];
 for (const s of SEGS) buildSeg(s);
 
 /* ---------- Straßenlampen, Autos, Taxi ---------- */
 const streetLamps = [];
+const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,225,170,1)'); r.addColorStop(0.18, 'rgba(255,190,110,0.55)'); r.addColorStop(0.5, 'rgba(255,150,70,0.16)'); r.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const coneTex = (() => { const c = document.createElement('canvas'); c.width = 4; c.height = 64; const g = c.getContext('2d'), r = g.createLinearGradient(0, 0, 0, 64); r.addColorStop(0, 'rgb(0,0,0)'); r.addColorStop(1, 'rgb(255,255,255)'); g.fillStyle = r; g.fillRect(0, 0, 4, 64); return new THREE.CanvasTexture(c); })();
+const coneMat = new THREE.MeshBasicMaterial({ map: coneTex, color: 0xff9a50, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+const haloMat = new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+const poolMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffa860, transparent: true, opacity: 0.30, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+function doorGlow(x, z, nx, nz) {
+  const halo = new THREE.Sprite(haloMat); halo.position.set(x, FLOOR_Y + 2.2, z); halo.scale.set(1.5, 1.5, 1); world.add(halo);
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(2.6, 24), poolMat); pool.rotation.x = -Math.PI / 2; pool.position.set(x + nx * 1.3, 0.06, z + nz * 1.3); world.add(pool);
+}
+for (const p of doorGlowPts) doorGlow(p[0], p[1], p[2], p[3]);
+function lampGlow(x, z) {
+  const hy = 5.2, halo = new THREE.Sprite(haloMat); halo.position.set(x, hy, z); halo.scale.set(2.6, 2.6, 1); world.add(halo);
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(3.4, hy - 0.2, 20, 1, true), coneMat); cone.position.set(x, (hy + 0.2) / 2, z); world.add(cone);
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(6, 28), poolMat); pool.rotation.x = -Math.PI / 2; pool.position.set(x, 0.06, z); world.add(pool);
+}
 function streetLamp(lx, lz, dir = 1) {
   sBox('metal', 0.14, 5.4, 0.14, lx, 0, lz); sBox('metal', 0.1, 0.1, 1.0, lx, 5.35, lz + 0.45 * dir); sBox('warm', 0.45, 0.1, 0.5, lx, 5.25, lz + 0.9 * dir);
   colliders.push({ minX: lx - 0.15, maxX: lx + 0.15, minZ: lz - 0.15, maxZ: lz + 0.15 });
-  streetLamps.push({ x: lx, z: lz + 0.9 * dir, dead: streetLamps.length % 3 === 1 });
+  const dead = streetLamps.length % 3 === 1;
+  streetLamps.push({ x: lx, z: lz + 0.9 * dir, dead });
+  if (!dead) lampGlow(lx, lz + 0.9 * dir);
 }
 for (const lx of [-88, -62, -36, -10, 18, 44, 70, 88]) streetLamp(lx, zQ(lx) - 4.6, 1);
 for (const lx of [-75, -49, -23, 3, 29, 55, 81]) streetLamp(lx, zQ(lx) + 4.6, -1);
@@ -1020,11 +1039,7 @@ function mirrorEvent() {
 }
 let flickerUntil = 0;
 /* ---------- Bodennebel und der Beobachter ---------- */
-const fogSprites = [];
-{ const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(170,185,200,0.55)'); gr.addColorStop(1, 'rgba(170,185,200,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
-  const tx = new THREE.CanvasTexture(c), mt = new THREE.SpriteMaterial({ map: tx, transparent: true, opacity: 0.09, depthWrite: false, fog: false });
-  let s = 11; const rr = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  for (let i = 0, n = 0; i < 400 && n < 70; i++) { const x = -108 + rr() * 208, z = -66 + rr() * 172; if (blockedAt(x, z, 5)) continue; n++; const sp = new THREE.Sprite(mt); const w = 7 + rr() * 6; sp.scale.set(w, 1.6 + rr() * 1.6, 1); sp.position.set(x, 0.6 + rr() * 1.0, z); sp.userData.x0 = x; sp.userData.ph = rr() * 6.28; sp.userData.vx = 0.12 + rr() * 0.12; world.add(sp); fogSprites.push(sp); } }
+const fogSprites = [];   // (Nebelkreise entfernt: der Nebel kommt jetzt nur noch aus dem Szenennebel)
 const watcher = new THREE.Group();
 { const m = new THREE.MeshLambertMaterial({ color: 0x020203 }); const add = (g, x, y, z) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); watcher.add(o); };
   add(new THREE.BoxGeometry(0.5, 0.85, 0.28), 0, 1.2, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), -0.14, 0.4, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), 0.14, 0.4, 0);
@@ -1037,7 +1052,7 @@ function updateWatcher(dt) {
   const out = player.level === 0 && !(player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1);
   if (!watcher.visible) {
     watchT -= dt; if (watchT > 0 || !out) return;
-    for (let k = 0; k < 14; k++) { const a = player.yaw + (Math.random() - 0.5) * 1.5, dist = 14 + Math.random() * 5, x = player.pos.x - Math.sin(a) * dist, z = player.pos.z - Math.cos(a) * dist;
+    for (let k = 0; k < 14; k++) { const a = player.yaw + (Math.random() < 0.5 ? -1 : 1) * (1.15 + Math.random() * 1.2), dist = 14 + Math.random() * 5, x = player.pos.x - Math.sin(a) * dist, z = player.pos.z - Math.cos(a) * dist;
       if (x < -98 || x > 90 || blockedAt(x, z)) continue; watcher.position.set(x, 0, z); watcher.rotation.y = Math.atan2(player.pos.x - x, player.pos.z - z); watcher.visible = true; watchLife = 0; watchStare = 0; return; }
     watchT = 5; return;
   }
@@ -1121,7 +1136,7 @@ function update(dt) {
   lampTVL.intensity = 3 * (0.7 + Math.random() * 0.5);
   look.u.uFlash.value = fl && Math.random() < 0.06 ? 0.12 : 0;
   // Nebel: draußen dicht, im Haus dünn
-  { const inside = player.pos.y > 2.4 || (player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1); const want = inside ? 0.012 : 0.05; if (!(window.__EDIT && window.__EDIT.on)) scene.fog.density += (want - scene.fog.density) * Math.min(1, dt * 1.5);
+  { const inside = player.pos.y > 2.4 || (player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1); const want = inside ? 0.012 : 0.058; if (!(window.__EDIT && window.__EDIT.on)) scene.fog.density += (want - scene.fog.density) * Math.min(1, dt * 1.5);
     for (const f of fogSprites) { f.position.x = f.userData.x0 + Math.sin(time * f.userData.vx + f.userData.ph) * 2.2; f.visible = !inside; } }
   updateWatcher(dt);
   // Zufallsereignisse in der Siedlung: ferner Hund, Zug, flackernde Laterne
