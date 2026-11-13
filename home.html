@@ -57,7 +57,7 @@
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9f · dunkle Atmosphäre · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9g · Nebel, Schmutz, Beobachter · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -112,13 +112,13 @@ renderer.autoClear = false;
 document.body.prepend(renderer.domElement);
 const look = new FtfLook(renderer, { height: 720 });
 const scene = new THREE.Scene();
-const SKY = 0x06080d;
+const SKY = 0x161e2a;
 scene.background = new THREE.Color(SKY);
-scene.fog = new THREE.FogExp2(SKY, 0.022);
+scene.fog = new THREE.FogExp2(SKY, 0.05);
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 300);
 camera.rotation.order = 'YXZ';
 scene.add(camera);
-scene.add(new THREE.AmbientLight(0x4a5670, 0.42));
+scene.add(new THREE.AmbientLight(0x4a5670, 0.55));
 scene.add(new THREE.HemisphereLight(0x4a5878, 0x120e10, 0.1));
 
 /* ------------------------------------------------------------------------ Texturen, Materialien */
@@ -133,15 +133,16 @@ const M = { wall: tex('wall', 0xe2d3bd), ceiling: tex('ceiling', 0xd8d2c8), wood
   white: flat(0xcfcac2), dark: flat(0x121214), black: flat(0x050505), metal: flat(0x707078), woodDark: flat(0x4a3322), cardboard: flat(0x9a7a4e), cloth: flat(0x6a4a52), pane: new THREE.MeshBasicMaterial({ color: 0x090d18 }), warm: glow(0xffc070) };
 const facTex = (() => {   // Fassade der Blöcke: grau-beiger Putz mit braunem Fensterband, eine Geschosshöhe (2,8 m) pro Kachel
   const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gy = y => (1 - y / 2.8) * 128;
-  g.fillStyle = 'rgb(180,174,160)'; g.fillRect(0, 0, 128, 128);
-  g.fillStyle = 'rgb(176,148,112)'; g.fillRect(0, gy(2.2), 128, gy(0.8) - gy(2.2));
+  g.fillStyle = 'rgb(112,110,102)'; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = 'rgb(88,74,60)'; g.fillRect(0, gy(2.2), 128, gy(0.8) - gy(2.2));
   g.fillStyle = 'rgba(70,55,40,0.35)'; g.fillRect(0, gy(0.8) - 1, 128, 2); g.fillRect(0, gy(2.2) - 1, 128, 2);
   let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
   for (let i = 0; i < 900; i++) { const v = (r() - 0.5) * 26; g.fillStyle = 'rgba(' + (v > 0 ? '255,255,255' : '0,0,0') + ',' + (Math.abs(v) / 120).toFixed(3) + ')'; g.fillRect(r() * 128, r() * 128, 1 + r() * 2, 1 + r() * 2); }
-  for (let i = 0; i < 14; i++) { g.fillStyle = 'rgba(60,50,40,0.07)'; g.beginPath(); g.ellipse(r() * 128, r() * 128, 6 + r() * 14, 3 + r() * 10, 0, 0, 7); g.fill(); }
+  for (let i = 0; i < 26; i++) { const x = r() * 128, y0 = r() * 90, len = 20 + r() * 60; const gr = g.createLinearGradient(0, y0, 0, y0 + len); gr.addColorStop(0, 'rgba(20,18,14,0.34)'); gr.addColorStop(1, 'rgba(20,18,14,0)'); g.fillStyle = gr; g.fillRect(x, y0, 1 + r() * 3, len); }
+  for (let i = 0; i < 18; i++) { g.fillStyle = 'rgba(30,34,26,0.16)'; g.beginPath(); g.ellipse(r() * 128, r() * 128, 6 + r() * 14, 3 + r() * 10, 0, 0, 7); g.fill(); }
   const tx = new THREE.CanvasTexture(c); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.magFilter = THREE.NearestFilter; tx.minFilter = THREE.NearestMipmapLinearFilter; tx.colorSpace = THREE.SRGBColorSpace; return tx;
 })();
-M.fac = new THREE.MeshLambertMaterial({ map: facTex }); M.towerWall = tex('concrete', 0xc8c4ba);
+M.fac = new THREE.MeshLambertMaterial({ map: facTex, color: 0xb8b8bc }); M.towerWall = tex('concrete', 0xc8c4ba);
 const TILEV = 1.6;
 function boxGeo(w, h, d, tile = TILEV) {
   const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
@@ -633,7 +634,7 @@ const streetLamps = [];
 function streetLamp(lx, lz, dir = 1) {
   sBox('metal', 0.14, 5.4, 0.14, lx, 0, lz); sBox('metal', 0.1, 0.1, 1.0, lx, 5.35, lz + 0.45 * dir); sBox('warm', 0.45, 0.1, 0.5, lx, 5.25, lz + 0.9 * dir);
   colliders.push({ minX: lx - 0.15, maxX: lx + 0.15, minZ: lz - 0.15, maxZ: lz + 0.15 });
-  streetLamps.push({ x: lx, z: lz + 0.9 * dir });
+  streetLamps.push({ x: lx, z: lz + 0.9 * dir, dead: streetLamps.length % 3 === 1 });
 }
 for (const lx of [-88, -62, -36, -10, 18, 44, 70, 88]) streetLamp(lx, zQ(lx) - 4.6, 1);
 for (const lx of [-75, -49, -23, 3, 29, 55, 81]) streetLamp(lx, zQ(lx) + 4.6, -1);
@@ -1018,6 +1019,34 @@ function mirrorEvent() {
   setTimeout(() => say(TEXT.mirror[2], 4), 3700);
 }
 let flickerUntil = 0;
+/* ---------- Bodennebel und der Beobachter ---------- */
+const fogSprites = [];
+{ const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(170,185,200,0.55)'); gr.addColorStop(1, 'rgba(170,185,200,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const tx = new THREE.CanvasTexture(c), mt = new THREE.SpriteMaterial({ map: tx, transparent: true, opacity: 0.16, depthWrite: false, fog: false });
+  let s = 11; const rr = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 110; i++) { const sp = new THREE.Sprite(mt); const w = 12 + rr() * 16; sp.scale.set(w, 2.5 + rr() * 3, 1); sp.position.set(-108 + rr() * 208, 0.8 + rr() * 1.4, -66 + rr() * 172); sp.userData.vx = 0.25 + rr() * 0.35; world.add(sp); fogSprites.push(sp); } }
+const watcher = new THREE.Group();
+{ const m = new THREE.MeshLambertMaterial({ color: 0x020203 }); const add = (g, x, y, z) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); watcher.add(o); };
+  add(new THREE.BoxGeometry(0.5, 0.85, 0.28), 0, 1.2, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), -0.14, 0.4, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), 0.14, 0.4, 0);
+  add(new THREE.BoxGeometry(0.14, 0.75, 0.14), -0.34, 1.15, 0); add(new THREE.BoxGeometry(0.14, 0.75, 0.14), 0.34, 1.15, 0); add(new THREE.SphereGeometry(0.17, 6, 5), 0, 1.78, 0); watcher.scale.setScalar(1.12); }
+watcher.visible = false; world.add(watcher);
+let watchT = 22, watchLife = 0, watchStare = 0;
+function blockedAt(x, z) { for (const c of colliders) if ((c.lvl || 0) === 0 && x > c.minX - 1 && x < c.maxX + 1 && z > c.minZ - 1 && z < c.maxZ + 1) return true; return false; }
+function updateWatcher(dt) {
+  if (!started || ended || paused || (window.__EDIT && window.__EDIT.on)) { watcher.visible = false; return; }
+  const out = player.level === 0 && !(player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1);
+  if (!watcher.visible) {
+    watchT -= dt; if (watchT > 0 || !out) return;
+    for (let k = 0; k < 14; k++) { const a = player.yaw + (Math.random() - 0.5) * 1.5, dist = 14 + Math.random() * 5, x = player.pos.x - Math.sin(a) * dist, z = player.pos.z - Math.cos(a) * dist;
+      if (x < -98 || x > 90 || blockedAt(x, z)) continue; watcher.position.set(x, 0, z); watcher.rotation.y = Math.atan2(player.pos.x - x, player.pos.z - z); watcher.visible = true; watchLife = 0; watchStare = 0; return; }
+    watchT = 5; return;
+  }
+  watchLife += dt;
+  const dx = watcher.position.x - player.pos.x, dz = watcher.position.z - player.pos.z, d = Math.hypot(dx, dz);
+  const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw), ang = Math.acos(Math.max(-1, Math.min(1, (dx * fx + dz * fz) / (d || 1))));
+  if (ang < 0.25) watchStare += dt; else watchStare = Math.max(0, watchStare - dt * 0.5);
+  if (watchStare > 1.6 || d < 8 || watchLife > 45 || !out) { watcher.visible = false; watchT = 25 + Math.random() * 35; if (watchStare > 1.6 || d < 8) { if (Math.random() < 0.5) whisper(); else creak(); } }
+}
 function finish() {
   if (ended) return; ended = true; document.exitPointerLock && document.exitPointerLock();
   $('fade').style.transition = 'opacity 1.6s'; $('fade').style.opacity = 1; tone(220, 1.5, 0.2, 'sine', 80);
@@ -1091,6 +1120,10 @@ function update(dt) {
   for (const k in BASE) L[k].intensity = BASE[k] * (fl ? (Math.random() > 0.45 ? 1 : 0) : 1);
   lampTVL.intensity = 3 * (0.7 + Math.random() * 0.5);
   look.u.uFlash.value = fl && Math.random() < 0.06 ? 0.12 : 0;
+  // Nebel: draußen dicht, im Haus dünn
+  { const inside = player.pos.y > 2.4 || (player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1); const want = inside ? 0.012 : 0.05; if (!(window.__EDIT && window.__EDIT.on)) scene.fog.density += (want - scene.fog.density) * Math.min(1, dt * 1.5);
+    for (const f of fogSprites) { f.position.x += f.userData.vx * dt; if (f.position.x > 100) f.position.x = -108; if (f.position.x < -108) f.position.x = 100; f.visible = !inside; } }
+  updateWatcher(dt);
   // Zufallsereignisse in der Siedlung: ferner Hund, Zug, flackernde Laterne
   if (started && !ended && time > nextEvent) {
     nextEvent = time + 14 + Math.random() * 24;
@@ -1105,7 +1138,7 @@ function update(dt) {
     else if (k === 7) { steps(5 + Math.floor(Math.random() * 4)); }                                    // Schritte über oder neben dir
     else { flickerUntil = performance.now() + 700 + Math.random() * 900; creak(); }
   }
-  { const px = player.pos.x, pz = player.pos.z, near = streetLamps.map(l => [Math.hypot(l.x - px, l.z - pz), l]).sort((a, b) => a[0] - b[0]); for (let i = 0; i < lampPool.length; i++) lampPool[i].position.set(near[i][1].x, 4.8, near[i][1].z); }
+  { const px = player.pos.x, pz = player.pos.z, near = streetLamps.filter(l => !l.dead).map(l => [Math.hypot(l.x - px, l.z - pz), l]).sort((a, b) => a[0] - b[0]); for (let i = 0; i < lampPool.length; i++) lampPool[i].position.set(near[i][1].x, 4.8, near[i][1].z); }
   swingKick = Math.max(0, swingKick - dt * 0.18); swingSeats.forEach((g, i) => { g.rotation.x = Math.sin(time * 2.1 + i) * 0.45 * swingKick; });
   towerBlink += dt;
   camera.position.set(player.pos.x, player.pos.y + Math.sin(player.bob) * 0.035, player.pos.z); camera.rotation.set(player.pitch, player.yaw, 0);
@@ -1143,7 +1176,7 @@ const EDITOR = initEditor({ scene, world, apt, camera, canvas: renderer.domEleme
 window.__EDITOR = EDITOR;
 try { await EDITOR.loadInitial(); } catch (err) { console.error('Editor-Daten konnten nicht geladen werden', err); }
 renderTasks();
-window.__home = { WALKSEGS, MAINWALKS, SPURS, LOTS, PLAYS, TOWERS, NUMS, setNums: v => { numsOn = v; }, haus, SEGS, zQ, zS, free: null, THREE, ent, mirror, player, begin, camera, interactables, tasks, phase, look, say, mirrorEvent, scene, colliders };
+window.__home = { watcher, fogSprites, WALKSEGS, MAINWALKS, SPURS, LOTS, PLAYS, TOWERS, NUMS, setNums: v => { numsOn = v; }, haus, SEGS, zQ, zS, free: null, THREE, ent, mirror, player, begin, camera, interactables, tasks, phase, look, say, mirrorEvent, scene, colliders };
 requestAnimationFrame(frame);
 </script>
 </body>
