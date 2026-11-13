@@ -57,7 +57,7 @@
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9d · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9e · ruhiger Look ohne Brummen · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -110,7 +110,7 @@ renderer.setPixelRatio(1);
 renderer.setSize(innerWidth, innerHeight);
 renderer.autoClear = false;
 document.body.prepend(renderer.domElement);
-const look = new FtfLook(renderer, { height: 300 });
+const look = new FtfLook(renderer, { height: 720 });
 const scene = new THREE.Scene();
 const SKY = 0x151823;
 scene.background = new THREE.Color(SKY);
@@ -943,8 +943,8 @@ function initAudio() {
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = 0.6; master.connect(AC.destination);
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const hum = AC.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = 50; const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 140; const hg = AC.createGain(); hg.gain.value = 0.025; hum.connect(lp).connect(hg).connect(master); hum.start();
-    const ws = AC.createBufferSource(); ws.buffer = noiseBuf; ws.loop = true; const wl = AC.createBiquadFilter(); wl.type = 'lowpass'; wl.frequency.value = 380; const wg = AC.createGain(); wg.gain.value = 0.03; ws.connect(wl).connect(wg).connect(master); ws.start();
+    // (Dauerbrummen und Rauschteppich entfernt: nur noch gezielte Geräusche)
+
   } catch (e) { AC = null; }
 }
 function burst(f, q, dur, vol, type = 'bandpass') { if (!AC) return; const s = AC.createBufferSource(); s.buffer = noiseBuf; const b = AC.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; const g = AC.createGain(), t = AC.currentTime; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + dur * .2); g.gain.linearRampToValueAtTime(0, t + dur); s.connect(b).connect(g).connect(master); s.start(t, Math.random(), dur + .05); }
@@ -1037,7 +1037,7 @@ addEventListener('keydown', e => {
     if (!ok) say(v, 12);
     console.log(v);
   }
-  if (e.code === 'KeyK') { const hs = [200, 300, 450, 720]; look.setHeight(hs[(hs.indexOf(look.height) + 1) % hs.length]); say('Auflösung: ' + look.height + 'p', 1.5); }
+  if (e.code === 'KeyK') { const hs = [360, 540, 720, 1080]; look.setHeight(hs[(hs.indexOf(look.height) + 1) % hs.length]); say('Auflösung: ' + look.height + 'p', 1.5); }
 });
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('mousemove', e => { if (!started || ended || (window.__EDIT && window.__EDIT.on) || !(locked || e.buttons & 1)) return; player.yaw -= e.movementX * 0.0022; player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch - e.movementY * 0.0022)); });
@@ -1091,7 +1091,7 @@ function update(dt) {
     nextEvent = time + 28 + Math.random() * 40;
     const k = Math.floor(Math.random() * 3);
     if (k === 0) { for (let i = 0; i < 3; i++) setTimeout(() => { burst(650, 4, 0.16, 0.1); tone(420, 0.14, 0.05, 'sawtooth', 240); }, i * 380); }
-    else if (k === 1 && AC) { const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true; const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 160; const g = AC.createGain(), t0 = AC.currentTime; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.18, t0 + 3); g.gain.linearRampToValueAtTime(0, t0 + 7); s.connect(f).connect(g).connect(master); s.start(); s.stop(t0 + 7.2); setTimeout(() => { tone(311, 1.2, 0.04, 'sine'); tone(392, 1.2, 0.04, 'sine'); }, 2500); }
+    else if (k === 1 && AC) { const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true; const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 160; const g = AC.createGain(), t0 = AC.currentTime; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.05, t0 + 3); g.gain.linearRampToValueAtTime(0, t0 + 7); s.connect(f).connect(g).connect(master); s.start(); s.stop(t0 + 7.2); setTimeout(() => { tone(311, 1.2, 0.04, 'sine'); tone(392, 1.2, 0.04, 'sine'); }, 2500); }
     else { const l = lampPool[Math.floor(Math.random() * 4)]; let n = 0; const iv = setInterval(() => { l.intensity = l.intensity > 0 ? 0 : 190; if (++n > 8) { clearInterval(iv); l.intensity = 190; } }, 90); }
   }
   { const px = player.pos.x, pz = player.pos.z, near = streetLamps.map(l => [Math.hypot(l.x - px, l.z - pz), l]).sort((a, b) => a[0] - b[0]); for (let i = 0; i < lampPool.length; i++) lampPool[i].position.set(near[i][1].x, 4.8, near[i][1].z); }

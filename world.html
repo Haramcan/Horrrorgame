@@ -119,7 +119,7 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.prepend(renderer.domElement);
-const look = new FtfLook(renderer, { height: 360 });
+const look = new FtfLook(renderer, { height: 720 });
 look.enabled = (location.search.indexOf('clean') < 0);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.3, 8000);
