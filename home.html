@@ -57,7 +57,7 @@
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9j · Nebel ohne Kreise, Lichthöfe · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9k · keine Scheiben, kein Beobachter · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -636,16 +636,15 @@ const streetLamps = [];
 const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,225,170,1)'); r.addColorStop(0.18, 'rgba(255,190,110,0.55)'); r.addColorStop(0.5, 'rgba(255,150,70,0.16)'); r.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
 const coneTex = (() => { const c = document.createElement('canvas'); c.width = 4; c.height = 64; const g = c.getContext('2d'), r = g.createLinearGradient(0, 0, 0, 64); r.addColorStop(0, 'rgb(0,0,0)'); r.addColorStop(1, 'rgb(255,255,255)'); g.fillStyle = r; g.fillRect(0, 0, 4, 64); return new THREE.CanvasTexture(c); })();
 const coneMat = new THREE.MeshBasicMaterial({ map: coneTex, color: 0xff9a50, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-const haloMat = new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+const haloMat = new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
 const poolMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffa860, transparent: true, opacity: 0.30, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 function doorGlow(x, z, nx, nz) {
-  const halo = new THREE.Sprite(haloMat); halo.position.set(x, FLOOR_Y + 2.2, z); halo.scale.set(1.5, 1.5, 1); world.add(halo);
+  const halo = new THREE.Sprite(haloMat); halo.position.set(x, FLOOR_Y + 2.2, z); halo.scale.set(0.7, 0.7, 1); world.add(halo);
   const pool = new THREE.Mesh(new THREE.CircleGeometry(2.6, 24), poolMat); pool.rotation.x = -Math.PI / 2; pool.position.set(x + nx * 1.3, 0.06, z + nz * 1.3); world.add(pool);
 }
 for (const p of doorGlowPts) doorGlow(p[0], p[1], p[2], p[3]);
 function lampGlow(x, z) {
-  const hy = 5.2, halo = new THREE.Sprite(haloMat); halo.position.set(x, hy, z); halo.scale.set(2.6, 2.6, 1); world.add(halo);
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(3.4, hy - 0.2, 20, 1, true), coneMat); cone.position.set(x, (hy + 0.2) / 2, z); world.add(cone);
+  const hy = 5.2, halo = new THREE.Sprite(haloMat); halo.position.set(x, hy, z); halo.scale.set(1.1, 1.1, 1); world.add(halo);
   const pool = new THREE.Mesh(new THREE.CircleGeometry(6, 28), poolMat); pool.rotation.x = -Math.PI / 2; pool.position.set(x, 0.06, z); world.add(pool);
 }
 function streetLamp(lx, lz, dir = 1) {
@@ -1044,8 +1043,8 @@ const watcher = new THREE.Group();
 { const m = new THREE.MeshLambertMaterial({ color: 0x020203 }); const add = (g, x, y, z) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); watcher.add(o); };
   add(new THREE.BoxGeometry(0.5, 0.85, 0.28), 0, 1.2, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), -0.14, 0.4, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), 0.14, 0.4, 0);
   add(new THREE.BoxGeometry(0.14, 0.75, 0.14), -0.34, 1.15, 0); add(new THREE.BoxGeometry(0.14, 0.75, 0.14), 0.34, 1.15, 0); add(new THREE.SphereGeometry(0.17, 6, 5), 0, 1.78, 0); watcher.scale.setScalar(1.12); }
-watcher.visible = false; world.add(watcher);
-let watchT = 22, watchLife = 0, watchStare = 0;
+watcher.visible = false;
+let watchT = 1e9, watchLife = 0, watchStare = 0;   // Beobachter abgeschaltet
 function blockedAt(x, z, m = 1) { for (const c of colliders) if ((c.lvl || 0) === 0 && x > c.minX - m && x < c.maxX + m && z > c.minZ - m && z < c.maxZ + m) return true; return false; }
 function updateWatcher(dt) {
   if (!started || ended || paused || (window.__EDIT && window.__EDIT.on)) { watcher.visible = false; return; }
@@ -1136,9 +1135,8 @@ function update(dt) {
   lampTVL.intensity = 3 * (0.7 + Math.random() * 0.5);
   look.u.uFlash.value = fl && Math.random() < 0.06 ? 0.12 : 0;
   // Nebel: draußen dicht, im Haus dünn
-  { const inside = player.pos.y > 2.4 || (player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1); const want = inside ? 0.012 : 0.058; if (!(window.__EDIT && window.__EDIT.on)) scene.fog.density += (want - scene.fog.density) * Math.min(1, dt * 1.5);
+  { const inside = player.pos.y > 2.4 || (player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1); const want = inside ? 0.028 : 0.058; if (!(window.__EDIT && window.__EDIT.on)) scene.fog.density += (want - scene.fog.density) * Math.min(1, dt * 0.45);
     for (const f of fogSprites) { f.position.x = f.userData.x0 + Math.sin(time * f.userData.vx + f.userData.ph) * 2.2; f.visible = !inside; } }
-  updateWatcher(dt);
   // Zufallsereignisse in der Siedlung: ferner Hund, Zug, flackernde Laterne
   if (started && !ended && time > nextEvent) {
     nextEvent = time + 14 + Math.random() * 24;
