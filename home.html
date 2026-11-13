@@ -57,7 +57,7 @@
     <tr><td><kbd>L</kbd></td><td>VHS-Look an/aus &nbsp; <kbd>K</kbd> Auflösung ändern</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
   </table>
-  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9g · Nebel, Schmutz, Beobachter · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
+  <div class="go">KLICKEN ZUM STARTEN</div><div style="text-align:center;margin-top:12px;font-size:12px;opacity:.6">Version 9h · weichere Schatten · Durchgehendes Treppenhaus (4 Etagen), Wohnung gedreht, Editor mit Wegen</div><div id="err"></div>
 </div></div>
 
 <script type="module">
@@ -1022,16 +1022,16 @@ let flickerUntil = 0;
 /* ---------- Bodennebel und der Beobachter ---------- */
 const fogSprites = [];
 { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(170,185,200,0.55)'); gr.addColorStop(1, 'rgba(170,185,200,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
-  const tx = new THREE.CanvasTexture(c), mt = new THREE.SpriteMaterial({ map: tx, transparent: true, opacity: 0.16, depthWrite: false, fog: false });
+  const tx = new THREE.CanvasTexture(c), mt = new THREE.SpriteMaterial({ map: tx, transparent: true, opacity: 0.09, depthWrite: false, fog: false });
   let s = 11; const rr = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 110; i++) { const sp = new THREE.Sprite(mt); const w = 12 + rr() * 16; sp.scale.set(w, 2.5 + rr() * 3, 1); sp.position.set(-108 + rr() * 208, 0.8 + rr() * 1.4, -66 + rr() * 172); sp.userData.vx = 0.25 + rr() * 0.35; world.add(sp); fogSprites.push(sp); } }
+  for (let i = 0, n = 0; i < 400 && n < 70; i++) { const x = -108 + rr() * 208, z = -66 + rr() * 172; if (blockedAt(x, z, 5)) continue; n++; const sp = new THREE.Sprite(mt); const w = 7 + rr() * 6; sp.scale.set(w, 1.6 + rr() * 1.6, 1); sp.position.set(x, 0.6 + rr() * 1.0, z); sp.userData.x0 = x; sp.userData.ph = rr() * 6.28; sp.userData.vx = 0.12 + rr() * 0.12; world.add(sp); fogSprites.push(sp); } }
 const watcher = new THREE.Group();
 { const m = new THREE.MeshLambertMaterial({ color: 0x020203 }); const add = (g, x, y, z) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); watcher.add(o); };
   add(new THREE.BoxGeometry(0.5, 0.85, 0.28), 0, 1.2, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), -0.14, 0.4, 0); add(new THREE.BoxGeometry(0.18, 0.8, 0.18), 0.14, 0.4, 0);
   add(new THREE.BoxGeometry(0.14, 0.75, 0.14), -0.34, 1.15, 0); add(new THREE.BoxGeometry(0.14, 0.75, 0.14), 0.34, 1.15, 0); add(new THREE.SphereGeometry(0.17, 6, 5), 0, 1.78, 0); watcher.scale.setScalar(1.12); }
 watcher.visible = false; world.add(watcher);
 let watchT = 22, watchLife = 0, watchStare = 0;
-function blockedAt(x, z) { for (const c of colliders) if ((c.lvl || 0) === 0 && x > c.minX - 1 && x < c.maxX + 1 && z > c.minZ - 1 && z < c.maxZ + 1) return true; return false; }
+function blockedAt(x, z, m = 1) { for (const c of colliders) if ((c.lvl || 0) === 0 && x > c.minX - m && x < c.maxX + m && z > c.minZ - m && z < c.maxZ + m) return true; return false; }
 function updateWatcher(dt) {
   if (!started || ended || paused || (window.__EDIT && window.__EDIT.on)) { watcher.visible = false; return; }
   const out = player.level === 0 && !(player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1);
@@ -1122,7 +1122,7 @@ function update(dt) {
   look.u.uFlash.value = fl && Math.random() < 0.06 ? 0.12 : 0;
   // Nebel: draußen dicht, im Haus dünn
   { const inside = player.pos.y > 2.4 || (player.pos.x > SH.x0 && player.pos.x < SH.x1 && player.pos.z > SH.z0 && player.pos.z < SH.z1); const want = inside ? 0.012 : 0.05; if (!(window.__EDIT && window.__EDIT.on)) scene.fog.density += (want - scene.fog.density) * Math.min(1, dt * 1.5);
-    for (const f of fogSprites) { f.position.x += f.userData.vx * dt; if (f.position.x > 100) f.position.x = -108; if (f.position.x < -108) f.position.x = 100; f.visible = !inside; } }
+    for (const f of fogSprites) { f.position.x = f.userData.x0 + Math.sin(time * f.userData.vx + f.userData.ph) * 2.2; f.visible = !inside; } }
   updateWatcher(dt);
   // Zufallsereignisse in der Siedlung: ferner Hund, Zug, flackernde Laterne
   if (started && !ended && time > nextEvent) {
@@ -1130,7 +1130,7 @@ function update(dt) {
     const k = Math.floor(Math.random() * 9);
     if (k === 0) { for (let i = 0; i < 3; i++) setTimeout(() => { burst(650, 4, 0.16, 0.1); tone(420, 0.14, 0.05, 'sawtooth', 240); }, i * 380); }
     else if (k === 1 && AC) { const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true; const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 160; const g = AC.createGain(), t0 = AC.currentTime; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.05, t0 + 3); g.gain.linearRampToValueAtTime(0, t0 + 7); s.connect(f).connect(g).connect(master); s.start(); s.stop(t0 + 7.2); setTimeout(() => { tone(311, 1.2, 0.04, 'sine'); tone(392, 1.2, 0.04, 'sine'); }, 2500); }
-    else if (k === 2) { const l = lampPool[Math.floor(Math.random() * 4)]; let n = 0; const iv = setInterval(() => { l.intensity = l.intensity > 0 ? 0 : 85; if (++n > 8) { clearInterval(iv); l.intensity = 85; } }, 90); }
+    else if (k === 2) { const l = lampPool[Math.floor(Math.random() * 4)]; let n = 0; const iv = setInterval(() => { l.userData.fixed = (n % 2 === 0) ? 0 : undefined; if (++n > 8) { clearInterval(iv); l.userData.fixed = undefined; } }, 90); }
     else if (k === 3) { creak(); setTimeout(creak, 1400 + Math.random() * 1500); }                       // Holz knarrt, irgendwo im Haus
     else if (k === 4) { knock(2 + Math.floor(Math.random() * 3)); }                                    // Klopfen an Wand oder Rohr
     else if (k === 5) { windGust(); }                                                                  // Windstoß
@@ -1138,7 +1138,12 @@ function update(dt) {
     else if (k === 7) { steps(5 + Math.floor(Math.random() * 4)); }                                    // Schritte über oder neben dir
     else { flickerUntil = performance.now() + 700 + Math.random() * 900; creak(); }
   }
-  { const px = player.pos.x, pz = player.pos.z, near = streetLamps.filter(l => !l.dead).map(l => [Math.hypot(l.x - px, l.z - pz), l]).sort((a, b) => a[0] - b[0]); for (let i = 0; i < lampPool.length; i++) lampPool[i].position.set(near[i][1].x, 4.8, near[i][1].z); }
+  { // Laternen weich überblenden statt springen: jeder der 8 Plätze blendet aus, wandert dann zur neuen Laterne und blendet wieder ein
+    const px = player.pos.x, pz = player.pos.z, want = streetLamps.filter(l => !l.dead).map(l => [Math.hypot(l.x - px, l.z - pz), l]).sort((a, b) => a[0] - b[0]).slice(0, lampPool.length).map(a => a[1]);
+    for (const s of lampPool) { const ok = s.userData.src && want.includes(s.userData.src); s.userData.k = Math.max(0, Math.min(1, (s.userData.k || 0) + (ok ? 1 : -1) * dt * 1.6)); if (!ok && s.userData.k <= 0) s.userData.src = null; }
+    for (const l of want) if (!lampPool.some(s => s.userData.src === l)) { const free = lampPool.find(s => !s.userData.src); if (free) { free.userData.src = l; free.userData.k = 0; free.position.set(l.x, 4.8, l.z); } }
+    for (const s of lampPool) s.intensity = (s.userData.fixed !== undefined ? s.userData.fixed : 85) * (s.userData.k || 0);
+  }
   swingKick = Math.max(0, swingKick - dt * 0.18); swingSeats.forEach((g, i) => { g.rotation.x = Math.sin(time * 2.1 + i) * 0.45 * swingKick; });
   towerBlink += dt;
   camera.position.set(player.pos.x, player.pos.y + Math.sin(player.bob) * 0.035, player.pos.z); camera.rotation.set(player.pitch, player.yaw, 0);
