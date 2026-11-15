@@ -248,7 +248,9 @@ const MATS = {
   log: new THREE.MeshStandardMaterial({ color: 0x4a3524, roughness: 1 }), tezek: new THREE.MeshStandardMaterial({ color: 0x3f3226, roughness: 1 }),
   hay: new THREE.MeshStandardMaterial({ color: 0x9c8450, roughness: 1 }), clay: new THREE.MeshStandardMaterial({ color: 0x8a4e32, roughness: 1 }),
   glow: new THREE.MeshStandardMaterial({ color: 0x3a2a14, emissive: 0xffa850, emissiveIntensity: 1.6, roughness: 1 }),
-  lead: new THREE.MeshStandardMaterial({ color: 0x6d7885, roughness: 0.7, metalness: 0.25, flatShading: true })
+  lead: new THREE.MeshStandardMaterial({ color: 0x6d7885, roughness: 0.7, metalness: 0.25, flatShading: true }),
+  snow: new THREE.MeshStandardMaterial({ color: 0xe6ebf2, roughness: 1 }), glass: new THREE.MeshStandardMaterial({ color: 0x0b1016, roughness: 0.25, metalness: 0.3 }),
+  iron: new THREE.MeshStandardMaterial({ color: 0x1c1a19, roughness: 0.6, metalness: 0.6 }), plinth: mkTex('rustic_stone_wall', 0x8f867c), planks: mkTex('weathered_planks', 0x8a7866)
 };
 function boxG(w, h, d) {
   const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
@@ -260,10 +262,13 @@ class Builder {
   constructor(seed) { this.parts = {}; this.r = rng(seed || 1); }
   add(mat, geo, x, y, z, rx = 0, ry = 0, rz = 0) {
     geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1)));
-    const uv = geo.attributes.uv, ou = this.r(), ov = this.r(); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) + ou, uv.getY(i) + ov);
+    const uv = geo.attributes.uv, p = geo.attributes.position, n = geo.attributes.normal;
+    if (this.planar && uv && n) { for (let i = 0; i < uv.count; i++) { const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i)); if (ay > ax && ay > az) uv.setXY(i, p.getX(i) / TILE + this.ou, p.getZ(i) / TILE + this.ov); else if (ax > az) uv.setXY(i, p.getZ(i) / TILE + this.ou, p.getY(i) / TILE + this.ov); else uv.setXY(i, p.getX(i) / TILE + this.ou, p.getY(i) / TILE + this.ov); } }
+    else if (uv) { const ou = this.r(), ov = this.r(); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) + ou, uv.getY(i) + ov); }
     (this.parts[mat] = this.parts[mat] || []).push(geo);
   }
   box(mat, w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) { this.add(mat, boxG(w, h, d), x, y + h / 2, z, rx, ry, rz); }
+  cone(mat, r, h, x, y, z, rx = 0, seg = 5) { this.add(mat, new THREE.ConeGeometry(r, h, seg), x, y, z, rx, 0, 0); }
   cyl(mat, r, h, x, y, z, rx = 0, ry = 0, rz = 0, seg = 8) { this.add(mat, new THREE.CylinderGeometry(r, r, h, seg), x, y + h / 2, z, rx, ry, rz); }
   build() {
     const g = new THREE.Group();
@@ -272,62 +277,93 @@ class Builder {
   }
 }
 
-/* ---------- Dorfhaus: parametrischer Bau (Stein oder Lehmputz, Flachdach aus Erde oder Blechdach, Schäden) ---------- */
+/* ---------- Dorfhaus (Ostanatolien, Winter): Steinsockel, Holzbänder (Hatıl) in der Wand, eingelassene Brettertür mit Schwelle, Fenster mit Rahmen,
+   Sprossen, Sims, Läden oder Gittern, Flachdach aus Erde mit Balkenköpfen oder Blech-Satteldach, Schnee auf Dach und Simsen, Eiszapfen, Schneewehen ---------- */
 function buildHouse(o) {
-  const B = new Builder(o.seed || 1), r = B.r, w = o.w, d = o.d, h = o.h || 3, t = 0.55, wall = o.wall || 'stone', dmg = o.damage || 0;
-  const win = o.lit ? 'glow' : 'dark';
-  const stories = o.stories || 1, H = h + (stories === 2 ? 2.7 : 0);
-  // Sockel aus Stein bei verputzten Häusern
-  if (wall === 'plaster' || wall === 'wood') { B.box('stone', w + 0.06, 0.55, d + 0.06, 0, 0, 0); }
-  // Rückwand und Seiten
-  B.box(wall, w, H, t, 0, 0, -d / 2 + t / 2);
-  const sideH = dmg > 0.55 ? H * 0.64 : H;
-  B.box(wall, t, H, d - 2 * t, -w / 2 + t / 2, 0, 0);
-  B.box(wall, t, sideH, d - 2 * t, w / 2 - t / 2, 0, 0);
-  if (dmg > 0.55) { B.box(wall, t, 0.7, (d - 2 * t) * 0.45, w / 2 - t / 2, sideH, -(d - 2 * t) * 0.22); B.box(wall, t, 0.35, (d - 2 * t) * 0.2, w / 2 - t / 2, sideH, (d - 2 * t) * 0.3); }
-  // Vorderwand mit Türöffnung
-  const dw = o.bigDoor ? 2.2 : 1.0, dh = o.bigDoor ? 2.3 : 1.95, dx = o.doorX !== undefined ? o.doorX : (r() - 0.5) * Math.max(0.5, w - 3.4);
+  const B = new Builder(o.seed || 1), r = B.r; B.planar = true; B.ou = r(); B.ov = r();
+  const w = o.w, d = o.d, h = o.h || 3, t = 0.55, wall = o.wall || 'stone', dmg = o.damage || 0, fz = d / 2;
+  const win = o.lit ? 'glow' : 'glass', stories = o.stories || 1, H = h + (stories === 2 ? 2.7 : 0), ruin = dmg > 0.55;
+  // Sockel
+  B.box('plinth', w + 0.16, 0.5, d + 0.16, 0, 0, 0);
+  // Wände
+  const sideH = ruin ? H * 0.64 : H;
+  B.box(wall, w, H, t, 0, 0, -fz + t / 2); B.box(wall, t, H, d - 2 * t, -w / 2 + t / 2, 0, 0); B.box(wall, t, sideH, d - 2 * t, w / 2 - t / 2, 0, 0);
+  if (ruin) { B.box(wall, t, 0.7, (d - 2 * t) * 0.45, w / 2 - t / 2, sideH, -(d - 2 * t) * 0.22); B.box(wall, t, 0.35, (d - 2 * t) * 0.2, w / 2 - t / 2, sideH, (d - 2 * t) * 0.3); for (let i = 0; i < 6; i++) B.box(wall, 0.4 + r() * 0.4, 0.25 + r() * 0.2, 0.4 + r() * 0.3, w / 2 + 0.5 + r() * 1.4, 0, -1.5 + r() * 3, 0, r() * 3, 0); }
+  const dw = o.bigDoor ? 2.3 : 1.05, dh = o.bigDoor ? 2.35 : 2.0, dx = o.doorX !== undefined ? o.doorX : (r() - 0.5) * Math.max(0.5, w - 3.6);
   const left = dx - dw / 2 + w / 2, right = w / 2 - (dx + dw / 2);
-  B.box(wall, left, H, t, -w / 2 + left / 2, 0, d / 2 - t / 2); B.box(wall, right, H, t, w / 2 - right / 2, 0, d / 2 - t / 2); B.box(wall, dw, H - dh, t, dx, dh, d / 2 - t / 2);
-  B.box('wood', dw - 0.08, dh - 0.04, 0.1, dx, 0, d / 2 - t * 0.55); B.box('wood', dw + 0.26, 0.16, 0.22, dx, dh - 0.02, d / 2 + 0.02);
-  B.box('wood', 0.14, dh, 0.2, dx - dw / 2 - 0.05, 0, d / 2 + 0.01); B.box('wood', 0.14, dh, 0.2, dx + dw / 2 + 0.05, 0, d / 2 + 0.01);
-  // Fenster (klein, mit Brett als Sims, manche mit offenem Laden)
-  const nw = stories === 2 ? [[0.28, 1.25], [0.72, 1.25], [0.28, 3.9], [0.72, 3.9]] : [[0.22, 1.25], [0.78, 1.25]];
-  nw.forEach(([u, yy], k) => { const x = -w / 2 + u * w; if (Math.abs(x - dx) < dw / 2 + 0.7) return; B.box(win, 0.72, 0.78, 0.07, x, yy, d / 2 + 0.01); B.box('wood', 0.98, 0.09, 0.24, x, yy - 0.1, d / 2 + 0.03); if (r() < 0.55) B.box('wood', 0.34, 0.8, 0.05, x + 0.62, yy, d / 2 + 0.18, 0, -0.9 - r() * 0.5, 0); });
-  // abblätternder Putz auf Steinwänden: helle Flecken, die Stein durchscheinen lassen
-  if (wall.startsWith('stone')) for (let i = 0; i < 2; i++) { const pw = 1.2 + r() * 2.2, ph = 0.9 + r() * 1.5, px = -w / 2 + 0.8 + r() * (w - 1.6 - pw); if (Math.abs(px + pw / 2 - dx) < dw / 2 + pw / 2 + 0.2) continue; B.box('plaster', pw, ph, 0.05, px + pw / 2, 0.6 + r() * 1.0, d / 2 + 0.03); }
-  // Zweites Geschoss: Holzbalkon
-  if (stories === 2) { B.box('wood', w * 0.92, 0.14, 1.2, 0, 2.95, d / 2 + 0.55); B.box('wood', w * 0.92, 0.8, 0.07, 0, 3.1, d / 2 + 1.1); for (let i = 0; i < 4; i++) B.box('log', 0.12, 2.9, 0.12, -w * 0.4 + i * w * 0.27, 0, d / 2 + 1.05); }
+  B.box(wall, left, H, t, -w / 2 + left / 2, 0, fz - t / 2); B.box(wall, right, H, t, w / 2 - right / 2, 0, fz - t / 2); B.box(wall, dw, H - dh, t, dx, dh, fz - t / 2);
+  // Holzbänder (Hatıl) rund ums Haus
+  if (wall !== 'wood') for (const y of stories === 2 ? [1.15, 2.95, H - 0.4] : [1.15, H - 0.4]) {
+    B.box('log', w + 0.05, 0.13, 0.06, 0, y, -fz - 0.01); B.box('log', 0.06, 0.13, d + 0.05, -w / 2 - 0.01, y, 0); if (!ruin || y < sideH - 0.2) B.box('log', 0.06, 0.13, d + 0.05, w / 2 + 0.01, y, 0);
+    if (y < dh) { B.box('log', left - 0.1, 0.13, 0.06, -w / 2 + (left - 0.1) / 2, y, fz + 0.01); B.box('log', right - 0.1, 0.13, 0.06, w / 2 - (right - 0.1) / 2, y, fz + 0.01); } else B.box('log', w + 0.05, 0.13, 0.06, 0, y, fz + 0.01);
+  }
+  // Tür: dunkle Laibung, Rahmen, Sturz, Schwelle, Brettertür mit Querleisten und Eisenring
+  B.box('dark', dw, dh, 0.05, dx, 0, fz - t + 0.04);
+  B.box('log', 0.17, dh + 0.1, t + 0.08, dx - dw / 2 - 0.085, 0, fz - t / 2 + 0.03); B.box('log', 0.17, dh + 0.1, t + 0.08, dx + dw / 2 + 0.085, 0, fz - t / 2 + 0.03); B.box('log', dw + 0.62, 0.22, t + 0.12, dx, dh, fz - t / 2 + 0.04);
+  B.box('plinth', dw + 0.7, 0.18, 0.7, dx, 0, fz + 0.3); B.box('snow', dw * 0.5, 0.05, 0.3, dx + dw * 0.3, 0.18, fz + 0.45);
+  const leaf = (lw, cx, ajar) => { const z0 = fz - 0.2 - (ajar ? 0.22 : 0), ry = ajar ? -0.55 : 0, x0 = cx - (ajar ? 0.14 : 0);
+    B.box('planks', lw, dh - 0.05, 0.07, x0, 0.02, z0, 0, ry, 0); for (const y of [0.35, dh * 0.5, dh - 0.45]) B.box('log', lw - 0.06, 0.1, 0.05, x0 + Math.sin(ry) * 0.05, y, z0 + 0.055 * Math.cos(ry), 0, ry, 0); };
+  if (o.bigDoor) { leaf(dw / 2 - 0.03, dx - dw / 4, false); leaf(dw / 2 - 0.03, dx + dw / 4, r() < 0.35); B.box('iron', 0.5, 0.07, 0.05, dx, 1.05, fz - 0.13); }
+  else { leaf(dw - 0.05, dx, !o.lit && r() < 0.22); B.cyl('iron', 0.07, 0.03, dx + dw / 2 - 0.2, 0.98, fz - 0.15, Math.PI / 2, 0, 0, 8); }
+  // Fenster
+  const winAt = (face, cx, cy, ww = 0.82, wh = 0.98) => {
+    const put = (mat, sx, sy, sz, lx, ly, lz, rz = 0) => { if (face === 'f') B.box(mat, sx, sy, sz, cx + lx, cy + ly - sy / 2, fz + lz, 0, 0, rz); else if (face === 'r') B.box(mat, sz, sy, sx, w / 2 + lz, cy + ly - sy / 2, cx - lx); else B.box(mat, sz, sy, sx, -w / 2 - lz, cy + ly - sy / 2, cx + lx); };
+    put('dark', ww + 0.1, wh + 0.1, 0.03, 0, 0, 0.015);                                                    // Laibung
+    put(win, ww, wh, 0.03, 0, 0, 0.04);
+    put('log', 0.09, wh + 0.18, 0.16, -ww / 2 - 0.045, 0, 0.08); put('log', 0.09, wh + 0.18, 0.16, ww / 2 + 0.045, 0, 0.08); put('log', ww + 0.36, 0.15, 0.2, 0, wh / 2 + 0.075, 0.1);   // Rahmen, Sturz
+    put('log', 0.05, wh, 0.05, 0, 0, 0.075); put('log', ww, 0.05, 0.05, 0, wh * 0.12, 0.075);                 // Sprossen
+    put('plinth', ww + 0.4, 0.11, 0.3, 0, -wh / 2 - 0.055, 0.14); put('snow', ww + 0.34, 0.06, 0.24, 0, -wh / 2 + 0.03, 0.17);   // Sims mit Schnee
+    const k = r();
+    if (dmg > 0.3 && face === 'f' && k < 0.6) { put('planks', ww + 0.5, 0.17, 0.04, 0, 0.12, 0.2, 0.32); put('planks', ww + 0.5, 0.17, 0.04, 0, -0.1, 0.22, -0.28); }                    // vernagelt
+    else if (k < 0.3) { for (let i = 0; i < 4; i++) put('iron', 0.03, wh, 0.03, -ww / 2 + (i + 0.5) * ww / 4, 0, 0.13); put('iron', ww, 0.03, 0.03, 0, 0.2, 0.13); put('iron', ww, 0.03, 0.03, 0, -0.25, 0.13); }   // Gitter
+    else if (k < 0.55) { put('planks', ww / 2 - 0.02, wh, 0.04, -ww / 4, 0, 0.13); put('planks', ww / 2 - 0.02, wh, 0.04, ww / 4, 0, 0.13); put('log', ww, 0.07, 0.03, 0, wh * 0.28, 0.16); put('log', ww, 0.07, 0.03, 0, -wh * 0.28, 0.16); }   // Läden zu
+    else if (k < 0.85) { for (const s of [-1, 1]) { put('planks', ww / 2, wh, 0.04, s * (ww / 2 + 0.09 + ww / 4), 0, 0.045); put('log', ww / 2 - 0.04, 0.06, 0.03, s * (ww / 2 + 0.09 + ww / 4), wh * 0.28, 0.075); put('log', ww / 2 - 0.04, 0.06, 0.03, s * (ww / 2 + 0.09 + ww / 4), -wh * 0.28, 0.075); } }   // Läden offen an der Wand
+  };
+  for (const [u, yy] of stories === 2 ? [[0.2, 1.55], [0.8, 1.55], [0.2, 4.25], [0.5, 4.25], [0.8, 4.25]] : [[0.2, 1.55], [0.8, 1.55], [0.5, 1.55]]) { const x = -w / 2 + u * w; if (yy < dh + 0.6 && Math.abs(x - dx) < dw / 2 + 1.0) continue; if (!o.veranda || yy > 3) winAt('f', x, yy); else winAt('f', x, yy, 0.82, 0.9); }
+  for (const yy of stories === 2 ? [1.55, 4.25] : [1.55]) { winAt('l', (r() - 0.5) * (d - 3.2), yy); if (!o.annex && !ruin) winAt('r', (r() - 0.5) * (d - 3.2) - (o.tezek ? 0.9 : 0), yy + (o.tezek && yy < 2 ? 0.1 : 0)); }
+  // Zweites Geschoss: Holzbalkon mit Geländer
+  if (stories === 2) { const bz = fz + 0.62, bw = w * 0.9; B.box('planks', bw, 0.1, 1.25, 0, 2.95, bz); for (let i = 0; i < 5; i++) { const x = -bw / 2 + 0.1 + i * (bw - 0.2) / 4; B.box('log', 0.13, 2.95, 0.13, x, 0, fz + 1.16); B.box('log', 0.1, 1.0, 0.1, x, 3.05, fz + 1.16); B.box('log', 0.12, 0.12, 1.2, x, 2.83, bz); }
+    B.box('log', bw, 0.09, 0.1, 0, 3.98, fz + 1.16); B.box('log', bw, 0.07, 0.07, 0, 3.4, fz + 1.16); for (let x = -bw / 2 + 0.3; x < bw / 2 - 0.2; x += 0.3) B.box('planks', 0.07, 0.9, 0.03, x, 3.07, fz + 1.16); B.box('snow', bw, 0.06, 0.16, 0, 4.07, fz + 1.16); }
   // Dach
   let chim = null;
+  const icicles = (x0, x1, y, z) => { for (let x = x0 + 0.2; x < x1 - 0.1; x += 0.22 + r() * 0.5) { const l = 0.14 + r() * r() * 0.6; B.cone('snow', 0.035 + l * 0.03, l, x, y - l / 2, z, Math.PI); } };
   if (o.roof === 'tin') {
-    const a = 0.42, ov = 0.5, span = d / 2 + ov, len = span / Math.cos(a) + 0.05, yE = H - 0.05, yR = yE + span * Math.tan(a);
+    const a = 0.44, ov = 0.6, span = fz + ov, len = span / Math.cos(a) + 0.05, yE = H - 0.06, yR = yE + span * Math.tan(a);
     [1, -1].forEach(s2 => {
-      if (dmg > 0.6 && s2 === -1) B.box('tin', w + 0.9, 0.07, len * 0.5, 0, (yE + yR) / 2 + (yR - yE) / 4 - 0.03, -span / 4, -a, 0, 0);
-      else B.box('tin', w + 0.9, 0.07, len, 0, (yE + yR) / 2 - 0.03, s2 * span / 2, s2 * a, 0, 0);
+      const half = dmg > 0.6 && s2 === -1, L2 = half ? len * 0.5 : len, zc = half ? -span / 4 : s2 * span / 2, yc = half ? (yE + yR) / 2 + (yR - yE) / 4 : (yE + yR) / 2;
+      B.box('tin', w + 1.0, 0.07, L2, 0, yc - 0.03, zc, s2 * a, 0, 0);
+      for (let x = -w / 2; x <= w / 2 + 0.01; x += w / 6) B.box('log', 0.12, 0.14, L2, x, yc - 0.17, zc, s2 * a, 0, 0);                                   // Sparren
+      if (!half) { const cov = 0.45 + r() * 0.5, Ls = len * cov, off = (len - Ls) / 2; B.box('snow', w + 0.9, 0.13, Ls, 0, yc + 0.05 - Math.sin(a) * off, s2 * (span / 2 + Math.cos(a) * off), s2 * a, 0, 0); icicles(-w / 2 - 0.4, w / 2 + 0.4, yE - 0.3, s2 * (span + 0.02)); }
     });
-    // Giebeldreiecke in Wandfarbe
-    const sh = new THREE.Shape(); sh.moveTo(-d / 2, 0); sh.lineTo(d / 2, 0); sh.lineTo(0, yR - yE + 0.1); sh.lineTo(-d / 2, 0);
-    [-1, 1].forEach(s => { const gg = new THREE.ShapeGeometry(sh); const uv = gg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / TILE, uv.getY(i) / TILE); B.add(wall, gg, s * (w / 2 - 0.02), yE, 0, 0, s * Math.PI / 2, 0); });
-    // Steine auf dem Blech, Ofenrohr
-    for (let i = 0; i < 5; i++) B.box('stone2', 0.5 + r() * 0.4, 0.25, 0.5 + r() * 0.4, -w / 2 + 0.6 + r() * (w - 1.2), yE + 0.5 + r() * 0.8, (r() < 0.5 ? -1 : 1) * (0.7 + r() * 1.6), 0, r(), 0);
-    chim = [w * 0.22, yR + 0.9, -d * 0.12]; B.cyl('dark', 0.13, 1.6, chim[0], yR - 0.5, chim[2], 0, 0, 0, 7);
+    B.box('tin', w + 1.05, 0.1, 0.55, 0, yR - 0.05, 0); B.box('snow', w + 0.9, 0.12, 0.5, 0, yR + 0.05, 0);                                             // First
+    const sh = new THREE.Shape(); sh.moveTo(-fz, 0); sh.lineTo(fz, 0); sh.lineTo(0, yR - yE + 0.1); sh.lineTo(-fz, 0);
+    [-1, 1].forEach(s => { const gg = new THREE.ShapeGeometry(sh); B.add(wall, gg, s * (w / 2 - 0.02), yE, 0, 0, s * Math.PI / 2, 0); B.box('planks', 0.05, 0.55, 0.5, s * (w / 2 + 0.01), yE + (yR - yE) * 0.3, 0); });
+    chim = [w * 0.22, yR + 0.9, -d * 0.12]; B.cyl('iron', 0.11, 1.7, chim[0], yR - 0.6, chim[2], 0, 0, 0, 8); B.cone('iron', 0.24, 0.16, chim[0], yR + 1.16, chim[2], 0, 8);
   } else {
-    // Flachdach aus gestampfter Erde mit Holzbalken, die an der Front vorstehen
-    const sw = dmg > 0.55 ? w * 0.58 : w + 0.6, sx = dmg > 0.55 ? -w * 0.2 : 0;
-    B.box('earth', sw, 0.4, d + 0.6, sx, H, 0, 0, 0, dmg > 0.55 ? 0.07 : 0);
-    if (dmg <= 0.55) { B.box('earth', w + 0.6, 0.3, 0.32, 0, H + 0.4, d / 2 + 0.14); B.box('earth', w + 0.6, 0.26, 0.32, 0, H + 0.4, -d / 2 - 0.14); B.box('earth', 0.32, 0.28, d + 0.6, -w / 2 - 0.14, H + 0.4, 0); B.box('earth', 0.32, 0.26, d + 0.6, w / 2 + 0.14, H + 0.4, 0); }
-    for (let i = 0; i < Math.floor(w / 0.65); i++) B.cyl('log', 0.095, 0.8, -w / 2 + 0.4 + i * 0.65, H - 0.18, d / 2 + 0.25, Math.PI / 2, 0, 0, 7);
-    if (dmg > 0.55) for (let i = 0; i < 5; i++) B.cyl('log', 0.1, 1.7, w * 0.12 + i * 0.7, H - 0.1 - i * 0.05, d / 2 - 1.2, 0.9 + r() * 0.2, 0, r(), 7);
-    if (o.chimney) { chim = [w * 0.25, H + 0.4 + 1.5, -d * 0.2]; B.box('stone2', 0.7, 1.5, 0.7, chim[0], H + 0.4, chim[2]); B.cyl('clay', 0.22, 0.5, chim[0], H + 1.9, chim[2], 0, 0, 0, 8); }
-    for (let i = 0; i < 3; i++) B.box('hay', 0.7 + r() * 0.5, 0.3 + r() * 0.2, 0.6 + r() * 0.4, -w / 2 + 0.8 + r() * (w - 1.6), H + 0.4, -d / 4 + r() * d / 2.5);
+    // Flachdach aus gestampfter Erde: Balkenköpfe vorn und hinten, niedriger Rand, Schneedecke
+    const sw = ruin ? w * 0.58 : w + 0.9, sx = ruin ? -w * 0.2 : 0, tilt = ruin ? 0.07 : 0;
+    B.box('earth', sw, 0.36, d + 0.9, sx, H, 0, 0, 0, tilt);
+    for (let x = -w / 2 + 0.3; x <= (ruin ? -w * 0.2 + sw / 2 - 0.4 : w / 2 - 0.2); x += 0.62) { B.cyl('log', 0.09, 0.5, x, H - 0.15, fz + 0.5, Math.PI / 2, 0, 0, 7); B.cyl('log', 0.09, 0.5, x, H - 0.15, -fz - 0.5, Math.PI / 2, 0, 0, 7); }
+    if (!ruin) { for (const s of [-1, 1]) { B.box('earth', w + 0.9, 0.16, 0.3, 0, H + 0.36, s * (fz + 0.3)); B.box('earth', 0.3, 0.16, d + 0.3, s * (w / 2 + 0.3), H + 0.36, 0); }
+      B.box('snow', w + 0.86, 0.2 + r() * 0.08, d + 0.86, 0, H + 0.4, 0); B.box('snow', w * 0.55, 0.12, d * 0.5, (r() - 0.5) * w * 0.3, H + 0.6, (r() - 0.5) * d * 0.3, 0, r(), 0); B.box('snow', w * 0.4, 0.16, 0.4, (r() - 0.5) * w * 0.5, H + 0.42, fz + 0.5);
+      icicles(-w / 2 - 0.3, w / 2 + 0.3, H + 0.02, fz + 0.46); if (r() < 0.6) icicles(-w / 2 - 0.3, w / 2 + 0.3, H + 0.02, -fz - 0.46);
+      if (r() < 0.4) { const rx = (r() - 0.5) * (w - 2); B.cyl('plinth', 0.2, 1.0, rx, H + 0.62, -fz * 0.4, 0, 0, Math.PI / 2, 10); B.box('log', 0.05, 0.05, 1.5, rx, H + 0.8, -fz * 0.4 + 0.75, 0.3, 0, 0); }   // Dachwalze (Loğ taşı)
+    } else { B.box('snow', sw - 0.2, 0.16, d + 0.5, sx, H + 0.37, 0, 0, 0, tilt); for (let i = 0; i < 5; i++) B.cyl('log', 0.1, 1.9, w * 0.12 + i * 0.7, H - 0.2 - i * 0.05, fz - 1.4, 0.9 + r() * 0.2, 0, r(), 7); B.box('snow', w * 0.4, 0.25, d * 0.6, w * 0.25, 0.3, 0, 0, 0.3, 0); }
+    if (o.chimney) { chim = [w * 0.25, H + 0.4 + 1.5, -d * 0.2]; B.box('plinth', 0.66, 1.45, 0.66, chim[0], H + 0.36, chim[2]); B.box('plinth', 0.8, 0.12, 0.8, chim[0], H + 1.72, chim[2]); B.cyl('clay', 0.19, 0.5, chim[0], H + 1.84, chim[2], 0, 0, 0, 8); B.box('snow', 0.5, 0.08, 0.3, chim[0], H + 1.84, chim[2] - 0.25); }
   }
-  // Tezek (getrocknete Dungfladen als Brennstoff) gestapelt an der Wand
-  if (o.tezek) { const z0 = -0.5 + r() * 1.2; for (let k = 0; k < 4; k++) for (let i = 0; i < 5 - k; i++) B.cyl('tezek', 0.26, 0.1, w / 2 + 0.55 + k * 0.1, 0.05 + k * 0.11, z0 + (i - (4 - k) / 2) * 0.5, 0, 0, Math.PI / 2, 8); }
+  // Schneewehen an den Wänden
+  B.box('snow', w * (0.5 + r() * 0.4), 0.5, 1.0, (r() - 0.5) * w * 0.3, -0.18, -fz - 0.35, 0.5, 0, 0); B.box('snow', 1.0, 0.45, d * (0.4 + r() * 0.4), -w / 2 - 0.35, -0.16, (r() - 0.5) * d * 0.3, 0, 0, 0.5);
+  // Leiter zum Dach, Bank neben der Tür, Laterne am Türrahmen
+  if (o.roof !== 'tin' && !ruin && r() < 0.4) { const lz = -fz * 0.3 + r() * fz * 0.5, L2 = H + 1.0; for (const s of [-0.24, 0.24]) B.box('log', 0.07, L2, 0.07, -w / 2 - 0.75, 0, lz + s, 0, 0, -0.2); for (let y = 0.4; y < L2 - 0.3; y += 0.38) B.box('log', 0.05, 0.05, 0.5, -w / 2 - 0.42 - (1 - y / L2) * 0.62, y, lz); }
+  if (!o.bigDoor && !o.veranda && r() < 0.5) { const bx2 = dx + (dx > 0 ? -1 : 1) * (dw / 2 + 1.1); if (Math.abs(bx2) < w / 2 - 0.9) { B.box('planks', 1.3, 0.07, 0.38, bx2, 0.42, fz + 0.3); B.box('plinth', 0.3, 0.42, 0.34, bx2 - 0.45, 0, fz + 0.3); B.box('plinth', 0.3, 0.42, 0.34, bx2 + 0.45, 0, fz + 0.3); B.box('snow', 1.2, 0.05, 0.3, bx2, 0.49, fz + 0.3); } }
+  { const lx = dx + dw / 2 + 0.4; if (lx < w / 2 - 0.3) { B.box('iron', 0.04, 0.04, 0.34, lx, dh - 0.05, fz + 0.17); B.box('iron', 0.16, 0.05, 0.16, lx, dh - 0.12, fz + 0.3); B.box(o.lit ? 'glow' : 'glass', 0.12, 0.2, 0.12, lx, dh - 0.32, fz + 0.3); B.box('iron', 0.16, 0.04, 0.16, lx, dh - 0.36, fz + 0.3); } }
+  // Tezek (getrocknete Dungfladen als Brennstoff) gestapelt an der Wand, mit Schnee obenauf
+  if (o.tezek) { const z0 = -0.5 + r() * 1.2; for (let k = 0; k < 4; k++) for (let i = 0; i < 5 - k; i++) B.cyl('tezek', 0.26, 0.1, w / 2 + 0.55 + k * 0.1, 0.05 + k * 0.11, z0 + (i - (4 - k) / 2) * 0.5, 0, 0, Math.PI / 2, 8); B.box('snow', 0.3, 0.06, 1.2, w / 2 + 0.75, 0.56, z0); }
   // Vordach / Veranda aus Holz
-  if (o.veranda) { const vz = d / 2 + 2.2; [-1, 1].forEach(s => B.box('log', 0.2, 2.9, 0.2, s * (w / 2 - 0.5), 0, vz)); B.box('wood', w - 0.2, 0.18, 2.6, 0, 2.9, d / 2 + 1.2); B.box('earth', w, 0.22, 2.9, 0, 3.08, d / 2 + 1.2); }
+  if (o.veranda) { const vz = fz + 2.2; for (const s of [-1, -0.33, 0.33, 1]) { B.box('log', 0.18, 2.9, 0.18, s * (w / 2 - 0.5), 0, vz); B.box('log', 0.12, 0.12, 0.7, s * (w / 2 - 0.5), 2.55, vz - 0.3, 0.75, 0, 0); } B.box('log', w - 0.4, 0.2, 0.2, 0, 2.8, vz); B.box('planks', w - 0.2, 0.1, 2.7, 0, 2.98, fz + 1.25); B.box('earth', w, 0.2, 2.9, 0, 3.08, fz + 1.25); B.box('snow', w - 0.1, 0.16, 2.8, 0, 3.28, fz + 1.25); icicles(-w / 2, w / 2, 3.02, fz + 2.68); B.box('planks', w - 1.2, 0.08, 2.3, 0, 0.1, fz + 1.2); }
   // Anbau (niedriger Stall oder Vorratsraum)
-  if (o.annex) { const aw = 3.7, ad = d * 0.85, ah = 2.2, ax = w / 2 + aw / 2 - 0.05; B.box('stone2', aw, ah, ad, ax, 0, -0.3); B.box('earth', aw + 0.4, 0.34, ad + 0.4, ax, ah, -0.3); B.box('wood', 1.4, 1.7, 0.1, ax, 0, ad / 2 - 0.3 + 0.03); }
+  if (o.annex) { const aw = 3.7, ad = d * 0.85, ah = 2.2, ax = w / 2 + aw / 2 - 0.05; B.box('plinth', aw + 0.1, 0.4, ad + 0.1, ax, 0, -0.3); B.box('stone2', aw, ah, ad, ax, 0, -0.3); B.box('earth', aw + 0.5, 0.3, ad + 0.5, ax, ah, -0.3); B.box('snow', aw + 0.46, 0.18, ad + 0.46, ax, ah + 0.3, -0.3);
+    for (let x = ax - aw / 2 + 0.3; x < ax + aw / 2; x += 0.62) B.cyl('log', 0.08, 0.4, x, ah - 0.14, ad / 2 - 0.3 + 0.3, Math.PI / 2, 0, 0, 7); B.box('dark', 1.4, 1.7, 0.04, ax, 0, ad / 2 - 0.3 + 0.005); B.box('planks', 1.34, 1.66, 0.07, ax, 0, ad / 2 - 0.3 + 0.03); B.box('log', 1.3, 0.1, 0.05, ax, 0.4, ad / 2 - 0.3 + 0.08); B.box('log', 1.3, 0.1, 0.05, ax, 1.25, ad / 2 - 0.3 + 0.08); B.box('log', 1.7, 0.16, 0.14, ax, 1.7, ad / 2 - 0.3 + 0.05); icicles(ax - aw / 2, ax + aw / 2, ah + 0.02, ad / 2 - 0.3 + 0.24); }
   const g = B.build(); g.userData = { w: w + (o.annex ? 3.9 : 0), d, h: H + 2, chimney: chim };
   return g;
 }
