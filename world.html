@@ -185,7 +185,7 @@ let snowAmt = 0.36;
 function paintTerrain() {
   const pos = geo.attributes.position, nor = geo.attributes.normal, g2 = groundCanvas.getContext('2d'), img = g2.createImageData(GW, GW), D = img.data, V = N + 1;
   const snow = [0.86, 0.88, 0.93], soilWet = [0.30, 0.24, 0.18], dust = [0.47, 0.41, 0.31], gravel = [0.41, 0.40, 0.38], rockC = [0.38, 0.35, 0.32];
-  const path = [0.25, 0.20, 0.155], road = [0.37, 0.35, 0.32], plaza = [0.36, 0.32, 0.27], ice = [0.55, 0.72, 0.86], rut = [0.17, 0.135, 0.105];
+  const path = [0.19, 0.145, 0.10], road = [0.30, 0.275, 0.24], plaza = [0.36, 0.32, 0.27], ice = [0.55, 0.72, 0.86], rut = [0.17, 0.135, 0.105];
   const c = [0, 0, 0], mix = (to, t) => { c[0] += (to[0] - c[0]) * t; c[1] += (to[1] - c[1]) * t; c[2] += (to[2] - c[2]) * t; };
   for (let py = 0; py < GW; py++) {
     const z = MIN + (py + 0.5) / GW * SIZE, gz = clamp((z - MIN) / SIZE * N, 0, N - 0.001), iz = Math.floor(gz), fz = gz - iz;
@@ -202,8 +202,9 @@ function paintTerrain() {
       const score = (snowAmt - 0.5) * 1.7 + (n1 - 0.5) * 1.5 + 0.7 * smooth(20, 190, y) - 0.55 * smooth(0.9, 0.7, ny) + (n3 - 0.5) * 0.12;
       let cover = smooth(-0.15, 0.3, score + 0.22);
       if (inB(x, z, LB)) { let dl = 1e9; for (const s of LANESEG) { const d = dseg(x, z, s[0], s[1]); if (d < dl) dl = d; }
-        const wl = smooth(3.4, 1.7, dl + (n3 - 0.5) * 1.3); if (wl > 0) { mix(path, wl); cover *= 1 - wl * 0.93; const rr = Math.abs(dl - 0.85); if (rr < 0.45) mix(rut, 0.5 * wl * (1 - rr / 0.45)); } }
-      if (inB(x, z, RB)) { const dro = dpoly(x, z, MAP.road), wr = smooth(5.2, 3.2, dro + (n3 - 0.5) * 0.9); if (wr > 0) { mix(road, wr); cover *= 1 - wr * 0.85; const rr = Math.abs(dro - 1.25); if (rr < 0.5) mix(rut, 0.45 * wr * (1 - rr / 0.5)); } }
+        cover = Math.max(cover, 0.85 * smooth(11, 5, dl) * (1 - smooth(5.2, 3.4, dl)));   // geräumter Schnee liegt als heller Rand neben der Gasse
+        const wl = smooth(3.6, 2.4, dl + (n3 - 0.5) * 1.1); if (wl > 0) { mix(path, wl); cover *= 1 - wl; const rr = Math.abs(dl - 0.85); if (rr < 0.45) mix(rut, 0.5 * wl * (1 - rr / 0.45)); } }
+      if (inB(x, z, RB)) { const dro = dpoly(x, z, MAP.road); cover = Math.max(cover, 0.85 * smooth(13, 7, dro) * (1 - smooth(7, 5, dro))); const wr = smooth(5.2, 3.8, dro + (n3 - 0.5) * 0.9); if (wr > 0) { mix(road, wr); cover *= 1 - wr * 0.95; const rr = Math.abs(dro - 1.25); if (rr < 0.5) mix(rut, 0.45 * wr * (1 - rr / 0.5)); } }
       const dp = Math.hypot(x - 480, z - 510); if (dp < 30) { const wp = smooth(28, 20, dp + (n3 - 0.5) * 3); mix(plaza, wp); cover *= 1 - wp * 0.9; }
       mix(snow, cover);
       if (inB(x, z, VB)) { const dr = dpoly(x, z, MAP.river); if (dr < 12) mix(ice, smooth(12, 7, dr)); }
@@ -526,6 +527,87 @@ await Promise.all(jobs);
     k++;
   }
   await Promise.all(jobs);
+}
+// ---------------------------------------------------------------- Dekoration: Schneebäume, tote Bäume, Zäune, Laternen, Schneewälle, Holzstapel, Vogelscheuchen
+{
+  const R = rng(4711), dmat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true });
+  const col = (g, c) => { const k = new THREE.Color(c), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = k.r; a[i * 3 + 1] = k.g; a[i * 3 + 2] = k.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); return g.index ? g.toNonIndexed() : g; };
+  const at = (g, x, y, z, rx = 0, ry = 0, rz = 0, s = 1) => { g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(s, s, s))); return g; };
+  const box = (w, hh, d, c) => col(new THREE.BoxGeometry(w, hh, d), c), cyl = (r1, r2, hh, c, sg = 6) => col(new THREE.CylinderGeometry(r2, r1, hh, sg), c), con = (r, hh, c, sg = 7) => col(new THREE.ConeGeometry(r, hh, sg), c);
+  const beam = (a, b, th, c) => { const d = new THREE.Vector3().subVectors(b, a), g = box(th, th, d.length(), c), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.clone().normalize()); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5), q, new THREE.Vector3(1, 1, 1))); return g; };
+  const laneD = (x, z) => { let d = 1e9; for (const s of LANESEG) d = Math.min(d, dseg(x, z, s[0], s[1])); return d; };
+  const allB = MAP.houses.map(hh => [hh.x, hh.z, 7]).concat(storyB.map(p => [p.x, p.y, Math.max(p._d[0], p._d[1]) * 0.62 + 2]));
+  const nearB = (x, z, m = 0) => allB.some(b => Math.hypot(x - b[0], z - b[1]) < b[2] + m);
+  const statics = [];
+  // 1) Schneebäume (Nadelbäume mit weißen Kappen) als Instanzen: Wälder an den unteren Hängen und Gruppen im Tal
+  const pine = mergeGeometries([at(cyl(0.16, 0.1, 1.3, 0x2a1c12), 0, 0.65, 0), at(con(1.25, 1.7, 0x16281a), 0, 1.7, 0), at(con(0.98, 1.5, 0x1a2e1e), 0, 2.6, 0), at(con(0.68, 1.3, 0x1c3220), 0, 3.4, 0),
+    at(con(0.95, 0.62, 0xdfe6ee), 0, 2.36, 0), at(con(0.72, 0.56, 0xdfe6ee), 0, 3.14, 0), at(con(0.46, 0.6, 0xe6ecf2), 0, 3.82, 0)], false);
+  const dead = mergeGeometries([at(cyl(0.2, 0.1, 2.6, 0x1c1612), 0, 1.3, 0), at(cyl(0.09, 0.04, 1.5, 0x1c1612), 0.42, 2.5, 0, 0, 0, -0.75), at(cyl(0.08, 0.03, 1.3, 0x1c1612), -0.4, 2.2, 0.1, 0.2, 0, 0.85), at(cyl(0.07, 0.03, 1.2, 0x1c1612), 0.1, 3.1, -0.3, -0.6, 0, 0.15),
+    at(cyl(0.06, 0.02, 0.9, 0x1c1612), -0.15, 3.3, 0.25, 0.55, 0, 0.3), at(cyl(0.05, 0.02, 0.8, 0x1c1612), 0.78, 3.0, 0, 0, 0, -0.3), at(box(0.5, 0.07, 0.2, 0xe2e8ee), 0.44, 2.62, 0, 0, 0, 0.8), at(box(0.45, 0.07, 0.18, 0xe2e8ee), -0.42, 2.3, 0.1, 0, 0, -0.75)], false);
+  const P1 = [], P2 = [];
+  for (let i = 0; i < 5200 && P1.length < 900; i++) {
+    const x = 20 + R() * 960, z = 20 + R() * 900, t = ringT(x, z), f = fbm(x / 110 + 3, z / 110 + 8);
+    const want = t > 0.03 && t < 0.5 ? 0.42 : 0.6;                                  // am Hang dichter Wald, im Tal nur Gruppen
+    if (f < want || laneD(x, z) < 13 || dpoly(x, z, MAP.road) < 12 || dpoly(x, z, MAP.river) < 16 || Math.hypot(x - 480, z - 510) < 45 || nearB(x, z, 7)) continue;
+    if (Math.hypot(x - P.friedhof.x, z - P.friedhof.y) < 45 || Math.hypot(x - P.schneefeld.x, z - P.schneefeld.y) < 70) continue;
+    P1.push([x, z, 1.5 + R() * 1.7, R() * 6.28]);
+  }
+  for (let i = 0; i < 1500 && P2.length < 110; i++) {
+    const x = 120 + R() * 660, z = 300 + R() * 440, d = laneD(x, z);
+    if (d < 6 || d > 34 || nearB(x, z, 2.5) || Math.hypot(x - 480, z - 510) < 30 || dpoly(x, z, MAP.road) < 8) continue;
+    P2.push([x, z, 1.1 + R() * 1.2, R() * 6.28]);
+  }
+  for (let i = 0; i < 26; i++) { const a = R() * 6.28, d = 30 + R() * 34; P2.push([P.friedhof.x + Math.cos(a) * d, P.friedhof.y + Math.sin(a) * d * 0.8, 1.3 + R() * 1.4, R() * 6.28]); }
+  const inst = (geo, list, lean) => { const m = new THREE.InstancedMesh(geo, dmat, list.length), o = new THREE.Object3D(); list.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) - 0.15, p[1]); o.rotation.set((R() - 0.5) * lean, p[3], (R() - 0.5) * lean); o.scale.set(p[2], p[2] * (0.85 + R() * 0.4), p[2]); o.updateMatrix(); m.setMatrixAt(i, o.matrix); colliders.push({ x: p[0], z: p[1], r: 0.45 }); }); m.castShadow = true; m.receiveShadow = true; scene.add(m); };
+  inst(pine, P1, 0.06); inst(dead, P2, 0.22);
+  // 2) Schneewälle neben den Gassen (geräumter Schnee) und lose Steine
+  { const g = new THREE.SphereGeometry(1, 12, 7); g.scale(1, 0.32, 1); const sm = new THREE.MeshStandardMaterial({ color: 0xe4e9f0, roughness: 1 }), L = [];
+    for (const s of LANESEG) { const dx = s[1][0] - s[0][0], dz = s[1][1] - s[0][1], len = Math.hypot(dx, dz), nx = -dz / len, nz = dx / len;
+      for (let d = 2; d < len; d += 3.2 + R() * 2.6) for (const sd of [-1, 1]) { if (R() < 0.22) continue; const o = 4.3 + R() * 1.1, x = s[0][0] + dx * d / len + nx * o * sd, z = s[0][1] + dz * d / len + nz * o * sd;
+        if (laneD(x, z) < 3.9 || Math.hypot(x - 480, z - 510) < 27 || nearB(x, z, -1.5) || dpoly(x, z, MAP.road) < 6) continue; L.push([x, z, 0.6 + R() * 0.7, R() * 6.28]); } }
+    const m = new THREE.InstancedMesh(g, sm, L.length), o = new THREE.Object3D(); L.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) - 0.05, p[1]); o.rotation.set(0, p[3], 0); o.scale.set(p[2] * (1 + R() * 0.8), p[2] * (0.7 + R() * 0.6), p[2]); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.receiveShadow = true; scene.add(m);
+    const rg = new THREE.DodecahedronGeometry(1, 0), rm = new THREE.MeshStandardMaterial({ color: 0x55524e, roughness: 1, flatShading: true }), RL = [];
+    for (let i = 0; i < 900 && RL.length < 260; i++) { const x = 150 + R() * 620, z = 300 + R() * 470, d = laneD(x, z); if (d < 3.6 || d > 9 || nearB(x, z, 0)) continue; RL.push([x, z, 0.18 + R() * 0.45]); }
+    const m2 = new THREE.InstancedMesh(rg, rm, RL.length); RL.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) + p[2] * 0.2, p[1]); o.rotation.set(R() * 3, R() * 3, R() * 3); o.scale.set(p[2] * 1.3, p[2], p[2]); o.updateMatrix(); m2.setMatrixAt(i, o.matrix); }); m2.castShadow = true; scene.add(m2); }
+  // 3) Zäune um die Höfe: Holzpfosten mit zwei Latten, teils umgekippt, teils mit Lücken; vorne zur Gasse offen
+  const WOOD = [0x3a2a1c, 0x44321f, 0x2e2218];
+  const fenceRun = (pts) => { for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1]; if (laneD(a[0], a[1]) < 4.4 || laneD(b[0], b[1]) < 4.4 || nearB(a[0], a[1], -3.5) || nearB(b[0], b[1], -3.5)) continue;
+      const ya = heightAt(a[0], a[1]), yb = heightAt(b[0], b[1]), c = WOOD[Math.floor(R() * 3)], k = R();
+      statics.push(at(box(0.14, 1.25, 0.14, c), a[0], ya + 0.55, a[1], (R() - 0.5) * 0.14, R(), (R() - 0.5) * 0.14));
+      if (k < 0.2) continue;                                                             // Lücke: Latten fehlen
+      const A = new THREE.Vector3(a[0], ya, a[1]), B = new THREE.Vector3(b[0], yb, b[1]);
+      if (k < 0.36) { statics.push(beam(A.clone().setY(ya + 0.95), B.clone().setY(yb + 0.08), 0.085, c)); }   // eine Latte hängt herunter
+      else { statics.push(beam(A.clone().setY(ya + 0.95), B.clone().setY(yb + 0.95 + (R() - 0.5) * 0.1), 0.085, c)); if (k > 0.5) statics.push(beam(A.clone().setY(ya + 0.5), B.clone().setY(yb + 0.5 + (R() - 0.5) * 0.12), 0.085, c));
+        if (R() < 0.5) statics.push(at(box(2.0, 0.07, 0.16, 0xe2e8ee), (a[0] + b[0]) / 2, (ya + yb) / 2 + 1.03, (a[1] + b[1]) / 2, 0, Math.atan2(b[0] - a[0], b[1] - a[1]) + Math.PI / 2, 0)); }
+      colliders.push({ x: a[0], z: a[1], r: 0.55 }, { x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, r: 0.6 });
+    } };
+  MAP.houses.forEach((hh, i) => { if (R() < 0.3) return; const r = hh.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), W = (lx, lz) => [hh.x + lx * c + lz * s, hh.z - lx * s + lz * c], hw = 7.5 + R() * 2.5, hb = 8 + R() * 3, pts = [];
+    for (let z = 3; z > -hb; z -= 2.2) pts.push(W(-hw, z)); for (let x = -hw; x < hw; x += 2.2) pts.push(W(x, -hb)); for (let z = -hb; z <= 3; z += 2.2) pts.push(W(hw, z)); fenceRun(pts);
+    // Holzstapel an der Hauswand, manchmal ein Schneehaufen mit Schaufel
+    if (R() < 0.6) { const p = W((R() < 0.5 ? -1 : 1) * 4.9, -1 + R() * 2), y = heightAt(p[0], p[1]); for (let a = 0; a < 3; a++) for (let b = 0; b < 5 - a; b++) statics.push(at(cyl(0.16, 0.16, 1.3, [0x4a3524, 0x3a2a1c, 0x5a4230][(a + b) % 3], 6), p[0] + (b - 2 + a * 0.5) * 0.33 * c, y + 0.16 + a * 0.29, p[1] - (b - 2 + a * 0.5) * 0.33 * s, Math.PI / 2, r, 0));
+      statics.push(at(box(1.9, 0.08, 1.4, 0xe2e8ee), p[0], y + 1.0, p[1], 0, r, 0)); colliders.push({ x: p[0], z: p[1], r: 1.0 }); } });
+  // 4) Laternen an den Abzweigungen: Holzmast mit Öllampe; die meisten sind erloschen oder schief
+  const lampGlowM = new THREE.MeshBasicMaterial({ color: 0xffb060 }); let litN = 0;
+  const lantern = (x, z, lit) => { const y = heightAt(x, z), tilt = lit ? 0.03 : (R() - 0.5) * 0.5, ry = R() * 6.28, g = new THREE.Group();
+    const parts = [at(box(0.18, 3.4, 0.18, 0x2e2218), 0, 1.7, 0), at(box(0.1, 0.1, 0.9, 0x2e2218), 0, 3.2, 0.4), at(box(0.3, 0.06, 0.3, 0x1a1a1c), 0, 2.98, 0.75), at(box(0.3, 0.05, 0.3, 0x1a1a1c), 0, 2.6, 0.75), at(box(0.36, 0.1, 0.36, 0xe2e8ee), 0, 3.05, 0.75), at(box(0.03, 0.2, 0.03, 0x1a1a1c), 0, 3.1, 0.75)];
+    g.add(new THREE.Mesh(mergeGeometries(parts, false), dmat)); const gl = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.32, 0.2), lit ? lampGlowM : new THREE.MeshStandardMaterial({ color: 0x20242a, roughness: 0.4 })); gl.position.set(0, 2.79, 0.75); g.add(gl);
+    g.position.set(x, y - 0.1, z); g.rotation.set(tilt, ry, tilt * 0.6, 'YXZ'); g.traverse(m => { if (m.isMesh && m !== gl) m.castShadow = true; }); scene.add(g); colliders.push({ x, z, r: 0.35 });
+    if (lit) { const l = new THREE.PointLight(0xff9a4a, 55, 20, 2); l.position.set(x + Math.sin(ry) * 0.75, y + 2.7, z + Math.cos(ry) * 0.75); scene.add(l); lights.push(l); } };
+  const seen = []; for (const L of MAP.lanes) for (const pt of [L[0], L[L.length - 1], L[Math.floor(L.length / 2)]]) { if (seen.some(q => Math.hypot(q[0] - pt[0], q[1] - pt[1]) < 26) || Math.hypot(pt[0] - 480, pt[1] - 510) < 12 || pt[1] < 300) continue; seen.push(pt);
+    let x = pt[0] + 4.6, z = pt[1] + 4.6; for (let a = 0; a < 6.28; a += 0.5) { const qx = pt[0] + Math.cos(a) * 5.2, qz = pt[1] + Math.sin(a) * 5.2; if (laneD(qx, qz) > 3.9 && !nearB(qx, qz, 1)) { x = qx; z = qz; break; } }
+    const lit = litN < 6 && R() < 0.34; if (lit) litN++; lantern(x, z, lit); }
+  for (const a of [0.6, 2.4, 4.3]) lantern(480 + Math.cos(a) * 22, 510 + Math.sin(a) * 22, a === 0.6);
+  // 5) Vogelscheuchen (Korkuluk) am Dorfrand und umgestürzte Sachen
+  const scare = (x, z, ry) => { const y = heightAt(x, z), parts = [at(box(0.12, 2.5, 0.12, 0x2e2218), 0, 1.25, 0, 0, 0, 0.05), at(box(1.7, 0.1, 0.1, 0x2e2218), 0, 1.9, 0, 0, 0, -0.06), at(box(0.34, 0.4, 0.3, 0x8a7a5c), 0, 2.45, 0), at(box(0.62, 0.95, 0.2, 0x3c342c), 0, 1.5, 0.02),
+      at(box(0.22, 0.6, 0.12, 0x3c342c), -0.72, 1.62, 0, 0, 0, 0.25), at(box(0.22, 0.7, 0.12, 0x3c342c), 0.72, 1.56, 0, 0, 0, -0.2), at(box(0.5, 0.07, 0.42, 0x1c1814), 0, 2.68, 0), at(box(0.3, 0.2, 0.28, 0x1c1814), 0, 2.78, 0)];
+    const m = new THREE.Mesh(mergeGeometries(parts, false), dmat); m.position.set(x, y - 0.2, z); m.rotation.y = ry; m.castShadow = true; scene.add(m); colliders.push({ x, z, r: 0.4 }); };
+  for (const [x, z] of [[262, 470], [705, 560], [450, 262], [590, 668], [205, 600]]) scare(x, z, Math.atan2(480 - x, 510 - z));
+  for (let i = 0; i < 40; i++) { const x = 180 + R() * 560, z = 320 + R() * 420, d = laneD(x, z); if (d < 5 || d > 16 || nearB(x, z, 1)) continue; const y = heightAt(x, z), ry = R() * 6.28, k = Math.floor(R() * 3);
+    if (k === 0) { statics.push(at(col(new THREE.TorusGeometry(0.55, 0.07, 5, 10), 0x2e2218), x, y + 0.12, z, Math.PI / 2 - 0.25, ry, 0)); for (let a = 0; a < 3; a++) statics.push(at(box(1.05, 0.05, 0.05, 0x2e2218), x, y + 0.14, z, -0.25, ry + a * 1.05, 0)); }                    // Wagenrad im Schnee
+    else if (k === 1) { statics.push(at(box(0.9, 0.7, 0.9, 0x3a2a1c), x, y + 0.25, z, 0.5, ry, 0.2), at(box(1.0, 0.06, 1.0, 0xe2e8ee), x, y + 0.62, z, 0.5, ry, 0.2)); colliders.push({ x, z, r: 0.6 }); }                                                                   // umgekippte Kiste
+    else { statics.push(at(cyl(0.34, 0.34, 0.9, 0x4a3524, 9), x, y + 0.3, z, Math.PI / 2 - 0.1, ry, 0), at(box(0.5, 0.05, 0.9, 0xe2e8ee), x, y + 0.66, z, 0, ry, 0)); colliders.push({ x, z, r: 0.55 }); } }                                                                    // liegendes Fass
+  if (statics.length) { const m = new THREE.Mesh(mergeGeometries(statics, false), dmat); m.castShadow = true; m.receiveShadow = true; scene.add(m); }
 }
 // Ortsmarken ohne Gebäude
 {
