@@ -104,6 +104,7 @@ function baseH(x, z) {
   if (dRiv < 22) h = lerp(h, Math.min(h, -2.5), 1 - smooth(9, 22, dRiv));
   return h;
 }
+let laneLift = () => 0;   // Höhe des Gassen-Reliefs über dem Gelände (wird bei der Dekoration gesetzt)
 const pads = [];
 function addPad(x, z, r) { pads.push({ x, z, r, h: baseH(x, z) }); }
 function heightAt(x, z) {
@@ -202,9 +203,9 @@ function paintTerrain() {
       const score = (snowAmt - 0.5) * 1.7 + (n1 - 0.5) * 1.5 + 0.7 * smooth(20, 190, y) - 0.55 * smooth(0.9, 0.7, ny) + (n3 - 0.5) * 0.12;
       let cover = smooth(-0.15, 0.3, score + 0.22);
       if (inB(x, z, LB)) { let dl = 1e9; for (const s of LANESEG) { const d = dseg(x, z, s[0], s[1]); if (d < dl) dl = d; }
-        cover = Math.max(cover, 0.85 * smooth(11, 5, dl) * (1 - smooth(5.2, 3.4, dl)));   // geräumter Schnee liegt als heller Rand neben der Gasse
+        cover = Math.max(cover, smooth(12, 7.5, dl));   // geräumter Schnee liegt als heller Rand neben der Gasse
         const wl = smooth(3.6, 2.4, dl + (n3 - 0.5) * 1.1); if (wl > 0) { mix(path, wl); cover *= 1 - wl; const rr = Math.abs(dl - 0.85); if (rr < 0.45) mix(rut, 0.5 * wl * (1 - rr / 0.45)); } }
-      if (inB(x, z, RB)) { const dro = dpoly(x, z, MAP.road); cover = Math.max(cover, 0.85 * smooth(13, 7, dro) * (1 - smooth(7, 5, dro))); const wr = smooth(5.2, 3.8, dro + (n3 - 0.5) * 0.9); if (wr > 0) { mix(road, wr); cover *= 1 - wr * 0.95; const rr = Math.abs(dro - 1.25); if (rr < 0.5) mix(rut, 0.45 * wr * (1 - rr / 0.5)); } }
+      if (inB(x, z, RB)) { const dro = dpoly(x, z, MAP.road); cover = Math.max(cover, smooth(15, 10, dro)); const wr = smooth(5.2, 3.8, dro + (n3 - 0.5) * 0.9); if (wr > 0) { mix(road, wr); cover *= 1 - wr * 0.95; const rr = Math.abs(dro - 1.25); if (rr < 0.5) mix(rut, 0.45 * wr * (1 - rr / 0.5)); } }
       const dp = Math.hypot(x - 480, z - 510); if (dp < 30) { const wp = smooth(28, 20, dp + (n3 - 0.5) * 3); mix(plaza, wp); cover *= 1 - wp * 0.9; }
       mix(snow, cover);
       if (inB(x, z, VB)) { const dr = dpoly(x, z, MAP.river); if (dr < 12) mix(ice, smooth(12, 7, dr)); }
@@ -220,7 +221,7 @@ const terrainMat = new THREE.MeshStandardMaterial({ map: groundTex, normalMap: T
 if (TX.ground) terrainMat.onBeforeCompile = sh => {   // feine Körnung aus der Detail-Textur über die Farbkarte legen (zwei Größen gegen sichtbare Kacheln)
   sh.uniforms.detailMap = { value: TX.ground };
   sh.fragmentShader = sh.fragmentShader.replace('#include <map_pars_fragment>', '#include <map_pars_fragment>\nuniform sampler2D detailMap;')
-    .replace('#include <map_fragment>', '#include <map_fragment>\n  { vec3 d1 = texture2D(detailMap, vMapUv * 500.0).rgb, d2 = texture2D(detailMap, vMapUv * 61.0).rgb; diffuseColor.rgb *= mix(vec3(1.0), d1 * 1.27, 0.75) * mix(vec3(1.0), d2 * 1.27, 0.35); }');
+    .replace('#include <map_fragment>', '#include <map_fragment>\n  { vec3 d1 = texture2D(detailMap, vMapUv * 500.0).rgb, d2 = texture2D(detailMap, vMapUv * 61.0).rgb; float sn = 1.0 - 0.85 * smoothstep(0.35, 0.62, dot(diffuseColor.rgb, vec3(0.333))); diffuseColor.rgb *= mix(vec3(1.0), d1 * 1.27, 0.75 * sn) * mix(vec3(1.0), d2 * 1.27, 0.35 * sn); }');
 };
 const terrain = new THREE.Mesh(geo, terrainMat);
 terrain.receiveShadow = true;
@@ -560,12 +561,49 @@ await Promise.all(jobs);
   for (let i = 0; i < 26; i++) { const a = R() * 6.28, d = 30 + R() * 34; P2.push([P.friedhof.x + Math.cos(a) * d, P.friedhof.y + Math.sin(a) * d * 0.8, 1.3 + R() * 1.4, R() * 6.28]); }
   const inst = (geo, list, lean) => { const m = new THREE.InstancedMesh(geo, dmat, list.length), o = new THREE.Object3D(); list.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) - 0.15, p[1]); o.rotation.set((R() - 0.5) * lean, p[3], (R() - 0.5) * lean); o.scale.set(p[2], p[2] * (0.85 + R() * 0.4), p[2]); o.updateMatrix(); m.setMatrixAt(i, o.matrix); colliders.push({ x: p[0], z: p[1], r: 0.45 }); }); m.castShadow = true; m.receiveShadow = true; scene.add(m); };
   inst(pine, P1, 0.06); inst(dead, P2, 0.22);
-  // 2) Schneewälle neben den Gassen (geräumter Schnee) und lose Steine
-  { const g = new THREE.SphereGeometry(1, 12, 7); g.scale(1, 0.32, 1); const sm = new THREE.MeshStandardMaterial({ color: 0xe4e9f0, roughness: 1 }), L = [];
-    for (const s of LANESEG) { const dx = s[1][0] - s[0][0], dz = s[1][1] - s[0][1], len = Math.hypot(dx, dz), nx = -dz / len, nz = dx / len;
-      for (let d = 2; d < len; d += 3.2 + R() * 2.6) for (const sd of [-1, 1]) { if (R() < 0.22) continue; const o = 4.3 + R() * 1.1, x = s[0][0] + dx * d / len + nx * o * sd, z = s[0][1] + dz * d / len + nz * o * sd;
-        if (laneD(x, z) < 3.9 || Math.hypot(x - 480, z - 510) < 27 || nearB(x, z, -1.5) || dpoly(x, z, MAP.road) < 6) continue; L.push([x, z, 0.6 + R() * 0.7, R() * 6.28]); } }
-    const m = new THREE.InstancedMesh(g, sm, L.length), o = new THREE.Object3D(); L.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) - 0.05, p[1]); o.rotation.set(0, p[3], 0); o.scale.set(p[2] * (1 + R() * 0.8), p[2] * (0.7 + R() * 0.6), p[2]); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.receiveShadow = true; scene.add(m);
+  // 2) Gassen als echtes Relief: festgetretene, gefrorene Erde mit Fahrspuren und Eispfützen, daneben unregelmäßige Wälle aus geräumtem Schnee
+  {
+    const dEff = (x, z) => Math.min(laneD(x, z), Math.max(0, dpoly(x, z, MAP.road) - 1.6), Math.max(0, Math.hypot(x - 480, z - 510) - 19));
+    const bDist = (x, z) => { let m = 1e9; for (const b of allB) m = Math.min(m, Math.hypot(x - b[0], z - b[1]) - b[2]); return m; };
+    const bell = t => Math.exp(-t * t);
+    const prof = (x, z, d) => {   // Höhe über dem Gelände und Farbe an dieser Stelle
+      const n = fbm(x / 3.1 + 11, z / 3.1), n2 = vnoise(x * 1.9, z * 1.9), n3 = vnoise(x / 1.1 + 5, z / 1.1), n4 = fbm(x / 9, z / 9 + 4);
+      const peak = 4.0 + (n4 - 0.5) * 1.5, bh = (0.28 + 0.62 * n + 0.16 * n2) * smooth(-1.0, 3.5, bDist(x, z));
+      const berm = bh * bell((d - peak) / (0.85 + 0.5 * n3)) * smooth(2.3, 3.0, d);
+      const rut = bell((d - 0.9) / 0.28), mudH = 0.10 - 0.085 * rut + (n2 - 0.5) * 0.035 + 0.05 * bell(d / 0.5) * n3;
+      const inPath = 1 - smooth(2.3, 3.1, d);
+      let y = mudH * inPath + berm + (1 - inPath) * 0.06;
+      // Farbe
+      let r = 0.19, g = 0.145, b = 0.10; const dry = smooth(0.45, 0.75, n3) * 0.5; r += dry * 0.14; g += dry * 0.12; b += dry * 0.09;        // Erde, stellenweise trocken und heller
+      const wet = rut * 0.55; r -= r * wet * 0.45; g -= g * wet * 0.45; b -= b * wet * 0.4;                                                    // Spuren dunkel und nass
+      const ice = rut * smooth(0.62, 0.78, n) * 0.85; r += (0.50 - r) * ice; g += (0.60 - g) * ice; b += (0.68 - b) * ice;                       // Eis in den Spuren
+      const sn = smooth(2.2, 3.2, d + (n2 - 0.5) * 0.8), dirt = (1 - smooth(3.0, 4.4, d + (n3 - 0.5) * 0.9)) * (0.35 + 0.4 * n2);                // Matschrand, dann sauberer Schnee
+      const sr = 0.86 - dirt * 0.36, sg = 0.88 - dirt * 0.40, sb = 0.93 - dirt * 0.46;
+      r += (sr - r) * sn; g += (sg - g) * sn; b += (sb - b) * sn;
+      const shade = 1 - 0.1 * bell((d - peak - 1.2) / 0.7) * (bh > 0.4 ? 1 : 0.4); r *= shade; g *= shade; b *= shade;
+      return [y, r, g, b];
+    };
+    laneLift = (x, z) => { const d = dEff(x, z); return d > 7.5 ? 0 : prof(x, z, d)[0] * (1 - smooth(6.2, 7.4, d)); };
+    const U = []; for (let u = -7.4; u <= 7.41; u += 0.37) U.push(u);
+    const ribbons = [];
+    const ribbon = (L, wide) => {
+      const C = []; // Mittellinie weich abtasten (alle 0,8 m)
+      const pts = L.map(p => new THREE.Vector3(p[0], 0, p[1])), curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5), len = curve.getLength(), nS = Math.max(2, Math.round(len / 0.8));
+      for (let i = 0; i <= nS; i++) { const p = curve.getPointAt(i / nS), t = curve.getTangentAt(i / nS); C.push([p.x, p.z, -t.z, t.x]); }
+      const cols = U.length, pos = new Float32Array(C.length * cols * 3), colr = new Float32Array(C.length * cols * 3), idx = [];
+      C.forEach((c, i) => U.forEach((u0, j) => { const u = u0 * (wide ? 1.35 : 1), x = c[0] + c[2] * u, z = c[1] + c[3] * u, d = dEff(x, z), pr = prof(x, z, d), edge = smooth(6.0, 7.3, Math.abs(u0));
+        const k = (i * cols + j) * 3; pos[k] = x; pos[k + 1] = heightAt(x, z) + pr[0] * (1 - edge) - 0.28 * edge; pos[k + 2] = z; colr[k] = pr[1]; colr[k + 1] = pr[2]; colr[k + 2] = pr[3]; }));
+      for (let i = 0; i < C.length - 1; i++) for (let j = 0; j < cols - 1; j++) { const a = i * cols + j, b = a + 1, c = a + cols, d = c + 1; idx.push(a, c, b, b, c, d); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(colr, 3)); g.setIndex(idx); g.computeVertexNormals(); ribbons.push(g);
+    };
+    for (const L of MAP.lanes) ribbon(L, false);
+    ribbon(MAP.road.filter(p => p[0] < 1010), true);
+    let rn = null; if (TX.ground_n) { rn = TX.ground_n.clone(); rn.repeat.set(1, 1); rn.needsUpdate = true; }
+    const rm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, normalMap: rn, normalScale: new THREE.Vector2(0.4, 0.4), side: THREE.DoubleSide });
+    for (const g of ribbons) { const n = g.attributes.position.count, uv = new Float32Array(n * 2); for (let i = 0; i < n; i++) { uv[i * 2] = g.attributes.position.getX(i) / 5; uv[i * 2 + 1] = g.attributes.position.getZ(i) / 5; } g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); const m = new THREE.Mesh(g, rm); m.receiveShadow = true; scene.add(m); }
+  }
+  // 2b) lose Steine am Wegrand
+  { const o = new THREE.Object3D();
     const rg = new THREE.DodecahedronGeometry(1, 0), rm = new THREE.MeshStandardMaterial({ color: 0x55524e, roughness: 1, flatShading: true }), RL = [];
     for (let i = 0; i < 900 && RL.length < 260; i++) { const x = 150 + R() * 620, z = 300 + R() * 470, d = laneD(x, z); if (d < 3.6 || d > 9 || nearB(x, z, 0)) continue; RL.push([x, z, 0.18 + R() * 0.45]); }
     const m2 = new THREE.InstancedMesh(rg, rm, RL.length); RL.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) + p[2] * 0.2, p[1]); o.rotation.set(R() * 3, R() * 3, R() * 3); o.scale.set(p[2] * 1.3, p[2], p[2]); o.updateMatrix(); m2.setMatrixAt(i, o.matrix); }); m2.castShadow = true; scene.add(m2); }
@@ -699,7 +737,7 @@ function frame(now) {
     let vx = -sn * fwd + cs * rgt, vz = -cs * fwd - sn * rgt; const l = Math.hypot(vx, vz) || 1;
     cam.pos.x = clamp(cam.pos.x + vx / l * sp * dt * (fwd || rgt ? 1 : 0), MIN + 5, MAX - 5); cam.pos.z = clamp(cam.pos.z + vz / l * sp * dt * (fwd || rgt ? 1 : 0), MIN + 5, MAX - 5);
     resolveColl(cam.pos, 0.5);
-    const ty = heightAt(cam.pos.x, cam.pos.z) + 1.65; cam.pos.y += (ty - cam.pos.y) * Math.min(1, dt * 12);
+    const ty = heightAt(cam.pos.x, cam.pos.z) + laneLift(cam.pos.x, cam.pos.z) + 1.65; cam.pos.y += (ty - cam.pos.y) * Math.min(1, dt * 12);
     sun.target.position.set(cam.pos.x, cam.pos.y, cam.pos.z);
   } else {
     const sp = (fast ? 400 : 110), f = new THREE.Vector3(-Math.sin(cam.yaw) * Math.cos(cam.pitch), Math.sin(cam.pitch), -Math.cos(cam.yaw) * Math.cos(cam.pitch)), r = new THREE.Vector3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
