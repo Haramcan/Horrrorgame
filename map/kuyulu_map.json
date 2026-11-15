@@ -233,7 +233,8 @@
    "note": "Stute mit Zöpfen in der Mähne. Funkgerät: Kör Hasan meldet sich.",
    "model": "village/buildings/Stable.glb",
    "safe": true,
-   "quarter": "oben"
+   "quarter": "oben",
+   "rot": -125.5
   },
   {
    "id": "platz",
@@ -294,7 +295,8 @@
    "chapter": "K2",
    "note": "Alle Möbel von innen vor die Tür geschoben.",
    "model": "village/buildings/House_2.glb",
-   "quarter": "mitte"
+   "quarter": "mitte",
+   "rot": -126.9
   },
   {
    "id": "haus2",
@@ -307,7 +309,8 @@
    "chapter": "K2",
    "note": "Dutzende Schuhe, alle verkehrt herum.",
    "model": "village/buildings/House_3.glb",
-   "quarter": "mitte"
+   "quarter": "mitte",
+   "rot": -164.3
   },
   {
    "id": "haus3",
@@ -320,7 +323,8 @@
    "chapter": "K2",
    "note": "Tagebuch: „Nuriye ist tot. Sie hat keine Angst mehr vor ihr.“",
    "model": "village/buildings/House_4.glb",
-   "quarter": "mitte"
+   "quarter": "mitte",
+   "rot": 68.2
   },
   {
    "id": "gasthaus",
@@ -334,7 +338,8 @@
    "note": "Aufwärmen. Tandır-Ofen.",
    "model": "village/buildings/Inn.glb",
    "safe": true,
-   "quarter": "mitte"
+   "quarter": "mitte",
+   "rot": 166.0
   },
   {
    "id": "schmiede",
@@ -348,7 +353,8 @@
    "note": "Quelle für Hufeisen und Nägel (Eisen). Esse zum Aufwärmen, Übergang zum Schneefeld.",
    "model": "village/buildings/Blacksmith.glb",
    "safe": true,
-   "quarter": "mitte"
+   "quarter": "mitte",
+   "rot": 13.0
   },
   {
    "id": "archiv",
@@ -388,7 +394,8 @@
    "chapter": "frei",
    "note": "Nebenort, Nazar-Amulett.",
    "model": "village/buildings/Sawmill.glb",
-   "quarter": "unten"
+   "quarter": "unten",
+   "rot": 180.0
   },
   {
    "id": "muehle",
@@ -403,7 +410,8 @@
    "model": "village/buildings/Mill.glb",
    "water": true,
    "safe": true,
-   "quarter": "unten"
+   "quarter": "unten",
+   "rot": -104.0
   },
   {
    "id": "unterstand",
@@ -532,8 +540,8 @@
    "id": "wh1",
    "name": "Wohnhaus 1",
    "type": "building",
-   "x": 491.7,
-   "y": 336.7,
+   "x": 386.7,
+   "y": 513.1,
    "w": 5.999999999999999,
    "h": 7.4,
    "chapter": "frei",
@@ -545,8 +553,8 @@
    "id": "wh2",
    "name": "Wohnhaus 2",
    "type": "building",
-   "x": 398.2,
-   "y": 380.9,
+   "x": 233.7,
+   "y": 542.7,
    "w": 5.999999999999999,
    "h": 7.4,
    "chapter": "frei",
@@ -558,8 +566,8 @@
    "id": "wh3",
    "name": "Wohnhaus 3",
    "type": "building",
-   "x": 602.4,
-   "y": 377.0,
+   "x": 508.6,
+   "y": 481.8,
    "w": 5.999999999999999,
    "h": 7.4,
    "chapter": "frei",
@@ -571,8 +579,8 @@
    "id": "wh4",
    "name": "Wohnhaus 4",
    "type": "building",
-   "x": 563.8,
-   "y": 411.8,
+   "x": 445.0,
+   "y": 623.9,
    "w": 5.4,
    "h": 5.9,
    "chapter": "frei",
@@ -584,8 +592,8 @@
    "id": "wh5",
    "name": "Wohnhaus 5",
    "type": "building",
-   "x": 754.9,
-   "y": 409.6,
+   "x": 497.7,
+   "y": 556.9,
    "w": 5.4,
    "h": 5.9,
    "chapter": "frei",
@@ -597,8 +605,8 @@
    "id": "wh6",
    "name": "Wohnhaus 6",
    "type": "building",
-   "x": 676.2,
-   "y": 441.8,
+   "x": 440.9,
+   "y": 495.2,
    "w": 5.4,
    "h": 5.9,
    "chapter": "frei",
@@ -610,8 +618,8 @@
    "id": "wh7",
    "name": "Wohnhaus 7",
    "type": "building",
-   "x": 662.9,
-   "y": 459.8,
+   "x": 539.2,
+   "y": 405.6,
    "w": 5.999999999999999,
    "h": 7.4,
    "chapter": "frei",
@@ -623,8 +631,8 @@
    "id": "wh8",
    "name": "Wohnhaus 8",
    "type": "building",
-   "x": 439.5,
-   "y": 490.9,
+   "x": 436.0,
+   "y": 381.5,
    "w": 5.4,
    "h": 5.9,
    "chapter": "frei",
@@ -636,8 +644,8 @@
    "id": "wh9",
    "name": "Wohnhaus 9",
    "type": "building",
-   "x": 537.0,
-   "y": 518.8,
+   "x": 346.3,
+   "y": 491.2,
    "w": 5.4,
    "h": 5.9,
    "chapter": "frei",
@@ -649,8 +657,8 @@
    "id": "wh10",
    "name": "Wohnhaus 10",
    "type": "building",
-   "x": 337.0,
-   "y": 542.5,
+   "x": 655.9,
+   "y": 493.2,
    "w": 5.4,
    "h": 5.9,
    "chapter": "frei",
@@ -662,8 +670,8 @@
    "id": "wh11",
    "name": "Wohnhaus 11",
    "type": "building",
-   "x": 453.8,
-   "y": 543.4,
+   "x": 596.6,
+   "y": 406.7,
    "w": 5.4,
    "h": 5.9,
    "chapter": "frei",
@@ -675,8 +683,8 @@
    "id": "wh12",
    "name": "Wohnhaus 12",
    "type": "building",
-   "x": 575.8,
-   "y": 544.5,
+   "x": 409.4,
+   "y": 361.1,
    "w": 6.2,
    "h": 9.6,
    "chapter": "frei",
@@ -688,8 +696,8 @@
    "id": "wh13",
    "name": "Wohnhaus 13",
    "type": "building",
-   "x": 361.8,
-   "y": 571.3,
+   "x": 318.9,
+   "y": 562.6,
    "w": 5.999999999999999,
    "h": 7.4,
    "chapter": "frei",
@@ -701,8 +709,8 @@
    "id": "wh14",
    "name": "Wohnhaus 14",
    "type": "building",
-   "x": 526.0,
-   "y": 563.0,
+   "x": 409.3,
+   "y": 592.0,
    "w": 5.999999999999999,
    "h": 7.4,
    "chapter": "frei",
@@ -713,452 +721,300 @@
  ],
  "houses": [
   {
-   "x": 491.7,
-   "z": 336.7,
-   "rot": -10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8,
+   "x": 444.0,
+   "z": 527.5,
+   "rot": -174.5,
+   "lane": "haupt_w"
+  },
+  {
+   "x": 386.7,
+   "z": 513.1,
+   "rot": -1.0,
+   "lane": "haupt_w",
    "place": "wh1"
   },
   {
-   "x": 620.6,
-   "z": 334.4,
-   "rot": -20,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
+   "x": 388.3,
+   "z": 534.2,
+   "rot": -180.5,
+   "lane": "haupt_w"
   },
   {
-   "x": 591.1,
-   "z": 359.6,
-   "rot": 10,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
+   "x": 373.6,
+   "z": 512.4,
+   "rot": 11.0,
+   "lane": "haupt_w"
   },
   {
-   "x": 398.2,
-   "z": 380.9,
-   "rot": 0,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8,
+   "x": 305.9,
+   "z": 547.0,
+   "rot": 174.2,
+   "lane": "haupt_w"
+  },
+  {
+   "x": 233.7,
+   "z": 542.7,
+   "rot": -170.5,
+   "lane": "haupt_w",
    "place": "wh2"
   },
   {
-   "x": 476.8,
-   "z": 378.0,
-   "rot": -10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 232.9,
+   "z": 521.6,
+   "rot": 7.0,
+   "lane": "haupt_w"
   },
   {
-   "x": 513.3,
-   "z": 386.9,
-   "rot": 10,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
+   "x": 220.6,
+   "z": 544.9,
+   "rot": -181.0,
+   "lane": "haupt_w"
   },
   {
-   "x": 581.4,
-   "z": 385.4,
-   "rot": -20,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 602.4,
-   "z": 377.0,
-   "rot": 0,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8,
+   "x": 508.6,
+   "z": 481.8,
+   "rot": -125.9,
+   "lane": "oma",
    "place": "wh3"
   },
   {
-   "x": 411.0,
-   "z": 406.5,
-   "rot": 0,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 465.4,
+   "z": 540.0,
+   "rot": 82.9,
+   "lane": "hamam"
   },
   {
-   "x": 530.1,
-   "z": 407.6,
-   "rot": -10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 486.1,
+   "z": 545.0,
+   "rot": -95.2,
+   "lane": "hamam"
   },
   {
-   "x": 563.8,
-   "z": 411.8,
-   "rot": -20,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8,
+   "x": 445.0,
+   "z": 623.9,
+   "rot": 68.1,
+   "lane": "hamam",
    "place": "wh4"
   },
   {
-   "x": 575.2,
-   "z": 404.5,
-   "rot": 20,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
+   "x": 464.5,
+   "z": 633.3,
+   "rot": -108.4,
+   "lane": "hamam"
   },
   {
-   "x": 622.0,
-   "z": 410.0,
-   "rot": -20,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
+   "x": 440.4,
+   "z": 634.5,
+   "rot": 54.1,
+   "lane": "hamam"
   },
   {
-   "x": 754.9,
-   "z": 409.6,
-   "rot": 0,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8,
+   "x": 509.7,
+   "z": 535.9,
+   "rot": -50.1,
+   "lane": "muehle"
+  },
+  {
+   "x": 497.7,
+   "z": 556.9,
+   "rot": 123.6,
+   "lane": "muehle",
    "place": "wh5"
   },
   {
-   "x": 444.4,
-   "z": 430.9,
-   "rot": -20,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
+   "x": 531.4,
+   "z": 607.0,
+   "rot": 119.5,
+   "lane": "muehle"
   },
   {
-   "x": 506.1,
-   "z": 439.8,
-   "rot": -20,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 551.3,
+   "z": 598.0,
+   "rot": -63.7,
+   "lane": "muehle"
   },
   {
-   "x": 524.8,
-   "z": 433.8,
-   "rot": 20,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 676.2,
-   "z": 441.8,
-   "rot": 10,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8,
+   "x": 440.9,
+   "z": 495.2,
+   "rot": 146.2,
+   "lane": "west_n",
    "place": "wh6"
   },
   {
-   "x": 399.2,
-   "z": 459.8,
-   "rot": -20,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 536.0,
+   "z": 418.5,
+   "rot": 73.1,
+   "lane": "berg_m"
   },
   {
-   "x": 471.2,
-   "z": 458.1,
-   "rot": 20,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
+   "x": 555.6,
+   "z": 423.4,
+   "rot": -113.6,
+   "lane": "berg_m"
   },
   {
-   "x": 662.9,
-   "z": 459.8,
-   "rot": -10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8,
+   "x": 539.2,
+   "z": 405.6,
+   "rot": 74.2,
+   "lane": "berg_m",
    "place": "wh7"
   },
   {
-   "x": 359.0,
-   "z": 487.4,
-   "rot": 10,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
+   "x": 417.2,
+   "z": 447.3,
+   "rot": 97.7,
+   "lane": "quelle"
   },
   {
-   "x": 423.5,
-   "z": 495.9,
-   "rot": 10,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
+   "x": 439.7,
+   "z": 443.4,
+   "rot": -87.7,
+   "lane": "quelle"
   },
   {
-   "x": 439.5,
-   "z": 490.9,
-   "rot": 180,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8,
+   "x": 417.8,
+   "z": 433.9,
+   "rot": 95.7,
+   "lane": "quelle"
+  },
+  {
+   "x": 436.0,
+   "z": 381.5,
+   "rot": -111.7,
+   "lane": "quelle",
    "place": "wh8"
   },
   {
-   "x": 534.3,
-   "z": 486.5,
-   "rot": 0,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
+   "x": 350.7,
+   "z": 510.2,
+   "rot": -96.4,
+   "lane": "berg_w"
   },
   {
-   "x": 668.2,
-   "z": 487.4,
-   "rot": 0,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
+   "x": 331.9,
+   "z": 505.2,
+   "rot": 74.8,
+   "lane": "berg_w"
   },
   {
-   "x": 754.3,
-   "z": 493.9,
-   "rot": 180,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 537.0,
-   "z": 518.8,
-   "rot": 180,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8,
+   "x": 346.3,
+   "z": 491.2,
+   "rot": -65.5,
+   "lane": "berg_w",
    "place": "wh9"
   },
   {
-   "x": 548.0,
-   "z": 512.2,
-   "rot": 180,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
+   "x": 678.7,
+   "z": 411.1,
+   "rot": -132.7,
+   "lane": "berg_o"
   },
   {
-   "x": 574.4,
-   "z": 512.6,
-   "rot": 20,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 635.5,
+   "z": 499.0,
+   "rot": 116.4,
+   "lane": "ost_s"
   },
   {
-   "x": 337.0,
-   "z": 542.5,
-   "rot": 10,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8,
+   "x": 655.9,
+   "z": 493.2,
+   "rot": -67.4,
+   "lane": "ost_s",
    "place": "wh10"
   },
   {
-   "x": 350.5,
-   "z": 542.2,
-   "rot": 0,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
+   "x": 630.2,
+   "z": 555.3,
+   "rot": 49.8,
+   "lane": "ost_s"
   },
   {
-   "x": 389.4,
-   "z": 543.5,
-   "rot": 0,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
+   "x": 646.2,
+   "z": 569.1,
+   "rot": -121.6,
+   "lane": "ost_s"
   },
   {
-   "x": 430.2,
-   "z": 540.2,
-   "rot": -10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 622.6,
+   "z": 566.1,
+   "rot": 58.8,
+   "lane": "ost_s"
   },
   {
-   "x": 453.8,
-   "z": 543.4,
-   "rot": 20,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8,
+   "x": 596.6,
+   "z": 406.7,
+   "rot": 66.7,
+   "lane": "nordost",
    "place": "wh11"
   },
   {
-   "x": 529.0,
-   "z": 537.5,
-   "rot": -20,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 616.9,
+   "z": 413.3,
+   "rot": -116.0,
+   "lane": "nordost"
   },
   {
-   "x": 542.1,
-   "z": 542.6,
-   "rot": -20,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
+   "x": 601.4,
+   "z": 395.1,
+   "rot": 67.2,
+   "lane": "nordost"
   },
   {
-   "x": 561.1,
-   "z": 543.1,
-   "rot": 20,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 575.8,
-   "z": 544.5,
-   "rot": -20,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8,
+   "x": 409.4,
+   "z": 361.1,
+   "rot": -16.1,
+   "lane": "nordwest",
    "place": "wh12"
   },
   {
-   "x": 591.7,
-   "z": 544.2,
-   "rot": 10,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
+   "x": 401.3,
+   "z": 381.1,
+   "rot": 153.7,
+   "lane": "nordwest"
   },
   {
-   "x": 622.1,
-   "z": 546.6,
-   "rot": 0,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 394.9,
+   "z": 357.5,
+   "rot": -9.6,
+   "lane": "nordwest"
   },
   {
-   "x": 361.8,
-   "z": 571.3,
-   "rot": 20,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8,
+   "x": 318.9,
+   "z": 562.6,
+   "rot": -123.6,
+   "lane": "west_s",
    "place": "wh13"
   },
   {
-   "x": 429.5,
-   "z": 567.0,
-   "rot": -10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
+   "x": 293.1,
+   "z": 565.1,
+   "rot": 70.3,
+   "lane": "west_s"
   },
   {
-   "x": 445.2,
-   "z": 569.9,
-   "rot": -20,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
+   "x": 525.2,
+   "z": 621.3,
+   "rot": 87.1,
+   "lane": "saege"
   },
   {
-   "x": 457.8,
-   "z": 572.1,
-   "rot": -20,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
+   "x": 546.5,
+   "z": 624.9,
+   "rot": -93.2,
+   "lane": "saege"
   },
   {
-   "x": 526.0,
-   "z": 563.0,
-   "rot": 180,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8,
+   "x": 409.3,
+   "z": 592.0,
+   "rot": -88.4,
+   "lane": "sued_w",
    "place": "wh14"
   },
   {
-   "x": 603.7,
-   "z": 573.5,
-   "rot": 10,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 636.6,
-   "z": 568.8,
-   "rot": 0,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 759.3,
-   "z": 568.3,
-   "rot": 20,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 367.6,
-   "z": 596.8,
-   "rot": 0,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 426.7,
-   "z": 591.4,
-   "rot": 180,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 443.8,
-   "z": 597.3,
-   "rot": -10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 510.8,
-   "z": 587.5,
-   "rot": 10,
-   "model": "village/buildings/House_1.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 592.3,
-   "z": 589.8,
-   "rot": 0,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 761.3,
-   "z": 590.8,
-   "rot": 10,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 425.0,
-   "z": 617.2,
-   "rot": 0,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 442.7,
-   "z": 615.8,
-   "rot": 0,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 530.2,
-   "z": 615.6,
-   "rot": 20,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 694.6,
-   "z": 615.2,
-   "rot": 0,
-   "model": "village/buildings/House_2.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 442.2,
-   "z": 664.7,
-   "rot": 20,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 540.0,
-   "z": 673.3,
-   "rot": -10,
-   "model": "village/buildings/House_4.glb",
-   "scale": 2.8
-  },
-  {
-   "x": 540.4,
-   "z": 692.0,
-   "rot": -10,
-   "model": "village/buildings/House_3.glb",
-   "scale": 2.8
+   "x": 389.5,
+   "z": 592.7,
+   "rot": 90.5,
+   "lane": "sued_w"
   }
  ],
  "lanes": [
@@ -1168,15 +1024,65 @@
     510
    ],
    [
-    500,
-    470
+    452,
+    517
+   ],
+   [
+    420,
+    520
+   ],
+   [
+    372,
+    524
+   ],
+   [
+    320,
+    536
+   ],
+   [
+    280,
+    534
+   ],
+   [
+    240,
+    532
+   ],
+   [
+    195,
+    536
+   ],
+   [
+    148,
+    540
+   ]
+  ],
+  [
+   [
+    480,
+    510
+   ],
+   [
+    492,
+    486
+   ],
+   [
+    512,
+    462
    ],
    [
     540,
     440
    ],
    [
+    572,
+    431
+   ],
+   [
     600,
+    430
+   ],
+   [
+    628,
     430
    ],
    [
@@ -1190,20 +1096,16 @@
     510
    ],
    [
-    420,
-    520
+    482,
+    480
    ],
    [
-    320,
-    525
+    480,
+    450
    ],
    [
-    240,
-    530
-   ],
-   [
-    148,
-    540
+    480,
+    432
    ]
   ],
   [
@@ -1212,16 +1114,32 @@
     510
    ],
    [
+    476,
+    548
+   ],
+   [
     470,
     580
+   ],
+   [
+    462,
+    612
    ],
    [
     450,
     640
    ],
    [
+    428,
+    668
+   ],
+   [
     400,
     690
+   ],
+   [
+    370,
+    708
    ],
    [
     340,
@@ -1234,12 +1152,24 @@
     510
    ],
    [
+    508,
+    552
+   ],
+   [
     540,
     600
    ],
    [
+    570,
+    650
+   ],
+   [
     600,
     700
+   ],
+   [
+    632,
+    738
    ],
    [
     660,
@@ -1252,22 +1182,16 @@
     510
    ],
    [
-    480,
-    450
-   ],
-   [
-    480,
-    420
-   ]
-  ],
-  [
-   [
-    480,
-    510
+    456,
+    492
    ],
    [
     430,
     470
+   ],
+   [
+    406,
+    450
    ],
    [
     385,
@@ -1280,8 +1204,16 @@
     440
    ],
    [
+    552,
+    400
+   ],
+   [
     560,
     360
+   ],
+   [
+    568,
+    330
    ],
    [
     575,
@@ -1298,8 +1230,16 @@
     470
    ],
    [
+    427,
+    425
+   ],
+   [
     425,
     380
+   ],
+   [
+    436,
+    342
    ],
    [
     450,
@@ -1308,12 +1248,24 @@
   ],
   [
    [
-    320,
-    525
+    336,
+    534
+   ],
+   [
+    342,
+    505
+   ],
+   [
+    322,
+    470
    ],
    [
     300,
     420
+   ],
+   [
+    318,
+    320
    ],
    [
     338,
@@ -1326,8 +1278,16 @@
     432
    ],
    [
+    680,
+    392
+   ],
+   [
     710,
     350
+   ],
+   [
+    742,
+    290
    ],
    [
     770,
@@ -1336,12 +1296,26 @@
   ],
   [
    [
-    400,
-    570
+    420,
+    520
    ],
    [
+    412,
+    546
+   ],
+   [
+    402,
+    562
+   ]
+  ],
+  [
+   [
     400,
-    600
+    584
+   ],
+   [
+    398,
+    612
    ],
    [
     400,
@@ -1350,16 +1324,138 @@
   ],
   [
    [
+    508,
+    552
+   ],
+   [
+    534,
+    566
+   ],
+   [
+    552,
+    574
+   ]
+  ],
+  [
+   [
+    640,
+    480
+   ],
+   [
+    652,
+    512
+   ],
+   [
+    648,
+    548
+   ],
+   [
+    628,
+    576
+   ],
+   [
+    600,
+    590
+   ]
+  ],
+  [
+   [
     560,
-    580
+    500
+   ],
+   [
+    582,
+    512
    ],
    [
     600,
-    640
-   ],
+    520
+   ]
+  ],
+  [
    [
     600,
-    700
+    430
+   ],
+   [
+    612,
+    396
+   ],
+   [
+    632,
+    368
+   ],
+   [
+    660,
+    352
+   ]
+  ],
+  [
+   [
+    425,
+    380
+   ],
+   [
+    396,
+    368
+   ],
+   [
+    366,
+    362
+   ],
+   [
+    340,
+    366
+   ]
+  ],
+  [
+   [
+    320,
+    536
+   ],
+   [
+    306,
+    562
+   ],
+   [
+    296,
+    598
+   ],
+   [
+    300,
+    634
+   ]
+  ],
+  [
+   [
+    540,
+    600
+   ],
+   [
+    530,
+    660
+   ],
+   [
+    524,
+    720
+   ],
+   [
+    520,
+    768
+   ]
+  ],
+  [
+   [
+    540,
+    440
+   ],
+   [
+    552,
+    444
+   ],
+   [
+    560,
+    452
    ]
   ]
  ],

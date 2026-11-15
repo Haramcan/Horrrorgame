@@ -167,48 +167,61 @@ addPad(480, 510, 28);
 const geo = new THREE.PlaneGeometry(SIZE, SIZE, N, N);
 geo.rotateX(-Math.PI / 2);
 geo.translate(MIN + SIZE / 2, 0, MIN + SIZE / 2);
-const GC = {};   // zwischengespeicherte Werte, damit sich die Schneemenge schnell ändern lässt
 {
   const pos = geo.attributes.position, n = pos.count;
   for (let i = 0; i < n; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)));
   geo.computeVertexNormals();
-  const nor = geo.attributes.normal;
-  GC.dl = new Float32Array(n); GC.dro = new Float32Array(n); GC.dr = new Float32Array(n); GC.n1 = new Float32Array(n); GC.n2 = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = pos.getX(i), z = pos.getZ(i);
-    let dl = 1e9; for (const L of MAP.lanes) dl = Math.min(dl, dpoly(x, z, L));
-    GC.dl[i] = dl; GC.dro[i] = dpoly(x, z, MAP.road); GC.dr[i] = dpoly(x, z, MAP.river);
-    GC.n1[i] = fbm(x / 26, z / 26); GC.n2[i] = fbm(x / 9 + 40, z / 9);
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
 }
+/* Bodenfarbe als eigene Textur (ca. 1 m pro Bildpunkt, weich gefiltert) statt grober Farbflächen pro Gitterpunkt:
+   Schnee, gefrorene Erde, Geröll, Fels, dazu die Gassen, die Straße, der Dorfplatz und das Eis am Fluss. */
+const GW = 2048, groundCanvas = document.createElement('canvas'); groundCanvas.width = groundCanvas.height = GW;
+const groundTex = new THREE.CanvasTexture(groundCanvas); groundTex.colorSpace = THREE.SRGBColorSpace; groundTex.anisotropy = 8; groundTex.generateMipmaps = true;
+const LANESEG = []; for (const L of MAP.lanes) for (let i = 0; i < L.length - 1; i++) LANESEG.push([L[i], L[i + 1]]);
+const bboxOf = (pts, m) => [Math.min(...pts.map(p => p[0])) - m, Math.min(...pts.map(p => p[1])) - m, Math.max(...pts.map(p => p[0])) + m, Math.max(...pts.map(p => p[1])) + m];
+const LB = bboxOf(MAP.lanes.flat(), 8), RB = bboxOf(MAP.road, 12), VB = bboxOf(MAP.river, 16);
+const inB = (x, z, B) => x > B[0] && x < B[2] && z > B[1] && z < B[3];
+const toS = v => Math.round(255 * Math.pow(clamp(v, 0, 1), 1 / 2.2));
 let snowAmt = 0.36;
 function paintTerrain() {
-  const pos = geo.attributes.position, nor = geo.attributes.normal, col = geo.attributes.color, n = pos.count;
-  const snow = new THREE.Color(0.86, 0.88, 0.93), soilWet = new THREE.Color(0.30, 0.24, 0.18), dust = new THREE.Color(0.47, 0.41, 0.31), gravel = new THREE.Color(0.41, 0.40, 0.38), rockC = new THREE.Color(0.38, 0.35, 0.32);
-  const path = new THREE.Color(0.27, 0.22, 0.17), road = new THREE.Color(0.39, 0.37, 0.34), plaza = new THREE.Color(0.37, 0.33, 0.28), ice = new THREE.Color(0.55, 0.72, 0.86);
-  const g = new THREE.Color(), c = new THREE.Color();
-  for (let i = 0; i < n; i++) {
-    const x = pos.getX(i), z = pos.getZ(i), y = pos.getY(i), ny = nor.getY(i), n1 = GC.n1[i], n2 = GC.n2[i];
-    // Boden ohne Schnee: gefrorene Erde, trockenes Gras/Staub, Geröll; steil = Fels
-    g.copy(soilWet).lerp(dust, smooth(0.35, 0.65, n2)).lerp(gravel, smooth(0.62, 0.8, GC.n1[i] * 0.6 + n2 * 0.4));
-    g.lerp(rockC, smooth(0.93, 0.7, ny));
-    // Schneeanteil: mehr in der Höhe und in Mulden, weniger an steilen Flanken, Wegen und im Dorfkern
-    const score = (snowAmt - 0.5) * 1.7 + (n1 - 0.5) * 1.5 + 0.7 * smooth(20, 190, y) - 0.55 * smooth(0.9, 0.7, ny);
-    let cover = smooth(-0.15, 0.3, score + 0.22);
-    const wl = smooth(4.5, 1.6, GC.dl[i]); if (wl > 0) { g.lerp(path, wl); cover *= 1 - wl * 0.95; }
-    const wr = smooth(7, 3, GC.dro[i]); if (wr > 0) { g.lerp(road, wr); cover *= 1 - wr * 0.85; }
-    const dp = Math.hypot(x - 480, z - 510); if (dp < 28) { const wp = smooth(28, 18, dp); g.lerp(plaza, wp); cover *= 1 - wp * 0.9; }
-    c.copy(g).lerp(snow, cover);
-    const dr = GC.dr[i]; if (dr < 12) c.lerp(ice, smooth(12, 7, dr));
-    col.setXYZ(i, c.r, c.g, c.b);
+  const pos = geo.attributes.position, nor = geo.attributes.normal, g2 = groundCanvas.getContext('2d'), img = g2.createImageData(GW, GW), D = img.data, V = N + 1;
+  const snow = [0.86, 0.88, 0.93], soilWet = [0.30, 0.24, 0.18], dust = [0.47, 0.41, 0.31], gravel = [0.41, 0.40, 0.38], rockC = [0.38, 0.35, 0.32];
+  const path = [0.25, 0.20, 0.155], road = [0.37, 0.35, 0.32], plaza = [0.36, 0.32, 0.27], ice = [0.55, 0.72, 0.86], rut = [0.17, 0.135, 0.105];
+  const c = [0, 0, 0], mix = (to, t) => { c[0] += (to[0] - c[0]) * t; c[1] += (to[1] - c[1]) * t; c[2] += (to[2] - c[2]) * t; };
+  for (let py = 0; py < GW; py++) {
+    const z = MIN + (py + 0.5) / GW * SIZE, gz = clamp((z - MIN) / SIZE * N, 0, N - 0.001), iz = Math.floor(gz), fz = gz - iz;
+    for (let px = 0; px < GW; px++) {
+      const x = MIN + (px + 0.5) / GW * SIZE, gx = clamp((x - MIN) / SIZE * N, 0, N - 0.001), ix = Math.floor(gx), fx = gx - ix;
+      const i00 = iz * V + ix, i10 = i00 + 1, i01 = i00 + V, i11 = i01 + 1, w00 = (1 - fx) * (1 - fz), w10 = fx * (1 - fz), w01 = (1 - fx) * fz, w11 = fx * fz;
+      const y = pos.getY(i00) * w00 + pos.getY(i10) * w10 + pos.getY(i01) * w01 + pos.getY(i11) * w11;
+      const ny = nor.getY(i00) * w00 + nor.getY(i10) * w10 + nor.getY(i01) * w01 + nor.getY(i11) * w11;
+      const n1 = fbm(x / 26, z / 26), n2 = fbm(x / 9 + 40, z / 9), n3 = vnoise(x / 2.3 + 7, z / 2.3);
+      // Boden ohne Schnee: gefrorene Erde, trockenes Gras/Staub, Geröll; steil = Fels
+      c[0] = soilWet[0]; c[1] = soilWet[1]; c[2] = soilWet[2];
+      mix(dust, smooth(0.35, 0.65, n2)); mix(gravel, smooth(0.62, 0.8, n1 * 0.6 + n2 * 0.4)); mix(rockC, smooth(0.93, 0.7, ny));
+      // Schneeanteil: mehr in der Höhe und in Mulden, weniger an steilen Flanken, auf Wegen und im Dorfkern; der Rand ist unregelmäßig
+      const score = (snowAmt - 0.5) * 1.7 + (n1 - 0.5) * 1.5 + 0.7 * smooth(20, 190, y) - 0.55 * smooth(0.9, 0.7, ny) + (n3 - 0.5) * 0.12;
+      let cover = smooth(-0.15, 0.3, score + 0.22);
+      if (inB(x, z, LB)) { let dl = 1e9; for (const s of LANESEG) { const d = dseg(x, z, s[0], s[1]); if (d < dl) dl = d; }
+        const wl = smooth(3.4, 1.7, dl + (n3 - 0.5) * 1.3); if (wl > 0) { mix(path, wl); cover *= 1 - wl * 0.93; const rr = Math.abs(dl - 0.85); if (rr < 0.45) mix(rut, 0.5 * wl * (1 - rr / 0.45)); } }
+      if (inB(x, z, RB)) { const dro = dpoly(x, z, MAP.road), wr = smooth(5.2, 3.2, dro + (n3 - 0.5) * 0.9); if (wr > 0) { mix(road, wr); cover *= 1 - wr * 0.85; const rr = Math.abs(dro - 1.25); if (rr < 0.5) mix(rut, 0.45 * wr * (1 - rr / 0.5)); } }
+      const dp = Math.hypot(x - 480, z - 510); if (dp < 30) { const wp = smooth(28, 20, dp + (n3 - 0.5) * 3); mix(plaza, wp); cover *= 1 - wp * 0.9; }
+      mix(snow, cover);
+      if (inB(x, z, VB)) { const dr = dpoly(x, z, MAP.river); if (dr < 12) mix(ice, smooth(12, 7, dr)); }
+      const k = (py * GW + px) * 4; D[k] = toS(c[0]); D[k + 1] = toS(c[1]); D[k + 2] = toS(c[2]); D[k + 3] = 255;
+    }
   }
-  col.needsUpdate = true;
+  g2.putImageData(img, 0, 0); groundTex.needsUpdate = true;
 }
 paintTerrain();
-if (TX.ground) TX.ground.repeat.set(SIZE / 4, SIZE / 4);
+if (TX.ground) { TX.ground.anisotropy = 8; }
 if (TX.ground_n) TX.ground_n.repeat.set(SIZE / 5, SIZE / 5);
-const terrain = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: TX.ground, normalMap: TX.ground_n, normalScale: new THREE.Vector2(0.55, 0.55), roughness: 0.95, metalness: 0 }));
+const terrainMat = new THREE.MeshStandardMaterial({ map: groundTex, normalMap: TX.ground_n, normalScale: new THREE.Vector2(0.55, 0.55), roughness: 0.95, metalness: 0 });
+if (TX.ground) terrainMat.onBeforeCompile = sh => {   // feine Körnung aus der Detail-Textur über die Farbkarte legen (zwei Größen gegen sichtbare Kacheln)
+  sh.uniforms.detailMap = { value: TX.ground };
+  sh.fragmentShader = sh.fragmentShader.replace('#include <map_pars_fragment>', '#include <map_pars_fragment>\nuniform sampler2D detailMap;')
+    .replace('#include <map_fragment>', '#include <map_fragment>\n  { vec3 d1 = texture2D(detailMap, vMapUv * 500.0).rgb, d2 = texture2D(detailMap, vMapUv * 61.0).rgb; diffuseColor.rgb *= mix(vec3(1.0), d1 * 1.27, 0.75) * mix(vec3(1.0), d2 * 1.27, 0.35); }');
+};
+const terrain = new THREE.Mesh(geo, terrainMat);
 terrain.receiveShadow = true;
 scene.add(terrain);
 // Kartenrand: Wand nach unten, damit die Kante sauber aussieht
