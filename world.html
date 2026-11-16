@@ -97,13 +97,14 @@ function baseH(x, z) {
   const gap = Math.min(lerp(0.25, 1, smooth(30, 330, dRoad)), lerp(0.3, 1, smooth(30, 380, dRiv)));
   const Hm = 210 + 130 * fbm(x / 260 + 5, z / 260 + 9);
   const rid = 1 - Math.abs(fbm(x / 90 + 3, z / 90) - 0.5) * 2;
-  h += (Hm * Math.pow(t, 1.1) + (rid * rid * 30 + (fbm(x / 45, z / 45) - 0.5) * 16) * t * t) * gap;
+  h += (Hm * Math.pow(t, 1.1) + (rid * rid * 30 + (fbm(x / 45, z / 45) - 0.5) * 16 + Math.pow(1 - Math.abs(fbm(x / 24 + 7, z / 24 + 2) - 0.5) * 2, 2) * 9 + (fbm(x / 11, z / 11 + 5) - 0.5) * 3.5) * t * t) * gap;
   // leichtes Relief im Talboden
   h += (fbm(x / 90, z / 90) - 0.5) * 2 * (1.5 + 3 * (1 - t));
   h += 10 * Math.exp(-((x - 60) ** 2 + (z - 540) ** 2) / (2 * 70 * 70)) * (1 - t);
   if (dRiv < 22) h = lerp(h, Math.min(h, -2.5), 1 - smooth(9, 22, dRiv));
   return h;
 }
+let snowUpdate = () => { }, skyUpdate = () => { };
 let laneLift = () => 0;   // Höhe des Gassen-Reliefs über dem Gelände (wird bei der Dekoration gesetzt)
 const pads = [];
 function addPad(x, z, r) { pads.push({ x, z, r, h: baseH(x, z) }); }
@@ -198,7 +199,7 @@ function paintTerrain() {
       const n1 = fbm(x / 26, z / 26), n2 = fbm(x / 9 + 40, z / 9), n3 = vnoise(x / 2.3 + 7, z / 2.3);
       // Boden ohne Schnee: gefrorene Erde, trockenes Gras/Staub, Geröll; steil = Fels
       c[0] = soilWet[0]; c[1] = soilWet[1]; c[2] = soilWet[2];
-      mix(dust, smooth(0.35, 0.65, n2)); mix(gravel, smooth(0.62, 0.8, n1 * 0.6 + n2 * 0.4)); mix(rockC, smooth(0.93, 0.7, ny));
+      mix(dust, smooth(0.35, 0.65, n2)); mix(gravel, smooth(0.62, 0.8, n1 * 0.6 + n2 * 0.4)); mix(rockC, smooth(0.93, 0.7, ny)); { const st = smooth(0.9, 0.68, ny); if (st > 0) { const bnd = 0.5 + 0.5 * Math.sin(y * 0.55 + n2 * 5 + n1 * 3); mix([0.22, 0.205, 0.2], st * 0.5 * bnd); mix([0.5, 0.47, 0.43], st * 0.28 * (1 - bnd)); } }
       // Schneeanteil: mehr in der Höhe und in Mulden, weniger an steilen Flanken, auf Wegen und im Dorfkern; der Rand ist unregelmäßig
       const score = (snowAmt - 0.5) * 2.6 + (n1 - 0.5) * (snowAmt > 0.6 ? 0.5 : 1.5) + 0.7 * smooth(20, 190, y) - 0.55 * smooth(0.9, 0.7, ny) + (n3 - 0.5) * 0.12;
       let cover = smooth(-0.15, 0.3, score + 0.22);
@@ -565,7 +566,7 @@ await Promise.all(jobs);
   const statics = [];
   // 1) Schneebäume (Nadelbäume mit weißen Kappen) als Instanzen: Wälder an den unteren Hängen und Gruppen im Tal
   // Baum-Bausteine: jeder Baum wird aus Zufallswerten gebaut, vier Formen je Art
-  const limb = (A, B, r1, r2, c, sg = 5) => { const d = new THREE.Vector3().subVectors(B, A), g = col(new THREE.CylinderGeometry(r2, r1, d.length(), sg, 1, true), c); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3().addVectors(A, B).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize()), new THREE.Vector3(1, 1, 1))); return g; };
+  const limb = (A, B, r1, r2, c, sg = 5) => { const d = new THREE.Vector3().subVectors(B, A), g = col(new THREE.CylinderGeometry(r2, r1, d.length(), sg, 1, true), c); { const ca = g.attributes.color; for (let i = 0; i < ca.count; i++) { const f = 0.72 + 0.5 * hash(i * 7 + sg, Math.round(r1 * 997)); ca.setXYZ(i, ca.getX(i) * f, ca.getY(i) * f, ca.getZ(i) * f); } } g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3().addVectors(A, B).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize()), new THREE.Vector3(1, 1, 1))); return g; };
   const skirt = (r, hh, c, jag, droop, sg = 10) => {   // Kegel mit ausgefranstem, hängendem Rand (Tannenzweige)
     const g = new THREE.ConeGeometry(r, hh, sg, 1, true).toNonIndexed(), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) if (p.getY(i) < 0) { const k = Math.round((Math.atan2(p.getZ(i), p.getX(i)) + Math.PI) / (2 * Math.PI) * sg) % sg, f = 1 + (jag[k] - 0.5) * 0.55; p.setXYZ(i, p.getX(i) * f, p.getY(i) - droop * jag[(k + 3) % sg], p.getZ(i) * f); }
@@ -582,8 +583,8 @@ await Promise.all(jobs);
     return mergeGeometries(parts, false); };
   const bareGeo = (seed, big) => { const r = rng(seed), parts = [], BARK = [0x231b15, 0x2a2019, 0x1d1712][seed % 3];
     const grow = (A, dir, len, rad, depth) => { const B = A.clone().addScaledVector(dir, len); parts.push(limb(A, B, rad, rad * 0.62, BARK, depth === 0 ? 7 : 5));
-      if (Math.abs(dir.y) < 0.75 && rad > 0.03 && r() < 0.75) { const mid = A.clone().lerp(B, 0.5), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), new THREE.Vector3(dir.x, 0, dir.z).normalize()), sg = box(len * 0.82, rad * 0.8, rad * 2.1, 0xe4eaf0);
-        sg.applyMatrix4(new THREE.Matrix4().compose(mid.clone().setY(mid.y + rad * 1.05), q, new THREE.Vector3(1, 1, 1))); parts.push(sg); }                                                            // Schnee auf waagerechten Ästen
+      if (Math.abs(dir.y) < 0.75 && rad > 0.03 && r() < 0.75) { const mid = A.clone().lerp(B, 0.5), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), new THREE.Vector3(dir.x, 0, dir.z).normalize()), sg = box(len * 0.6, rad * 0.45, rad * 1.5, 0xe4eaf0);
+        sg.applyMatrix4(new THREE.Matrix4().compose(mid.clone().setY(mid.y + rad * 0.95), q, new THREE.Vector3(1, 1, 1))); parts.push(sg); }                                                            // Schnee auf waagerechten Ästen
       if (depth >= (big ? 4 : 3)) return; const nk = depth === 0 ? 3 + Math.floor(r() * 2) : 2 + Math.floor(r() * 2);
       for (let i = 0; i < nk; i++) { const d2 = dir.clone().add(new THREE.Vector3(r() - 0.5, (r() - 0.35) * 0.9, r() - 0.5).multiplyScalar(depth === 0 ? 1.5 : 1.25)).normalize(); grow(A.clone().lerp(B, depth === 0 ? 0.55 + r() * 0.45 : 0.6 + r() * 0.4), d2, len * (0.56 + r() * 0.2), rad * 0.58, depth + 1); } };
     grow(new THREE.Vector3(0, -0.1, 0), new THREE.Vector3((r() - 0.5) * 0.3, 1, (r() - 0.5) * 0.3).normalize(), big ? 2.6 : 1.9, big ? 0.34 : 0.2, 0);
@@ -774,6 +775,63 @@ await Promise.all(jobs);
     const gm = new THREE.Mesh(mergeGeometries(gs, false), dmat); gm.castShadow = true; gm.receiveShadow = true; scene.add(gm);
     addLabel('Friedhof', f.x, heightAt(f.x, f.y) + 8, f.y, '');
   }
+  // 7) Mehr Einzelheiten in Dorf und Bergen
+  {
+    const D = rng(99), ex = [];
+    // Felsnasen an den Hängen: dunkle, kantige Blöcke mit Schnee obenauf
+    { const mk = (seed) => { const r = rng(seed), p = []; for (let i = 0; i < 4; i++) { const g = col(new THREE.DodecahedronGeometry(1, 0), [0x3a3836, 0x45423f, 0x2f2d2c, 0x4e4a46][i]); g.scale(0.7 + r() * 0.7, 0.6 + r() * 0.9, 0.7 + r() * 0.6); p.push(at(g, (r() - 0.5) * 1.5, 0.2 + r() * 0.5, (r() - 0.5) * 1.5, r(), r() * 3, r())); }
+        for (let i = 0; i < 2; i++) { const g = col(new THREE.DodecahedronGeometry(1, 0), 0xe4eaf0); g.scale(0.7 + r() * 0.5, 0.16, 0.6 + r() * 0.5); p.push(at(g, (r() - 0.5) * 1.2, 1.05 + r() * 0.35, (r() - 0.5) * 1.2, 0, r() * 3, 0)); } return mergeGeometries(p, false); };
+      const geos = [mk(1), mk(2), mk(3)], L = [[], [], []];
+      for (let i = 0; i < 9000 && L[0].length + L[1].length + L[2].length < 1100; i++) { const x = MIN + 60 + D() * (SIZE - 120), z = MIN + 60 + D() * (SIZE - 120), t = ringT(x, z); if (t < 0.1 || fbm(x / 60 + 20, z / 60) < 0.42 + 0.25 * (1 - t) || dpoly(x, z, MAP.road) < 14 || dpoly(x, z, MAP.river) < 20) continue; L[i % 3].push([x, z, 1.6 + D() * D() * 9, D() * 6.28]); }
+      L.forEach((list, v) => { const m = new THREE.InstancedMesh(geos[v], dmat, list.length), o = new THREE.Object3D(); list.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) - p[2] * 0.25, p[1]); o.rotation.set(0, p[3], 0); o.scale.set(p[2], p[2] * (0.7 + D() * 0.6), p[2]); o.updateMatrix(); m.setMatrixAt(i, o.matrix); if (p[2] > 2.2) colliders.push({ x: p[0], z: p[1], r: p[2] * 0.9 }); }); m.castShadow = true; m.receiveShadow = true; scene.add(m); }); }
+    // einzelne tote Bäume weiter oben am Berg
+    { const L = []; for (let i = 0; i < 6000 && L.length < 520; i++) { const x = MIN + 80 + D() * (SIZE - 160), z = MIN + 80 + D() * (SIZE - 160), t = ringT(x, z); if (t < 0.3 || t > 0.85 || fbm(x / 90, z / 90 + 6) < 0.5 || dpoly(x, z, MAP.road) < 14) continue; L.push([x, z, 0.9 + D() * 1.1, D() * 6.28]); }
+      inst(PINES[3], L.filter((p, i) => i % 2 === 0), 0.2); inst(PINES[0], L.filter((p, i) => i % 2 === 1), 0.14); }
+    // Schilf am zugefrorenen Fluss
+    { const p = []; const r = rng(5); for (let i = 0; i < 9; i++) { const a = r() * 6.28, l = r() * 0.35; p.push(at(con(0.025, 1.1 + r() * 0.9, [0x6a5a36, 0x7a6a40, 0x4a3e26][i % 3], 3), Math.cos(a) * l, 0.6, Math.sin(a) * l, (r() - 0.5) * 0.3, 0, (r() - 0.5) * 0.3)); }
+      const g = mergeGeometries(p, false), L = []; for (let i = 0; i < 12000 && L.length < 900; i++) { const x = -200 + D() * 1150, z = 760 + D() * 130, d = dpoly(x, z, MAP.river); if (d < 9 || d > 15 || fbm(x / 14, z / 14) < 0.45) continue; L.push([x, z]); }
+      const m = new THREE.InstancedMesh(g, dmat, L.length), o = new THREE.Object3D(); L.forEach((q, i) => { o.position.set(q[0], heightAt(q[0], q[1]) - 0.1, q[1]); o.rotation.set(0, D() * 6, 0); o.scale.setScalar(0.8 + D() * 0.7); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); scene.add(m); }
+    // Strommasten an der Straße ins Dorf, mit durchhängenden Leitungen; manche schief, eine Leitung ist gerissen
+    { const pts = MAP.road.filter(q => q[0] < 1010), curve = new THREE.CatmullRomCurve3(pts.map(q => new THREE.Vector3(q[0], 0, q[1]))), len = curve.getLength(), tops = [], wm = new THREE.LineBasicMaterial({ color: 0x0c0c0e });
+      for (let s = 12; s < len - 30; s += 36) { const c = curve.getPointAt(s / len), t = curve.getTangentAt(s / len), x = c.x - t.z * 7.5, z = c.z + t.x * 7.5, y = heightAt(x, z), tilt = (D() - 0.5) * 0.22, ry = Math.atan2(t.x, t.z);
+        const g = mergeGeometries([at(cyl(0.16, 0.11, 7.6, 0x2a2018, 6), 0, 3.7, 0), at(box(1.9, 0.12, 0.12, 0x2a2018), 0, 7.0, 0), at(box(1.3, 0.1, 0.1, 0x2a2018), 0, 6.4, 0), ...[-0.85, 0.85, -0.55, 0.55].map((u, k) => at(cyl(0.05, 0.04, 0.16, 0x9aa4a8, 5), u, k < 2 ? 7.14 : 6.53, 0)), at(box(0.3, 0.08, 0.3, 0xe2e8ee), 0, 7.54, 0), at(box(1.8, 0.05, 0.16, 0xe2e8ee), 0, 7.09, 0)], false);
+        const m = new THREE.Mesh(g, dmat); m.position.set(x, y - 0.3, z); m.rotation.set(tilt, ry + Math.PI / 2, tilt * 0.5, 'YXZ'); m.castShadow = true; scene.add(m); colliders.push({ x, z, r: 0.4 }); m.updateMatrixWorld(); tops.push([-0.85, 0.85].map(u => new THREE.Vector3(u, 7.2, 0).applyMatrix4(m.matrixWorld))); }
+      for (let i = 0; i < tops.length - 1; i++) for (let k = 0; k < 2; k++) { const A = tops[i][k], B = tops[i + 1][k], broken = (i === 3 && k === 0) || (i === 9 && k === 1), P3 = [];
+        if (broken) { for (let j = 0; j <= 8; j++) { const u = j / 8; P3.push(new THREE.Vector3(A.x + (B.x - A.x) * u * 0.3, A.y - (A.y - heightAt(A.x, A.z) - 0.1) * Math.pow(u, 0.6), A.z + (B.z - A.z) * u * 0.3)); } }
+        else for (let j = 0; j <= 10; j++) { const u = j / 10; P3.push(new THREE.Vector3().lerpVectors(A, B, u).setY(A.y + (B.y - A.y) * u - 1.5 * Math.sin(Math.PI * u))); }
+        scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(P3), wm)); } }
+    // Autos: der Mietwagen im Graben (Tür offen, ein Scheinwerfer brennt noch) und ein alter, verrosteter Wagen am Dorfeingang
+    { const car = (x, z, ry, rz, rx, body, lights, wheels) => { const p = [at(box(1.7, 0.55, 4.0, body), 0, 0.62, 0), at(box(1.56, 0.55, 2.1, body), 0, 1.17, -0.25), at(box(1.42, 0.4, 0.06, 0x101418), 0, 1.18, 0.82, -0.35, 0, 0), at(box(1.42, 0.4, 0.06, 0x101418), 0, 1.18, -1.3, 0.3, 0, 0),
+          at(box(0.04, 0.34, 1.6, 0x101418), 0.79, 1.2, -0.25), at(box(0.04, 0.34, 1.6, 0x101418), -0.79, 1.2, -0.25), at(box(1.74, 0.16, 0.2, 0x1a1a1c), 0, 0.42, 2.0), at(box(1.74, 0.16, 0.2, 0x1a1a1c), 0, 0.42, -2.0), at(box(1.5, 0.1, 1.9, 0xe2e8ee), 0, 1.49, -0.25), at(box(1.6, 0.07, 1.0, 0xe2e8ee), 0, 0.93, 1.45), at(box(0.3, 0.12, 0.05, 0x40100c), 0.6, 0.72, -2.01), at(box(0.3, 0.12, 0.05, 0x40100c), -0.6, 0.72, -2.01)];
+        if (wheels) for (const [wx, wz] of [[-0.86, 1.25], [0.86, 1.25], [-0.86, -1.3], [0.86, -1.3]]) p.push(at(cyl(0.33, 0.33, 0.22, 0x0c0c0d, 10), wx, 0.33, wz, 0, 0, Math.PI / 2)); else p.push(at(box(0.5, 0.3, 0.5, 0x4a4844), -0.7, 0.15, 1.2), at(box(0.5, 0.3, 0.5, 0x4a4844), 0.7, 0.15, -1.2));
+        if (lights) p.push(at(box(0.07, 0.9, 1.05, body), -1.32, 0.95, 0.55, 0, 0.95, 0));                                                                   // offene Fahrertür
+        const g = new THREE.Group(); const m = new THREE.Mesh(mergeGeometries(p, false), dmat); m.castShadow = true; g.add(m);
+        for (const sd of [-1, 1]) { const hl = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 0.05), lights && sd === 1 ? new THREE.MeshBasicMaterial({ color: 0xfff0c8 }) : new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.3 })); hl.position.set(sd * 0.58, 0.72, 2.02); g.add(hl); }
+        g.position.set(x, heightAt(x, z) - (rz ? 0.5 : 0.12), z); g.rotation.set(rx, ry, rz, 'YXZ'); scene.add(g); colliders.push({ x, z, r: 2.0 });
+        if (lights) { const l = new THREE.SpotLight(0xfff0d0, 260, 34, 0.5, 0.6, 1.6); l.position.set(x + Math.sin(ry) * 2.2, heightAt(x, z) + 0.6, z + Math.cos(ry) * 2.2); l.target.position.set(x + Math.sin(ry) * 20, heightAt(x, z) + 1.5, z + Math.cos(ry) * 20); scene.add(l, l.target); } };
+      car(P.auto.x, P.auto.y, 2.2, 0.36, 0.1, 0xb9bec6, true, true); car(742, 496, 0.7, 0, -0.04, 0x5a3424, false, false); }
+    // Heuschober mit Schneehaube, Wäscheleinen mit steif gefrorener Wäsche, Tränken an den Brunnen
+    { let n = 0; for (let i = 0; i < 900 && n < 16; i++) { const x = 160 + D() * 600, z = 310 + D() * 440, d = laneD(x, z); if (d < 9 || d > 22 || nearB(x, z, 3) || Math.hypot(x - 480, z - 510) < 34) continue; n++; const y = heightAt(x, z), s = 0.8 + D() * 0.5;
+        ex.push(at(cyl(1.5 * s, 1.25 * s, 1.5 * s, 0x6e5e34, 9), x, y + 0.7 * s, z), at(con(1.4 * s, 1.5 * s, 0x7a6a3c, 9), x, y + 2.2 * s, z), at(con(1.0 * s, 0.95 * s, 0xe4eaf0, 9), x, y + 2.55 * s, z), at(cyl(0.05, 0.05, 0.9, 0x2e2218, 4), x, y + 3.2 * s, z)); colliders.push({ x, z, r: 1.6 * s }); }
+      n = 0; for (const hh of MAP.houses) { if (n >= 9 || D() < 0.7) continue; const r = hh.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), W = (lx, lz) => [hh.x + lx * c + lz * s, hh.z - lx * s + lz * c], a = W(-5.5, -5.2), b = W(-0.5, -5.6); if (nearB(a[0], a[1], -2.5) || laneD(a[0], a[1]) < 5) continue; n++;
+        const ya = heightAt(a[0], a[1]), yb = heightAt(b[0], b[1]); ex.push(at(box(0.1, 2.0, 0.1, 0x2e2218), a[0], ya + 0.95, a[1]), at(box(0.1, 2.0, 0.1, 0x2e2218), b[0], yb + 0.95, b[1]), beam(new THREE.Vector3(a[0], ya + 1.85, a[1]), new THREE.Vector3(b[0], yb + 1.85, b[1]), 0.02, 0x101010));
+        for (let k = 0; k < 4; k++) { const u = 0.15 + k * 0.23, cw = 0.5 + D() * 0.5, chh = 0.6 + D() * 0.6; ex.push(at(box(cw, chh, 0.03, [0xc8c8c4, 0x7a2a22, 0x9a9488, 0x3c4458, 0xb8a888][Math.floor(D() * 5)]), a[0] + (b[0] - a[0]) * u, (ya + yb) / 2 + 1.83 - chh / 2, a[1] + (b[1] - a[1]) * u, (D() - 0.5) * 0.25, r + 0.08, 0)); } }
+      for (const id of ['brunnen', 'brunnen2', 'brunnen3']) { const q = P[id], x = q.x + 3.2, z = q.y + 1.2, y = heightAt(x, z); ex.push(at(box(2.4, 0.5, 0.8, 0x5c5a57), x, y + 0.2, z, 0, 0.4, 0), at(box(2.1, 0.06, 0.55, 0x9ab4c8), x, y + 0.44, z, 0, 0.4, 0), at(box(0.5, 0.05, 0.3, 0xe2e8ee), x - 0.6, y + 0.48, z + 0.1, 0, 0.4, 0)); colliders.push({ x, z, r: 1.2 }); } }
+    // Schafpferche aus Feldsteinen bei den Hirtenhütten
+    for (const id of ['huette1', 'huette2', 'huette3', 'unterstand']) { const q = P[id], cx = q.x + 13, cz = q.y + 6, rr = 6 + D() * 2; for (let a = 0.5; a < 6.28; a += 0.24) { if (D() < 0.1) continue; const x = cx + Math.cos(a) * rr, z = cz + Math.sin(a) * rr, hh = 0.7 + D() * 0.35; ex.push(at(box(1.6, hh, 0.6, STONE[Math.floor(D() * 4)]), x, heightAt(x, z) + hh / 2 - 0.15, z, 0, -a + Math.PI / 2 + (D() - 0.5) * 0.2, 0), at(box(1.0 + D() * 0.5, 0.09, 0.5, 0xe2e8ee), x, heightAt(x, z) + hh - 0.1, z, 0, -a + Math.PI / 2, 0)); colliders.push({ x, z, r: 0.8 }); } }
+    if (ex.length) { const m = new THREE.Mesh(mergeGeometries(ex, false), dmat); m.castShadow = true; m.receiveShadow = true; scene.add(m); }
+    // Schneefall rund um die Kamera
+    { const N2 = 6000, BX = 90, BY = 45, pos = new Float32Array(N2 * 3), sp = new Float32Array(N2); for (let i = 0; i < N2; i++) { pos[i * 3] = D() * BX; pos[i * 3 + 1] = D() * BY; pos[i * 3 + 2] = D() * BX; sp[i] = 1.2 + D() * 1.6; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xf2f5fa, size: 0.14, sizeAttenuation: true, transparent: true, opacity: 0.85, depthWrite: false })); pts.frustumCulled = false; scene.add(pts);
+      const base = new Float32Array(pos); let last = 0, T = 0;
+      snowUpdate = (now) => { const dt = Math.min(0.1, now - last); last = now; T += dt; const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z, a = g.attributes.position.array, md = (v, m) => ((v % m) + m) % m;
+        for (let i = 0; i < N2; i++) { const k = i * 3; a[k] = cx - BX / 2 + md(base[k] + T * 0.9 + Math.sin(T * 0.7 + i) * 0.4 - cx, BX); a[k + 1] = cy - BY / 3 + md(base[k + 1] - T * sp[i] - cy, BY); a[k + 2] = cz - BX / 2 + md(base[k + 2] + T * 0.35 - cz, BX); } g.attributes.position.needsUpdate = true; }; }
+    // Himmel: Sterne und Mond in Dämmerung und Nacht
+    { const n = 1400, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const u = D() * 6.283, v = Math.acos(0.02 + D() * 0.98), r = 6000; pos[i * 3] = MIN + SIZE / 2 + r * Math.sin(v) * Math.cos(u); pos[i * 3 + 1] = r * Math.cos(v); pos[i * 3 + 2] = MIN + SIZE / 2 + r * Math.sin(v) * Math.sin(u); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const stars = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xcfd8ee, size: 2.2, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false, depthWrite: false })); scene.add(stars);
+      const moon = new THREE.Mesh(new THREE.SphereGeometry(170, 20, 14), new THREE.MeshBasicMaterial({ color: 0xdfe6f2, fog: false })); moon.position.set(MIN + SIZE / 2 + 2600, 3300, MIN + SIZE / 2 - 4200); scene.add(moon);
+      skyUpdate = (name) => { stars.visible = name !== 'tag'; stars.material.opacity = name === 'nacht' ? 0.85 : 0.3; moon.visible = name !== 'tag'; moon.material.color.setHex(name === 'nacht' ? 0xdfe6f2 : 0x9aa2b8); }; skyUpdate(lightName); }
+  }
   if (statics.length) { const m = new THREE.Mesh(mergeGeometries(statics, false), dmat); m.castShadow = true; m.receiveShadow = true; scene.add(m); }
 }
 // Ortsmarken ohne Gebäude
@@ -833,6 +891,7 @@ function setLight(name) {
   scene.background.setHex(L.bg); scene.fog.color.setHex(L.bg); scene.fog.density = mode === 'walk' ? L.fogWalk : L.fog;
   hemi.intensity = L.hemi; hemi.color.setHex(L.hemiSky); sun.color.setHex(L.sun); sun.intensity = L.sunI;
   document.querySelectorAll('[data-light]').forEach(b => b.classList.toggle('on', b.dataset.light === name));
+  skyUpdate(name);
 }
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
 document.querySelectorAll('[data-walk]').forEach(b => b.onclick = () => walkTo(b.dataset.walk));
@@ -877,7 +936,7 @@ function frame(now) {
   }
   const L = LIGHTS[lightName]; sun.position.copy(sun.target.position).addScaledVector(new THREE.Vector3(...L.dir).normalize(), 900);
   camera.position.copy(cam.pos); camera.rotation.set(cam.pitch, cam.yaw, 0);
-  updatePlumes(now / 1000);
+  updatePlumes(now / 1000); snowUpdate(now / 1000);
   for (const w of wheels) w.rotation.x += dt * 0.5;
   look.render(scene, camera);
   // Beschriftungen nur im Flugmodus
