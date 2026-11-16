@@ -41,6 +41,8 @@
   <button data-walk="hamam">Hamam</button>
   <button data-walk="muehle">Mühle</button>
   <span class="sep"></span>
+  <button id="btnWalk" style="font-weight:bold">Hier herumlaufen (G)</button>
+  <span class="sep"></span>
   <button data-light="daemmerung" class="on">Dämmerung</button>
   <button data-light="tag">Tag</button>
   <button data-light="nacht">Nacht</button>
@@ -882,9 +884,10 @@ function setMode(m) {
   const e = walk ? 90 : 1500; Object.assign(sun.shadow.camera, { left: -e, right: e, top: e, bottom: -e, near: 1, far: 2500 }); sun.shadow.camera.updateProjectionMatrix();
   if (!walk && document.pointerLockElement) document.exitPointerLock();
   labels.forEach(l => l.el.style.display = 'none');
+  if ($('btnWalk')) $('btnWalk').textContent = walk ? 'Wieder fliegen (G)' : 'Hier herumlaufen (G)';
   $('help').innerHTML = walk
-    ? '<b>Gehen:</b> Klick ins Bild, dann <b>W A S D</b> bewegen, Maus umsehen, <b>Shift</b> rennen, <b>Esc</b> Maus freigeben. Oben die Knöpfe springen zu anderen Orten.'
-    : '<b>Fliegen:</b> Maustaste gedrückt halten und ziehen = umsehen. <b>W A S D</b> bewegen, <b>Q</b>/<b>E</b> runter/hoch, <b>Shift</b> schneller, Mausrad vor/zurück. Knöpfe oben: Ansichten und Orte zum Hineingehen.';
+    ? '<b>Gehen:</b> Klick ins Bild, dann <b>W A S D</b> bewegen, Maus umsehen, <b>Shift</b> rennen, <b>Esc</b> Maus freigeben, <b>G</b> wieder fliegen. Oben die Knöpfe springen zu anderen Orten.'
+    : '<b>Fliegen:</b> Maustaste gedrückt halten und ziehen = umsehen. <b>W A S D</b> bewegen, <b>Q</b>/<b>E</b> runter/hoch, <b>Shift</b> schneller, Mausrad vor/zurück. <b>G</b> = an dieser Stelle herumlaufen. Knöpfe oben: Ansichten und Orte zum Hineingehen.';
 }
 function setLight(name) {
   lightName = name; const L = LIGHTS[name];
@@ -900,7 +903,14 @@ $('btnLook').onclick = e => { look.enabled = !look.enabled; e.target.classList.t
 $('btnSnow').onclick = e => { const steps = [[0.7, 'viel'], [0.42, 'mittel'], [0.2, 'wenig']]; const i = (steps.findIndex(s => s[0] === snowAmt) + 1) % steps.length; snowAmt = steps[i][0]; e.target.textContent = 'Schnee: ' + steps[i][1]; paintTerrain(); };
 $('btnLabels').onclick = e => { labelsOn = !labelsOn; e.target.classList.toggle('on', labelsOn); };
 
-addEventListener('keydown', e => { keys.add(e.code); });
+addEventListener('keydown', e => { keys.add(e.code); if (e.code === 'KeyG' && !e.repeat) toggleWalk(); });
+// Umschalten zwischen Fliegen und Gehen an der Stelle, an der man gerade ist
+function toggleWalk() {
+  if (mode === 'walk') { setMode('fly'); cam.pos.y += 30; cam.pitch = -0.45; }
+  else { const x = clamp(cam.pos.x, MIN + 10, MAX - 10), z = clamp(cam.pos.z, MIN + 10, MAX - 10); setMode('walk'); cam.pos.set(x, heightAt(x, z) + 1.65, z); cam.pitch = 0; try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (e) { } }
+  $('btnWalk').textContent = mode === 'walk' ? 'Wieder fliegen (G)' : 'Hier herumlaufen (G)';
+}
+$('btnWalk').onclick = toggleWalk;
 addEventListener('keyup', e => keys.delete(e.code));
 renderer.domElement.addEventListener('mousedown', e => { dragging = true; if (mode === 'walk' && !document.pointerLockElement) renderer.domElement.requestPointerLock && renderer.domElement.requestPointerLock(); });
 addEventListener('mouseup', () => dragging = false);
@@ -921,7 +931,7 @@ function frame(now) {
   const fwd = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0), rgt = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0);
   const fast = keys.has('ShiftLeft') || keys.has('ShiftRight');
   if (mode === 'walk') {
-    const sp = fast ? 6 : 3.4, sn = Math.sin(cam.yaw), cs = Math.cos(cam.yaw);
+    const sp = fast ? 8 : 3.6, sn = Math.sin(cam.yaw), cs = Math.cos(cam.yaw);
     let vx = -sn * fwd + cs * rgt, vz = -cs * fwd - sn * rgt; const l = Math.hypot(vx, vz) || 1;
     cam.pos.x = clamp(cam.pos.x + vx / l * sp * dt * (fwd || rgt ? 1 : 0), MIN + 5, MAX - 5); cam.pos.z = clamp(cam.pos.z + vz / l * sp * dt * (fwd || rgt ? 1 : 0), MIN + 5, MAX - 5);
     resolveColl(cam.pos, 0.5);
