@@ -135,9 +135,9 @@ sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.6;
 scene.add(hemi, sun, sun.target);
 const LIGHTS = {
-  daemmerung: { bg: 0x3d4363, fog: 0.00045, fogWalk: 0.0035, hemi: 1.15, hemiSky: 0xb4bedc, sun: 0xffb682, sunI: 1.5, dir: [-0.9, 0.3, 0.25] },
+  daemmerung: { bg: 0x353b58, fog: 0.00055, fogWalk: 0.014, hemi: 1.15, hemiSky: 0xb4bedc, sun: 0xffb682, sunI: 1.5, dir: [-0.9, 0.3, 0.25] },
   tag:        { bg: 0x9db6d2, fog: 0.0002,  fogWalk: 0.0012, hemi: 1.1,  hemiSky: 0xdfe9f5, sun: 0xfff2dd, sunI: 2.6, dir: [-0.4, 0.8, 0.35] },
-  nacht:      { bg: 0x07090f, fog: 0.0008,  fogWalk: 0.0055, hemi: 0.32, hemiSky: 0x4a5c88, sun: 0x8aa0d8, sunI: 0.7, dir: [0.5, 0.6, -0.4] }
+  nacht:      { bg: 0x0b111c, fog: 0.0011,  fogWalk: 0.03, hemi: 0.4, hemiSky: 0x5a6e9c, sun: 0x93a9dc, sunI: 0.85, dir: [0.5, 0.6, -0.4] }
 };
 let lightName = 'daemmerung';
 scene.background = new THREE.Color(LIGHTS.daemmerung.bg);
@@ -615,10 +615,10 @@ await Promise.all(jobs);
   }
   for (let i = 0; i < 1500 && P2.length < 110; i++) {
     const x = 120 + R() * 660, z = 300 + R() * 440, d = laneD(x, z);
-    if (d < 6 || d > 34 || nearB(x, z, 2.5) || Math.hypot(x - 480, z - 510) < 30 || dpoly(x, z, MAP.road) < 8) continue;
+    if (d < 6 || d > 34 || nearB(x, z, 2.5) || Math.hypot(x - 480, z - 510) < 30 || dpoly(x, z, MAP.road) < 8 || (Math.abs(x - P.friedhof.x) < P.friedhof.w / 2 + 3 && Math.abs(z - P.friedhof.y) < P.friedhof.h / 2 + 3)) continue;
     P2.push([x, z, 0.95 + R() * 0.8, R() * 6.28]);
   }
-  for (let i = 0; i < 26; i++) { const a = R() * 6.28, d = 30 + R() * 34; P2.push([P.friedhof.x + Math.cos(a) * d, P.friedhof.y + Math.sin(a) * d * 0.8, 1.3 + R() * 1.4, R() * 6.28]); }
+  for (let i = 0; i < 34; i++) { const f = P.friedhof, a = R() * 6.28, m = 4 + R() * 16, x = f.x + Math.cos(a) * (f.w / 2 + m) * 1.25, z = f.y + Math.sin(a) * (f.h / 2 + m) * 1.25; if ((Math.abs(x - f.x) < f.w / 2 + 3 && Math.abs(z - f.y) < f.h / 2 + 3) || laneD(x, z) < 7) continue; P2.push([x, z, 1.3 + R() * 1.4, R() * 6.28]); }
   const inst = (geo, list, lean) => { const m = new THREE.InstancedMesh(geo, dmat, list.length), o = new THREE.Object3D(); list.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) - 0.15, p[1]); o.rotation.set((R() - 0.5) * lean, p[3], (R() - 0.5) * lean); o.scale.set(p[2], p[2] * (0.85 + R() * 0.4), p[2]); o.updateMatrix(); m.setMatrixAt(i, o.matrix); colliders.push({ x: p[0], z: p[1], r: 0.45 }); }); m.castShadow = true; m.receiveShadow = true; scene.add(m); };
   for (let v = 0; v < 6; v++) inst(PINES[v], P1.filter((p, i) => i % 6 === v).map(p => [p[0], p[1], p[2] * (v === 2 || v === 5 ? 1.9 : 1), p[3]]), 0.1);
   for (let v = 0; v < 4; v++) { inst(BARES[v], P2.filter((p, i) => i % 4 === v).map(p => [p[0], p[1], p[2] * (v > 1 ? 1.15 : 0.9), p[3]]), 0.16); }
@@ -672,31 +672,32 @@ await Promise.all(jobs);
     const m2 = new THREE.InstancedMesh(rg, rm, RL.length); RL.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) + p[2] * 0.2, p[1]); o.rotation.set(R() * 3, R() * 3, R() * 3); o.scale.set(p[2] * 1.3, p[2], p[2]); o.updateMatrix(); m2.setMatrixAt(i, o.matrix); }); m2.castShadow = true; scene.add(m2); }
   // 3) Zäune um die Höfe: Holzpfosten mit zwei Latten, teils umgekippt, teils mit Lücken; vorne zur Gasse offen
   const WOOD = [0x3a2a1c, 0x44321f, 0x2e2218];
-  const fenceRun = (pts) => { for (let i = 0; i < pts.length - 1; i++) {
-      const a = pts[i], b = pts[i + 1]; if (laneD(a[0], a[1]) < 4.4 || laneD(b[0], b[1]) < 4.4 || nearB(a[0], a[1], -3.5) || nearB(b[0], b[1], -3.5)) continue;
-      const ya = heightAt(a[0], a[1]), yb = heightAt(b[0], b[1]), c = WOOD[Math.floor(R() * 3)], k = R();
-      statics.push(at(box(0.14, 1.25, 0.14, c), a[0], ya + 0.55, a[1], (R() - 0.5) * 0.14, R(), (R() - 0.5) * 0.14), at(box(0.2, 0.07, 0.2, 0xe2e8ee), a[0], ya + 1.2, a[1], 0, R(), 0));
-      if (k < 0.2) continue;                                                             // Lücke: Latten fehlen
+  const ptOK = (p, own) => !(laneD(p[0], p[1]) < 4.4 || nearB(p[0], p[1], -3.5) || (own && !own(p)));
+  const fenceRun = (pts, own) => { const ok = pts.map(p => ptOK(p, own)), ys = pts.map(p => heightAt(p[0], p[1])), c = WOOD[Math.floor(R() * 3)];
+    pts.forEach((a, i) => { if (!ok[i]) return;                                             // an jedem gültigen Punkt steht ein Pfosten
+      statics.push(at(box(0.15, 1.3, 0.15, c), a[0], ys[i] + 0.55, a[1], (R() - 0.5) * 0.1, R(), (R() - 0.5) * 0.1), at(box(0.21, 0.07, 0.21, 0xe2e8ee), a[0], ys[i] + 1.23, a[1], 0, R(), 0)); colliders.push({ x: a[0], z: a[1], r: 0.5 }); });
+    for (let i = 0; i < pts.length - 1; i++) { if (!ok[i] || !ok[i + 1]) continue; const a = pts[i], b = pts[i + 1], ya = ys[i], yb = ys[i + 1], k = R();
       const A = new THREE.Vector3(a[0], ya, a[1]), B = new THREE.Vector3(b[0], yb, b[1]);
-      if (k < 0.36) { statics.push(beam(A.clone().setY(ya + 0.95), B.clone().setY(yb + 0.08), 0.085, c)); }   // eine Latte hängt herunter
-      else { statics.push(beam(A.clone().setY(ya + 0.95), B.clone().setY(yb + 0.95 + (R() - 0.5) * 0.1), 0.085, c)); if (k > 0.5) statics.push(beam(A.clone().setY(ya + 0.5), B.clone().setY(yb + 0.5 + (R() - 0.5) * 0.12), 0.085, c));
-        if (R() < 0.5) statics.push(at(box(2.0, 0.07, 0.16, 0xe2e8ee), (a[0] + b[0]) / 2, (ya + yb) / 2 + 1.03, (a[1] + b[1]) / 2, 0, Math.atan2(b[0] - a[0], b[1] - a[1]) + Math.PI / 2, 0)); }
-      colliders.push({ x: a[0], z: a[1], r: 0.55 }, { x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, r: 0.6 });
+      if (k < 0.07) continue;                                                              // selten: beide Latten fehlen
+      if (k < 0.17) { statics.push(beam(A.clone().setY(ya + 0.98), B.clone().setY(yb + 0.1), 0.085, c), beam(A.clone().setY(ya + 0.5), B.clone().setY(yb + 0.5), 0.085, c)); }   // obere Latte hängt an einem Ende herunter
+      else { statics.push(beam(A.clone().setY(ya + 0.98), B.clone().setY(yb + 0.98), 0.085, c), beam(A.clone().setY(ya + 0.5), B.clone().setY(yb + 0.5), 0.085, c));
+        if (R() < 0.5) statics.push(at(box(2.0, 0.07, 0.16, 0xe2e8ee), (a[0] + b[0]) / 2, (ya + yb) / 2 + 1.06, (a[1] + b[1]) / 2, 0, Math.atan2(b[0] - a[0], b[1] - a[1]) + Math.PI / 2, 0)); }
+      colliders.push({ x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, r: 0.6 });
     } };
   const STONE = [0x6a6763, 0x5c5a57, 0x77736d, 0x504e4c];
-  const wallRun = (pts) => { for (let i = 0; i < pts.length - 1; i++) {   // Trockenmauer aus Feldsteinen, stellenweise eingestürzt
-      const a = pts[i], b = pts[i + 1]; if (laneD(a[0], a[1]) < 4.4 || laneD(b[0], b[1]) < 4.4 || nearB(a[0], a[1], -3.5) || nearB(b[0], b[1], -3.5)) continue;
+  const wallRun = (pts, own) => { for (let i = 0; i < pts.length - 1; i++) {   // Trockenmauer aus Feldsteinen, stellenweise eingestürzt
+      const a = pts[i], b = pts[i + 1]; if (!ptOK(a, own) || !ptOK(b, own)) continue;
       const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, y = heightAt(mx, mz), ry = Math.atan2(b[0] - a[0], b[1] - a[1]) + Math.PI / 2, L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      if (R() < 0.15) { for (let k = 0; k < 4; k++) statics.push(at(box(0.3 + R() * 0.35, 0.2 + R() * 0.2, 0.3 + R() * 0.3, STONE[k % 4]), mx + (R() - 0.5) * 1.8, y + 0.08, mz + (R() - 0.5) * 1.8, R(), R() * 3, R())); continue; }
+      if (R() < 0.08) { for (let k = 0; k < 4; k++) statics.push(at(box(0.3 + R() * 0.35, 0.2 + R() * 0.2, 0.3 + R() * 0.3, STONE[k % 4]), mx + (R() - 0.5) * 1.8, y + 0.08, mz + (R() - 0.5) * 1.8, R(), R() * 3, R())); continue; }
       const hh2 = 0.6 + R() * 0.3; statics.push(at(box(L + 0.1, hh2, 0.55, STONE[Math.floor(R() * 4)]), mx, y + hh2 / 2 - 0.1, mz, 0, ry, 0));
       for (let k = 0; k < 3; k++) { const u = (k - 1) * L / 3 + (R() - 0.5) * 0.2, sw2 = 0.45 + R() * 0.3; statics.push(at(box(sw2, 0.2 + R() * 0.16, 0.42 + R() * 0.16, STONE[Math.floor(R() * 4)]), mx + Math.cos(ry) * u, y + hh2 - 0.02, mz - Math.sin(ry) * u, 0, ry + (R() - 0.5) * 0.4, 0)); }
       if (R() < 0.75) statics.push(at(box(L * (0.5 + R() * 0.5), 0.09, 0.5, 0xe2e8ee), mx, y + hh2 + 0.2, mz, 0, ry, 0));
       colliders.push({ x: a[0], z: a[1], r: 0.6 }, { x: mx, z: mz, r: 0.65 });
     } };
   MAP.houses.forEach((hh, i) => { if (R() < 0.3) return; const r = hh.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), W = (lx, lz) => [hh.x + lx * c + lz * s, hh.z - lx * s + lz * c], hw = 7.5 + R() * 2.5, hb = 8 + R() * 3, pts = [];
-    for (let z = 3; z > -hb; z -= 2.2) pts.push(W(-hw, z)); for (let x = -hw; x < hw; x += 2.2) pts.push(W(x, -hb)); for (let z = -hb; z <= 3; z += 2.2) pts.push(W(hw, z)); (R() < 0.32 ? wallRun : fenceRun)(pts);
+    for (let z = 3; z > -hb; z -= 2.2) pts.push(W(-hw, z)); for (let x = -hw; x < hw; x += 2.2) pts.push(W(x, -hb)); for (let z = -hb; z <= 3; z += 2.2) pts.push(W(hw, z)); { const own = p => { const d0 = Math.hypot(p[0] - hh.x, p[1] - hh.z); for (const o of MAP.houses) if (o !== hh && Math.hypot(p[0] - o.x, p[1] - o.z) < d0 - 0.3) return false; for (const s of storyB) if (Math.hypot(p[0] - s.x, p[1] - s.y) < Math.max(s._d[0], s._d[1]) * 0.62 + 5) return false; return true; }; (R() < 0.32 ? wallRun : fenceRun)(pts, own); }
     // Torpfosten vorn an beiden Ecken, manchmal hängt noch ein schiefes Gatter daran
-    for (const sd of [-1, 1]) { const q = W(sd * hw, 4.2); if (laneD(q[0], q[1]) < 4.6 || nearB(q[0], q[1], -3)) continue; const y = heightAt(q[0], q[1]); statics.push(at(box(0.2, 1.7, 0.2, 0x2e2218), q[0], y + 0.75, q[1], (R() - 0.5) * 0.12, r, (R() - 0.5) * 0.12), at(box(0.26, 0.08, 0.26, 0xe2e8ee), q[0], y + 1.63, q[1], 0, r, 0)); colliders.push({ x: q[0], z: q[1], r: 0.35 });
+    for (const sd of [-1, 1]) { const q = W(sd * hw, 4.2); if (laneD(q[0], q[1]) < 4.6 || nearB(q[0], q[1], -3) || MAP.houses.some(o => o !== hh && Math.hypot(q[0] - o.x, q[1] - o.z) < Math.hypot(q[0] - hh.x, q[1] - hh.z))) continue; const y = heightAt(q[0], q[1]); statics.push(at(box(0.2, 1.7, 0.2, 0x2e2218), q[0], y + 0.75, q[1], (R() - 0.5) * 0.12, r, (R() - 0.5) * 0.12), at(box(0.26, 0.08, 0.26, 0xe2e8ee), q[0], y + 1.63, q[1], 0, r, 0)); colliders.push({ x: q[0], z: q[1], r: 0.35 });
       if (sd === -1 && R() < 0.4) { const g0 = W(-hw + 1.0, 4.2), gy = heightAt(g0[0], g0[1]); for (const yy of [0.35, 0.75, 1.1]) statics.push(at(box(1.9, 0.08, 0.05, 0x3a2a1c), g0[0], gy + yy - 0.1, g0[1], 0, r + 0.5, 0.12)); statics.push(at(box(2.1, 0.07, 0.05, 0x3a2a1c), g0[0], gy + 0.65, g0[1], 0, r + 0.5, 0.55)); } }
     // Holzstapel an der Hauswand, manchmal ein Schneehaufen mit Schaufel
     if (R() < 0.6) { const p = W((R() < 0.5 ? -1 : 1) * 4.9, -1 + R() * 2), y = heightAt(p[0], p[1]); for (let a = 0; a < 3; a++) for (let b = 0; b < 5 - a; b++) statics.push(at(cyl(0.16, 0.16, 1.3, [0x4a3524, 0x3a2a1c, 0x5a4230][(a + b) % 3], 6), p[0] + (b - 2 + a * 0.5) * 0.33 * c, y + 0.16 + a * 0.29, p[1] - (b - 2 + a * 0.5) * 0.33 * s, Math.PI / 2, r, 0));
@@ -834,6 +835,45 @@ await Promise.all(jobs);
       const moon = new THREE.Mesh(new THREE.SphereGeometry(170, 20, 14), new THREE.MeshBasicMaterial({ color: 0xdfe6f2, fog: false })); moon.position.set(MIN + SIZE / 2 + 2600, 3300, MIN + SIZE / 2 - 4200); scene.add(moon);
       skyUpdate = (name) => { stars.visible = name !== 'tag'; stars.material.opacity = name === 'nacht' ? 0.85 : 0.3; moon.visible = name !== 'tag'; moon.material.color.setHex(name === 'nacht' ? 0xdfe6f2 : 0x9aa2b8); }; skyUpdate(lightName); }
   }
+  // 8) Unheimliches: Kerzenlicht in einzelnen Fenstern, Fußspuren, die im Nichts enden, Stofffetzen in den Bäumen, kreisende Krähen, seltene Geräusche
+  {
+    const H = rng(666), ticks = [], hz = [];
+    // schwaches, flackerndes Kerzenlicht in drei sonst dunklen Häusern
+    for (const idx of [6, 21, 38]) { const hh = MAP.houses[idx]; if (!hh) continue; const v = hh._v, r = hh.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), lx = -0.3 * v.w, lz = v.d / 2 + 0.052, x = hh.x + lx * c + lz * s, z = hh.z - lx * s + lz * c, y = heightAt(hh.x, hh.z);
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.94), new THREE.MeshBasicMaterial({ color: 0xff9838 })); pane.position.set(x, y + 1.55, z); pane.rotation.y = r; scene.add(pane);
+      const l = new THREE.PointLight(0xff8a30, 14, 13, 2); l.position.set(x + s * 1.2, y + 1.6, z + c * 1.2); scene.add(l); lights.push(l);
+      const ph = H() * 10; ticks.push(t => { const f = 0.72 + 0.2 * Math.sin(t * 9 + ph) + 0.12 * Math.sin(t * 23.7 + ph * 2) + (Math.sin(t * 0.37 + ph) > 0.985 ? -0.7 : 0); l.intensity = 14 * Math.max(0, f); pane.material.color.setRGB(1.0 * Math.max(0.05, f), 0.55 * Math.max(0.05, f), 0.2 * Math.max(0.05, f)); }); }
+    // Fußspuren im Schnee
+    { const g = new THREE.CircleGeometry(1, 8); g.scale(0.11, 0.27, 1); g.rotateX(-Math.PI / 2); const L = [];
+      const trail = (pts, stride, wobble) => { const cv = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], 0, p[1]))), len = cv.getLength(); for (let s = 0, k = 0; s < len; s += stride * (0.85 + H() * 0.3), k++) { const p = cv.getPointAt(s / len), t = cv.getTangentAt(s / len), sd = k % 2 ? 1 : -1, x = p.x - t.z * 0.17 * sd + (H() - 0.5) * wobble, z = p.z + t.x * 0.17 * sd + (H() - 0.5) * wobble; if (laneD(x, z) < 3.2 || dpoly(x, z, MAP.road) < 4.2) continue; L.push([x, z, Math.atan2(t.x, t.z)]); } };
+      trail([[P.auto.x - 3, P.auto.y + 2], [845, 362], [822, 330], [806, 296], [800, 262], [796, 240]], 0.72, 0.08);                  // vom Mietwagen weg, den Hang hinauf, endet zwischen den Bäumen
+      trail([[P.tor.x + 3, P.tor.y - 4], [158, 515], [170, 488], [165, 460], [176, 436]], 0.6, 0.06);                               // vom Friedhofstor in den Wald
+      { const o = P.haus_oma, pts = []; for (let a = 0; a <= 6.4; a += 0.35) pts.push([o.x + Math.cos(a) * 17.5, o.y + Math.sin(a) * 15.5]); trail(pts, 0.55, 0.05); }   // einmal rund um das Haus der Großmutter
+      trail([[P.schneefeld.x - 30, P.schneefeld.y + 20], [P.schneefeld.x - 5, P.schneefeld.y + 4], [P.schneefeld.x + 22, P.schneefeld.y - 14]], 1.5, 0.1);         // sehr weite Schritte quer über das Schneefeld
+      const m = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ color: 0x7c8aa4, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }), L.length), o = new THREE.Object3D();
+      L.forEach((p, i) => { o.position.set(p[0], heightAt(p[0], p[1]) + 0.035, p[1]); o.rotation.set(0, p[2], 0); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); scene.add(m); }
+    // Stofffetzen in den Ästen (Wunschbäume) am Friedhof und am Dorfrand
+    for (let i = 0; i < P2.length && hz.length < 260; i += 3) { const p = P2[i]; if (H() < 0.45) continue; for (let k = 0; k < 5; k++) { const a = H() * 6.28, rr = 0.5 + H() * 1.1, l = 0.35 + H() * 0.5; hz.push(at(box(0.07, l, 0.012, [0x8a1c16, 0xc8c2b4, 0x6a1410, 0x2c3a5c, 0xb0a890][Math.floor(H() * 5)]), p[0] + Math.cos(a) * rr, heightAt(p[0], p[1]) + 1.7 + H() * 1.6 - l / 2, p[1] + Math.sin(a) * rr, (H() - 0.5) * 0.3, H() * 3, (H() - 0.5) * 0.3)); } }
+    if (hz.length) { const m = new THREE.Mesh(mergeGeometries(hz, false), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide })); scene.add(m); }
+    // Krähen kreisen über dem Friedhof
+    { const wing = new THREE.BufferGeometry(); wing.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 0, 0.25, 0, 0, -0.3, 0.95, 0.05, -0.05, 0, 0, 0.25, -0.95, 0.05, -0.05, 0, 0, -0.3]), 3)); const bm = new THREE.MeshBasicMaterial({ color: 0x050506, side: THREE.DoubleSide });
+      for (let i = 0; i < 8; i++) { const b = new THREE.Mesh(wing, bm), rr = 18 + H() * 34, hh = 20 + H() * 22, sp = (0.18 + H() * 0.14) * (i % 2 ? 1 : -1), ph = H() * 6.28, cx = P.friedhof.x + (H() - 0.5) * 30, cz = P.friedhof.y + (H() - 0.5) * 40; b.scale.setScalar(0.9 + H() * 0.5); scene.add(b);
+        ticks.push(t => { const a = ph + t * sp; b.position.set(cx + Math.cos(a) * rr, heightAt(cx, cz) + hh + Math.sin(t * 0.3 + ph) * 3, cz + Math.sin(a) * rr); b.rotation.set(0, -a + (sp > 0 ? 0 : Math.PI), Math.sin(t * 7 + ph) * 0.5); }); } }
+    // seltene Geräusche (kein Dauerton): Windstoß, Krähe, fernes Heulen, Knarren, dumpfer Schlag, Flüstern
+    { let AC = null, master = null, nb = null, next = 9;
+      const start = () => { if (AC) return; try { AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination); nb = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } catch (e) { AC = null; } };
+      addEventListener('pointerdown', start); addEventListener('keydown', start);
+      const noise = (type, f0, f1, q, dur, vol, pan) => { const t = AC.currentTime, s = AC.createBufferSource(); s.buffer = nb; s.loop = true; const f = AC.createBiquadFilter(); f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.linearRampToValueAtTime(f1, t + dur * 0.5); f.frequency.linearRampToValueAtTime(f0, t + dur); const g = AC.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + dur * 0.4); g.gain.linearRampToValueAtTime(0, t + dur); let out = g; if (AC.createStereoPanner) { const p = AC.createStereoPanner(); p.pan.value = pan || 0; g.connect(p); out = p; } s.connect(f).connect(g); out.connect(master); s.start(t); s.stop(t + dur + 0.1); };
+      const tone = (type, pts, vol, pan) => { const t = AC.currentTime, o = AC.createOscillator(); o.type = type; o.frequency.setValueAtTime(pts[0][1], t); for (const [dt, f] of pts) o.frequency.linearRampToValueAtTime(f, t + dt); const end = pts[pts.length - 1][0], g = AC.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.3, end * 0.2)); g.gain.linearRampToValueAtTime(0, t + end); const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; let out = g; if (AC.createStereoPanner) { const p = AC.createStereoPanner(); p.pan.value = pan || 0; g.connect(p); out = p; } o.connect(lp).connect(g); out.connect(master); o.start(t); o.stop(t + end + 0.1); };
+      ticks.push(t => { if (!AC || t < next) return; next = t + 9 + Math.random() * 20; const k = Math.floor(Math.random() * 7), pan = Math.random() * 1.6 - 0.8;
+        if (k === 0 || k === 1) noise('bandpass', 280, 800 + Math.random() * 500, 0.8, 4 + Math.random() * 3, 0.09, pan);                                    // Windstoß
+        else if (k === 2) { for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) setTimeout(() => { tone('sawtooth', [[0.05, 620], [0.28, 430]], 0.035, pan); noise('bandpass', 1400, 1100, 3, 0.3, 0.03, pan); }, i * 420); }   // Krähe
+        else if (k === 3) tone('sine', [[0.1, 290], [1.2, 470], [2.6, 455], [3.8, 300]], 0.03, pan);                                                         // fernes Heulen
+        else if (k === 4) noise('bandpass', 300, 700, 9, 0.9, 0.12, pan);                                                                                   // Holz knarrt
+        else if (k === 5) { noise('lowpass', 140, 90, 1, 0.25, 0.3, pan); tone('sine', [[0.02, 85], [0.2, 50]], 0.12, pan); }                               // dumpfer Schlag, wie eine Tür
+        else if (lightName === 'nacht') noise('bandpass', 2300, 3100, 5, 1.7, 0.035, pan < 0 ? -0.85 : 0.85); }); }                                         // Flüstern, nur nachts
+    const prevSU = snowUpdate; snowUpdate = now => { prevSU(now); for (const f of ticks) f(now); };
+  }
   if (statics.length) { const m = new THREE.Mesh(mergeGeometries(statics, false), dmat); m.castShadow = true; m.receiveShadow = true; scene.add(m); }
 }
 // Ortsmarken ohne Gebäude
@@ -966,6 +1006,7 @@ function frame(now) {
 $('load').style.display = 'none';
 setLight('daemmerung');
 const startView = (location.hash || '#dorf').slice(1);
+setLight('nacht');
 if (WALKS[startView]) walkTo(startView); else { setView(VIEWS[startView] ? startView : 'dorf'); }
 window.__world = { setView, walkTo, setLight, cam, heightAt, scene, camera, renderer };
 requestAnimationFrame(frame);
