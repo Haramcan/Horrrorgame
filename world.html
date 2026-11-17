@@ -137,7 +137,7 @@ scene.add(hemi, sun, sun.target);
 const LIGHTS = {
   daemmerung: { bg: 0x353b58, fog: 0.00055, fogWalk: 0.014, hemi: 1.15, hemiSky: 0xb4bedc, sun: 0xffb682, sunI: 1.5, dir: [-0.9, 0.3, 0.25] },
   tag:        { bg: 0x9db6d2, fog: 0.0002,  fogWalk: 0.0012, hemi: 1.1,  hemiSky: 0xdfe9f5, sun: 0xfff2dd, sunI: 2.6, dir: [-0.4, 0.8, 0.35] },
-  nacht:      { bg: 0x0b111c, fog: 0.0011,  fogWalk: 0.019, hemi: 0.46, hemiSky: 0x5a6e9c, sun: 0x93a9dc, sunI: 0.85, dir: [0.5, 0.6, -0.4] }
+  nacht:      { bg: 0x05070c, fog: 0.0011,  fogWalk: 0.026, hemi: 0.4, hemiSky: 0x5a6e9c, sun: 0x93a9dc, sunI: 0.8, hemiWalk: 0.085, sunWalk: 0.13, dir: [0.5, 0.6, -0.4] }
 };
 let lightName = 'daemmerung';
 scene.background = new THREE.Color(LIGHTS.daemmerung.bg);
@@ -843,7 +843,7 @@ await Promise.all(jobs);
     for (const idx of [6, 21, 38]) { const hh = MAP.houses[idx]; if (!hh) continue; const v = hh._v, r = hh.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), lx = -0.3 * v.w, lz = v.d / 2 + 0.052, x = hh.x + lx * c + lz * s, z = hh.z - lx * s + lz * c, y = heightAt(hh.x, hh.z);
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.94), new THREE.MeshBasicMaterial({ color: 0xff9838 })); pane.position.set(x, y + 1.55, z); pane.rotation.y = r; scene.add(pane);
       const l = new THREE.PointLight(0xff8a30, 14, 13, 2); l.position.set(x + s * 1.2, y + 1.6, z + c * 1.2); scene.add(l); lights.push(l);
-      const ph = H() * 10; ticks.push(t => { const f = 0.72 + 0.2 * Math.sin(t * 9 + ph) + 0.12 * Math.sin(t * 23.7 + ph * 2) + (Math.sin(t * 0.37 + ph) > 0.985 ? -0.7 : 0); l.intensity = 14 * Math.max(0, f); pane.material.color.setRGB(1.0 * Math.max(0.05, f), 0.55 * Math.max(0.05, f), 0.2 * Math.max(0.05, f)); }); }
+      const ph = H() * 10; ticks.push(t => { const f = 0.72 + 0.2 * Math.sin(t * 9 + ph) + 0.12 * Math.sin(t * 23.7 + ph * 2) + (Math.sin(t * 0.37 + ph) > 0.985 ? -0.7 : 0); const near = mode === 'walk' && Math.hypot(cam.pos.x - x, cam.pos.z - z) < 16 ? 0 : 1, ff = Math.max(0.03, f) * near + 0.03 * (1 - near); l.intensity = 14 * Math.max(0, f) * near; pane.material.color.setRGB(1.0 * ff, 0.55 * ff, 0.2 * ff); }); }
     // Fußspuren im Schnee
     { const g = new THREE.CircleGeometry(1, 8); g.scale(0.11, 0.27, 1); g.rotateX(-Math.PI / 2); const L = [];
       const trail = (pts, stride, wobble) => { const cv = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], 0, p[1]))), len = cv.getLength(); for (let s = 0, k = 0; s < len; s += stride * (0.85 + H() * 0.3), k++) { const p = cv.getPointAt(s / len), t = cv.getTangentAt(s / len), sd = k % 2 ? 1 : -1, x = p.x - t.z * 0.17 * sd + (H() - 0.5) * wobble, z = p.z + t.x * 0.17 * sd + (H() - 0.5) * wobble; if (laneD(x, z) < 3.2 || dpoly(x, z, MAP.road) < 4.2) continue; L.push([x, z, Math.atan2(t.x, t.z)]); } };
@@ -861,7 +861,7 @@ await Promise.all(jobs);
       for (let i = 0; i < 8; i++) { const b = new THREE.Mesh(wing, bm), rr = 18 + H() * 34, hh = 20 + H() * 22, sp = (0.18 + H() * 0.14) * (i % 2 ? 1 : -1), ph = H() * 6.28, cx = P.friedhof.x + (H() - 0.5) * 30, cz = P.friedhof.y + (H() - 0.5) * 40; b.scale.setScalar(0.9 + H() * 0.5); scene.add(b);
         ticks.push(t => { const a = ph + t * sp; b.position.set(cx + Math.cos(a) * rr, heightAt(cx, cz) + hh + Math.sin(t * 0.3 + ph) * 3, cz + Math.sin(a) * rr); b.rotation.set(0, -a + (sp > 0 ? 0 : Math.PI), Math.sin(t * 7 + ph) * 0.5); }); } }
     // seltene Geräusche (kein Dauerton): Windstoß, Krähe, fernes Heulen, Knarren, dumpfer Schlag, Flüstern
-    { let AC = null, master = null, nb = null, next = 9;
+    let AC = null, master = null, nb = null, next = 9;
       const start = () => { if (AC) return; try { AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination); nb = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } catch (e) { AC = null; } };
       addEventListener('pointerdown', start); addEventListener('keydown', start);
       const noise = (type, f0, f1, q, dur, vol, pan) => { const t = AC.currentTime, s = AC.createBufferSource(); s.buffer = nb; s.loop = true; const f = AC.createBiquadFilter(); f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.linearRampToValueAtTime(f1, t + dur * 0.5); f.frequency.linearRampToValueAtTime(f0, t + dur); const g = AC.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + dur * 0.4); g.gain.linearRampToValueAtTime(0, t + dur); let out = g; if (AC.createStereoPanner) { const p = AC.createStereoPanner(); p.pan.value = pan || 0; g.connect(p); out = p; } s.connect(f).connect(g); out.connect(master); s.start(t); s.stop(t + dur + 0.1); };
@@ -872,7 +872,57 @@ await Promise.all(jobs);
         else if (k === 3) tone('sine', [[0.1, 290], [1.2, 470], [2.6, 455], [3.8, 300]], 0.03, pan);                                                         // fernes Heulen
         else if (k === 4) noise('bandpass', 300, 700, 9, 0.9, 0.12, pan);                                                                                   // Holz knarrt
         else if (k === 5) { noise('lowpass', 140, 90, 1, 0.25, 0.3, pan); tone('sine', [[0.02, 85], [0.2, 50]], 0.12, pan); }                               // dumpfer Schlag, wie eine Tür
-        else if (lightName === 'nacht') noise('bandpass', 2300, 3100, 5, 1.7, 0.035, pan < 0 ? -0.85 : 0.85); }); }                                         // Flüstern, nur nachts
+        else if (lightName === 'nacht') noise('bandpass', 2300, 3100, 5, 1.7, 0.035, pan < 0 ? -0.85 : 0.85); });                                         // Flüstern, nur nachts
+    // ---- Dunkelheit und Taschenlampe: nachts sieht man beim Gehen nur, was der Lichtkegel trifft
+    scene.add(camera);
+    const torch = new THREE.SpotLight(0xfff0d4, 0, 60, 0.46, 0.7, 1.3); torch.position.set(0.25, -0.2, 0.1); camera.add(torch); torch.target.position.set(0.05, -0.02, -6); camera.add(torch.target);
+    let torchOn = true, blackout = 0, lastT = 0, lastPos = null, stepAcc = 0, walked = 0, echo = 0, beat = 0;
+    addEventListener('keydown', e => { if (e.code === 'KeyF') { torchOn = !torchOn; if (AC) noise('bandpass', 2500, 2500, 6, 0.06, 0.12, 0); } });
+    // ---- Umgebung: Zweigfiguren in den Bäumen, Handabdrücke an Türen, ein gerissenes Schaf mit Schleifspur, ein Steinkreis mit Asche
+    { const E = []; let n = 0;
+      for (let i = 0; i < 4000 && n < 70; i++) { const x = 130 + H() * 680, z = 280 + H() * 500, d = laneD(x, z); if (d < 4.5 || d > 13 || nearB(x, z, 1)) continue; n++; const y = heightAt(x, z) + 2.0 + H() * 1.2, s = 0.5 + H() * 0.5, ry = H() * 6.28, T = 0x2a2018;   // Figur aus zusammengebundenen Zweigen, hängt an einer Schnur
+        const fig = [at(box(0.03, 0.9 * s, 0.03, T), 0, 0, 0), at(box(0.7 * s, 0.03, 0.03, T), 0, 0.22 * s, 0), at(box(0.03, 0.6 * s, 0.03, T), -0.14 * s, -0.62 * s, 0, 0, 0, -0.3), at(box(0.03, 0.6 * s, 0.03, T), 0.14 * s, -0.62 * s, 0, 0, 0, 0.3), at(box(0.3 * s, 0.03, 0.03, T), 0, 0.5 * s, 0, 0, 0, 0.78), at(box(0.3 * s, 0.03, 0.03, T), 0, 0.5 * s, 0, 0, 0, -0.78), at(box(0.012, 1.4, 0.012, 0x15120f), 0, 0.45 * s + 0.7, 0)];
+        const m = mergeGeometries(fig, false); m.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler((H() - 0.5) * 0.3, ry, (H() - 0.5) * 0.3)), new THREE.Vector3(1, 1, 1))); E.push(m);
+        E.push(at(box(0.16, 4.2, 0.16, 0x1c1612), x + 0.5, heightAt(x, z) + 1.9, z, 0, 0, 0.1), at(box(1.3, 0.07, 0.07, 0x1c1612), x, y + 0.45 * s + 1.38, z)); colliders.push({ x: x + 0.5, z, r: 0.3 }); }
+      MAP.houses.forEach((hh, i) => { if (i % 4 !== 1) return; const v = hh._v, r = hh.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), y = heightAt(hh.x, hh.z); for (let k = 0; k < 3; k++) { const lx = (H() - 0.5) * (v.w - 1.5), lz = v.d / 2 + 0.03, x = hh.x + lx * c + lz * s, z = hh.z - lx * s + lz * c; E.push(at(box(0.17, 0.2, 0.012, 0x4a0806), x, y + 1.0 + H() * 0.7, z, 0, r, (H() - 0.5) * 0.8), at(box(0.035, 0.5 + H() * 0.5, 0.012, 0x3a0605), x + (H() - 0.5) * 0.1, y + 0.55 + H() * 0.3, z, 0, r, (H() - 0.5) * 0.15)); } });   // Handabdrücke mit Schlieren
+      for (const [sx, sz, tx, tz] of [[612, 548, 660, 600], [372, 458, 330, 410]]) { const y = heightAt(sx, sz); const body = col(new THREE.DodecahedronGeometry(0.5, 0), 0x9a968c); body.scale(1.5, 0.6, 0.8); E.push(at(body, sx, y + 0.2, sz, 0, 1, 0), at(box(0.3, 0.26, 0.26, 0x2a2622), sx + 0.75, y + 0.16, sz - 0.3, 0, 0.6, 0.3), at(box(0.07, 0.07, 0.6, 0x2a2622), sx - 0.4, y + 0.1, sz + 0.5, 0.2, 0.5, 0), at(box(0.07, 0.07, 0.6, 0x2a2622), sx + 0.2, y + 0.1, sz + 0.6, -0.1, -0.3, 0));
+        const blood = new THREE.Mesh(new THREE.CircleGeometry(1.5, 12), new THREE.MeshBasicMaterial({ color: 0x3a0606, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, fog: true })); blood.rotation.x = -Math.PI / 2; blood.position.set(sx, y + 0.04, sz); blood.scale.set(1.2, 0.8, 1); scene.add(blood);
+        for (let u = 0.03; u < 1; u += 0.022) { const x = sx + (tx - sx) * u + (H() - 0.5) * 0.5, z = sz + (tz - sz) * u + (H() - 0.5) * 0.5, sm = new THREE.Mesh(new THREE.CircleGeometry(0.35 + H() * 0.35, 7), blood.material); sm.rotation.x = -Math.PI / 2; sm.position.set(x, heightAt(x, z) + 0.04, z); sm.scale.set(1, 0.5 + H(), 1); scene.add(sm); } }
+      { const cx = 610, cz = 300, y = heightAt(cx, cz); for (let a = 0; a < 6.28; a += 0.48) E.push(at(box(0.5, 0.9 + H() * 0.5, 0.35, STONE[Math.floor(H() * 4)]), cx + Math.cos(a) * 4, y + 0.3, cz + Math.sin(a) * 4, (H() - 0.5) * 0.25, -a, (H() - 0.5) * 0.25)); const ash = new THREE.Mesh(new THREE.CircleGeometry(1.6, 12), new THREE.MeshBasicMaterial({ color: 0x0c0b0a, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 })); ash.rotation.x = -Math.PI / 2; ash.position.set(cx, y + 0.04, cz); scene.add(ash); for (let k = 0; k < 6; k++) E.push(at(box(0.08, 0.08, 0.9, 0x0e0c0b), cx + (H() - 0.5), y + 0.08, cz + (H() - 0.5), 0, H() * 3, 0)); }
+      const em = new THREE.Mesh(mergeGeometries(E, false), dmat); em.castShadow = true; scene.add(em); }
+    // ---- die Gestalt: steht hinter dir. Siehst du sie an, fällt die Lampe kurz aus, und sie ist fort. Jedes Mal steht sie näher.
+    const ghost = new THREE.Group();
+    { const robe = new THREE.MeshLambertMaterial({ color: 0x0b0b0d }), skin = new THREE.MeshLambertMaterial({ color: 0xa8a294 }), hair = new THREE.MeshLambertMaterial({ color: 0x4a0a07 });
+      const add = (g, m, x, y, z, rz = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.rotation.z = rz; ghost.add(o); };
+      add(new THREE.ConeGeometry(0.42, 1.9, 7), robe, 0, 0.95, 0); add(new THREE.BoxGeometry(0.5, 0.5, 0.26), robe, 0, 1.75, 0); add(new THREE.SphereGeometry(0.15, 7, 6), skin, 0, 2.14, 0.02);
+      add(new THREE.BoxGeometry(0.4, 0.75, 0.3), hair, 0, 2.0, -0.08); add(new THREE.BoxGeometry(0.1, 0.9, 0.08), hair, -0.2, 1.75, 0.06); add(new THREE.BoxGeometry(0.1, 1.0, 0.08), hair, 0.2, 1.7, 0.06);
+      add(new THREE.BoxGeometry(0.09, 1.15, 0.09), robe, -0.33, 1.4, 0, 0.1); add(new THREE.BoxGeometry(0.09, 1.15, 0.09), robe, 0.33, 1.4, 0, -0.1); add(new THREE.BoxGeometry(0.07, 0.24, 0.05), skin, -0.39, 0.74, 0); add(new THREE.BoxGeometry(0.07, 0.24, 0.05), skin, 0.39, 0.74, 0); }
+    ghost.visible = false; scene.add(ghost);
+    let gT = 28, gLife = 0, gSeen = 0, gDist = 14;
+    const blocked = (x, z) => colliders.some(c => Math.hypot(x - c.x, z - c.z) < c.r + 0.6);
+    const candleHouses = [6, 21, 38].map(i => MAP.houses[i]).filter(Boolean), slammed = new Set();
+    ticks.push(t => { const dt = Math.min(0.1, t - lastT); lastT = t; const walk = mode === 'walk', night = lightName === 'nacht';
+      // Lampe
+      blackout = Math.max(0, blackout - dt); const fl = Math.sin(t * 0.23) > 0.992 ? 0.25 : 1;
+      torch.intensity = walk && torchOn && lightName !== 'tag' && blackout <= 0 ? 150 * fl : 0;
+      if (look && look.u) { look.u.uVig.value = walk && night ? 1.05 : 0.75; look.u.uGrain.value = walk && night ? 0.055 : 0.03; }
+      if (!walk) { ghost.visible = false; lastPos = null; return; }
+      // Schritte im Schnee, und manchmal ein Schritt zu viel, wenn man stehen bleibt
+      const p = cam.pos; if (!lastPos) lastPos = p.clone(); const moved = Math.hypot(p.x - lastPos.x, p.z - lastPos.z); lastPos.copy(p); stepAcc += moved;
+      if (moved > 0.001) { walked += dt; echo = 0.55; } else if (echo > 0) { echo -= dt; if (echo <= 0 && walked > 5 && AC && Math.random() < 0.4) { noise('bandpass', 700, 500, 1.5, 0.16, 0.1, 0.6); setTimeout(() => AC && noise('bandpass', 650, 480, 1.5, 0.16, 0.08, 0.7), 520); walked = 0; } if (echo <= 0) walked = Math.min(walked, 5.01); }
+      if (stepAcc > 0.78) { stepAcc = 0; if (AC) noise('bandpass', 900 + Math.random() * 300, 600, 1.2, 0.13, 0.085, 0); }
+      // Häuser reagieren: ein Schlag hinter der Tür, wenn man nah vorbeigeht
+      for (const hh of MAP.houses) { if (slammed.has(hh) || Math.hypot(p.x - hh.x, p.z - hh.z) > 9.5) continue; slammed.add(hh); if (Math.random() < 0.3 && AC) { const pan = Math.sin(Math.atan2(hh.x - p.x, hh.z - p.z) - cam.yaw) > 0 ? -0.8 : 0.8; for (let k = 0; k < 3; k++) setTimeout(() => { noise('lowpass', 150, 100, 1, 0.14, 0.34, pan); }, k * 330); } }
+      if (!night) { ghost.visible = false; return; }
+      // Gestalt
+      if (!ghost.visible) { gT -= dt; if (gT > 0) return; for (let k = 0; k < 12; k++) { const a = cam.yaw + Math.PI + (Math.random() - 0.5) * 1.3, x = p.x - Math.sin(a) * gDist, z = p.z - Math.cos(a) * gDist; if (blocked(x, z)) continue; ghost.position.set(x, heightAt(x, z) + laneLift(x, z), z); ghost.visible = true; gLife = 0; gSeen = 0; if (AC) noise('bandpass', 2400, 3000, 5, 1.2, 0.03, Math.random() < 0.5 ? -0.9 : 0.9); return; } gT = 6; return; }
+      gLife += dt; const dx = ghost.position.x - p.x, dz = ghost.position.z - p.z, d = Math.hypot(dx, dz); ghost.rotation.y = Math.atan2(-dx, -dz);
+      const ang = Math.acos(Math.max(-1, Math.min(1, (dx * -Math.sin(cam.yaw) + dz * -Math.cos(cam.yaw)) / (d || 1))));
+      beat -= dt; if (beat <= 0 && AC) { beat = d < 9 ? 0.6 : 0.95; tone('sine', [[0.02, 62], [0.16, 40]], 0.5, 0); setTimeout(() => AC && tone('sine', [[0.02, 55], [0.14, 38]], 0.35, 0), 170); }
+      if (ang < 0.62) { if (gSeen === 0 && AC) { noise('bandpass', 180, 2600, 2, 0.9, 0.3, 0); tone('sawtooth', [[0.05, 90], [0.8, 58]], 0.2, 0); } gSeen += dt; if (gSeen > 0.75) { blackout = 0.9; ghost.visible = false; gT = 35 + Math.random() * 45; gDist = Math.max(5, gDist - 2.5); if (AC) noise('bandpass', 3000, 1200, 4, 0.5, 0.1, 0); } }
+      else if (gLife > 28) { ghost.visible = false; gT = 20 + Math.random() * 30; }
+      else if (gLife > 12 && d > 4.5) { const nx = ghost.position.x - dx / d * dt * 0.9, nz = ghost.position.z - dz / d * dt * 0.9; if (!blocked(nx, nz)) ghost.position.set(nx, heightAt(nx, nz) + laneLift(nx, nz), nz); }   // kommt langsam näher, solange man nicht hinsieht
+    });
     const prevSU = snowUpdate; snowUpdate = now => { prevSU(now); for (const f of ticks) f(now); };
   }
   if (statics.length) { const m = new THREE.Mesh(mergeGeometries(statics, false), dmat); m.castShadow = true; m.receiveShadow = true; scene.add(m); }
@@ -919,6 +969,7 @@ function setMode(m) {
   mode = m;
   const walk = m === 'walk';
   scene.fog.density = walk ? LIGHTS[lightName].fogWalk : LIGHTS[lightName].fog;
+  { const L = LIGHTS[lightName]; hemi.intensity = walk && L.hemiWalk !== undefined ? L.hemiWalk : L.hemi; sun.intensity = walk && L.sunWalk !== undefined ? L.sunWalk : L.sunI; }
   camera.near = walk ? 0.1 : 1; camera.updateProjectionMatrix();
   sun.shadow.mapSize.set(walk ? 2048 : 4096, walk ? 2048 : 4096);
   if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
@@ -927,13 +978,13 @@ function setMode(m) {
   labels.forEach(l => l.el.style.display = 'none');
   if ($('btnWalk')) $('btnWalk').textContent = walk ? 'Wieder fliegen (G)' : 'Hier herumlaufen (G)';
   $('help').innerHTML = walk
-    ? '<b>Gehen:</b> Klick ins Bild, dann <b>W A S D</b> bewegen, Maus umsehen, <b>Shift</b> rennen, <b>Esc</b> Maus freigeben, <b>G</b> wieder fliegen. Oben die Knöpfe springen zu anderen Orten.'
+    ? '<b>Gehen:</b> Klick ins Bild, dann <b>W A S D</b> bewegen, Maus umsehen, <b>Shift</b> rennen, <b>F</b> Taschenlampe, <b>Esc</b> Maus freigeben, <b>G</b> wieder fliegen. Oben die Knöpfe springen zu anderen Orten.'
     : '<b>Fliegen:</b> Maustaste gedrückt halten und ziehen = umsehen. <b>W A S D</b> bewegen, <b>Q</b>/<b>E</b> runter/hoch, <b>Shift</b> schneller, Mausrad vor/zurück. <b>G</b> = an dieser Stelle herumlaufen. Knöpfe oben: Ansichten und Orte zum Hineingehen.';
 }
 function setLight(name) {
   lightName = name; const L = LIGHTS[name];
   scene.background.setHex(L.bg); scene.fog.color.setHex(L.bg); scene.fog.density = mode === 'walk' ? L.fogWalk : L.fog;
-  hemi.intensity = L.hemi; hemi.color.setHex(L.hemiSky); sun.color.setHex(L.sun); sun.intensity = L.sunI;
+  { const wk = mode === 'walk'; hemi.intensity = wk && L.hemiWalk !== undefined ? L.hemiWalk : L.hemi; hemi.color.setHex(L.hemiSky); sun.color.setHex(L.sun); sun.intensity = wk && L.sunWalk !== undefined ? L.sunWalk : L.sunI; }
   document.querySelectorAll('[data-light]').forEach(b => b.classList.toggle('on', b.dataset.light === name));
   skyUpdate(name);
 }
@@ -1009,7 +1060,7 @@ setLight('daemmerung');
 const startView = (location.hash || '#dorf').slice(1);
 setLight('nacht');
 if (WALKS[startView]) walkTo(startView); else { setView(VIEWS[startView] ? startView : 'dorf'); }
-window.__world = { setView, walkTo, setLight, cam, heightAt, scene, camera, renderer };
+window.__world = { getMode: () => mode, setView, walkTo, setLight, cam, heightAt, scene, camera, renderer };
 requestAnimationFrame(frame);
 </script>
 </body>
